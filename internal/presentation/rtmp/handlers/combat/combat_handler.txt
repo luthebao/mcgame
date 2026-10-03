@@ -1,0 +1,2967 @@
+// Combat handler for battle-related RPC calls.
+// Handles hitNpc, clickNpc, cbom (combat action), skill learning, and revive.
+// Manages PVE battles with turn-based combat system.
+package handlers
+
+import (
+	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+	"time"
+
+	appbattle "mcgame-server/internal/application/battle"
+	appchar "mcgame-server/internal/application/character"
+	appcombat "mcgame-server/internal/application/combat"
+	appgroup "mcgame-server/internal/application/group"
+	appquest "mcgame-server/internal/application/quest"
+	appscene "mcgame-server/internal/application/scene"
+	"mcgame-server/internal/domain/character"
+	"mcgame-server/internal/domain/combat"
+	"mcgame-server/internal/gamedata"
+	"mcgame-server/internal/gamedata/models"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"mcgame-server/internal/domain/auth"
+
+	"github.com/google/uuid"
+	amf0 "github.com/yutopp/go-amf0"
+	"go.uber.org/zap"
+)
+
+type CombatHandler struct {
+	combatService *appcombat.Service
+	sceneService  *appscene.Service
+	charService   *appchar.Service
+	battleService *appbattle.Service
+	groupService  *appgroup.Service
+	questService  *appquest.Service
+	sceneManager  *rtmp.SceneManager
+	gameData      *gamedata.Manager
+	questNotify   *QuestNotifyHelper
+	accountRepo   auth.AccountRepository
+	logger        *zap.Logger
+}
+
+func NewCombatHandler(combatService *appcombat.Service, sceneService *appscene.Service, charService *appchar.Service, battleService *appbattle.Service, questService *appquest.Service, sceneManager *rtmp.SceneManager, accountRepo auth.AccountRepository, logger *zap.Logger) *CombatHandler {
+	return &CombatHandler{
+		combatService: combatService,
+		sceneService:  sceneService,
+		charService:   charService,
+		battleService: battleService,
+		questService:  questService,
+		sceneManager:  sceneManager,
+		accountRepo:   accountRepo,
+		logger:        logger,
+	}
+}
+
+func (h *CombatHandler) SetQuestNotifyHelper(qnh *QuestNotifyHelper) {
+	h.questNotify = qnh
+}
+
+func (h *CombatHandler) SetGameDataManager(manager *gamedata.Manager) {
+	h.gameData = manager
+}
+
+func (h *CombatHandler) SetGroupService(groupService *appgroup.Service) {
+	h.groupService = groupService
+}
+
+func (h *CombatHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("hitNpc", h.HitNpc)
+	dispatcher.Register("clickNpc", h.ClickNpc)
+	dispatcher.Register("cbom", h.CheckBattleOnMove)
+	dispatcher.Register("battleFieldGetInfo", h.GetBattleInfo)
+	dispatcher.Register("battlePlayEnd", h.EndBattle)
+	dispatcher.Register("battleReplayEnd", h.BattleReplayEnd)
+	dispatcher.Register("battleUpdateCmd", h.BattleUpdateCmd)
+	dispatcher.Register("skillLearnByClient", h.LearnSkill)
+	dispatcher.Register("reliveSwitch", h.ReliveSwitch)
+	dispatcher.Register("npcScript", h.NpcScript)
+	dispatcher.Register("mazeRecover", h.MazeRecover)
+	dispatcher.Register("useBloodBag", h.UseBloodBag)
+	dispatcher.Register("bbGoldRelive", h.BBGoldRelive)
+	dispatcher.Register("bbNormalRelive", h.BBNormalRelive)
+	dispatcher.Register("freeRelive", h.FreeRelive)
+	dispatcher.Register("reliveUseItem", h.ReliveUseItem)
+	dispatcher.Register("quitWatch", h.QuitWatch)
+	dispatcher.Register("npcFuncClick", h.NpcFuncClick)
+}
+
+func (h *CombatHandler) NpcFuncClick(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	var npcID int
+	var passHash string
+	foundID := false
+
+	for _, arg := range args {
+		if arg == nil {
+			continue
+		}
+		if !foundID {
+			switch v := arg.(type) {
+			case float64:
+				npcID = int(v)
+				foundID = true
+			case int:
+				npcID = v
+				foundID = true
+			}
+		} else {
+			// Look for hash after ID
+			if s, ok := arg.(string); ok {
+				passHash = s
+				break
+			}
+		}
+	}
+
+	if npcID == 0 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	// 2. Look up NPC and Open Shop
+	if h.gameData != nil {
+		npc := h.gameData.GetNPC(npcID)
+		if npc != nil {
+			if npc.ShopID > 0 {
+				shopID := int(npc.ShopID)
+				h.logger.Info("NpcFuncClick opening shop", zap.Int("npc_id", npcID), zap.Int("shop_id", shopID))
+
+				if shopID <= 7 {
+					if err := ctx.Connection.SendCallbackSync("openShopById", shopID); err != nil {
+						h.logger.Warn("Failed to send openShopById", zap.Error(err))
+					}
+				} else {
+					if err := ctx.Connection.SendCallbackSync("onOpenShop", shopID); err != nil {
+						h.logger.Warn("Failed to send onOpenShop", zap.Error(err))
+					}
+				}
+				return map[string]interface{}{"success": true}, nil
+			}
+
+			// If not a shop, check for other types
+			switch npc.Type {
+			case 7: // NPC_TYPE_BANK (Or 5?)
+				h.logger.Info("NpcFuncClick: opening Bank panel", zap.Int("npc_id", npcID))
+
+				// If password hash is provided, verify it first (if not empty)
+				if passHash != "" {
+					accountID, err := uuid.Parse(ctx.AccountID)
+					if err == nil {
+						if acc, err := h.accountRepo.FindByID(ctx.Context, accountID); err == nil {
+							// Check if stored secondary password is empty or matches
+							// If checking against stored pass:
+							if !acc.CheckSecondaryPassword(passHash) {
+								h.logger.Warn("NpcFuncClick: Incorrect bank password", zap.String("accountID", ctx.AccountID))
+								// Send callback indicating wrong password? Or just return success:false?
+								// Sending "onNpcMsg" might be appropriate feedback
+								ctx.Connection.SendCallback("onNpcMsg", npcID, "Mật khẩu rương không đúng!")
+								return map[string]interface{}{"success": true}, nil
+							}
+						}
+					}
+
+					h.logger.Info("NpcFuncClick: sending setClientDP", zap.String("hash", passHash))
+					if err := ctx.Connection.SendCallback("setClientDP", passHash); err != nil {
+						h.logger.Error("Failed to send setClientDP", zap.Error(err))
+					}
+				}
+
+				if err := ctx.Connection.SendCallback("initViewBankPanel"); err != nil {
+					h.logger.Error("Failed to send initViewBankPanel", zap.Error(err))
+				}
+				return map[string]interface{}{"success": true}, nil
+			case 5: // NPC_TYPE_AUCTION (Or 7?)
+				h.logger.Info("NpcFuncClick: opening Auction panel", zap.Int("npc_id", npcID))
+				data := map[string]interface{}{
+					"flag":          true,
+					"npcId":         npcID,
+					"myAuctionList": map[string]interface{}{},
+				}
+				if err := ctx.Connection.SendCallback("onInitViewAuctionP", data); err != nil {
+					h.logger.Error("Failed to send onInitViewAuctionP", zap.Error(err))
+				}
+				return map[string]interface{}{"success": true}, nil
+			case 13: // CallBoard
+				h.logger.Info("NpcFuncClick: CallBoard clicked", zap.Int("npc_id", npcID))
+			}
+		}
+	}
+
+	h.logger.Warn("NpcFuncClick called for NPC without shop or not found", zap.Int("npc_id", npcID))
+	return map[string]interface{}{"success": false}, nil
+}
+
+func (h *CombatHandler) NpcScript(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var funcID string
+	switch v := args[0].(type) {
+	case string:
+		funcID = v
+	case float64:
+		funcID = fmt.Sprintf("%v", v)
+	case int:
+		funcID = fmt.Sprintf("%d", v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Info("NPC script action triggered",
+		zap.Int64("character_id", characterID),
+		zap.String("func_id", funcID))
+
+	// Handle specific function logics
+	if strings.HasPrefix(funcID, "transport_") {
+		parts := strings.Split(funcID, "_")
+		if len(parts) == 5 {
+			mapID, _ := strconv.Atoi(parts[1])
+			cost, _ := strconv.Atoi(parts[2])
+
+			// Get character to check/deduct money
+			char, err := h.charService.GetByID(ctx.Context, characterID)
+			if err != nil {
+				h.logger.Error("Failed to get character", zap.Error(err))
+				return nil, err
+			}
+
+			// Check cost (assumed Money/Silver)
+			if int(char.MoneyBind) < cost {
+				h.logger.Info("Not enough money", zap.Int64("charID", characterID))
+				return map[string]interface{}{"success": false}, nil
+			}
+
+			// Deduct money
+			char.MoneyBind -= int64(cost)
+
+			// Notify client
+			ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+				"moneyBind": char.MoneyBind,
+			})
+			ctx.Connection.SendCallback("onBlueMsg", fmt.Sprintf("Mất %d Ngân phiếu.", cost))
+
+			if err := h.teleportToMap(ctx, characterID, mapID); err != nil {
+				return nil, err
+			}
+
+			return map[string]interface{}{"success": true}, nil
+		}
+	}
+
+	if strings.HasPrefix(funcID, "hlvt_next_floor_") {
+		idStr := funcID[len("hlvt_next_floor_"):]
+		id, _ := strconv.Atoi(idStr)
+
+		// Mapping logic for 2293-2300
+		// 2293->80, 2294->81, 2295->82, 2296->83, 2297->84, 2298->85, 2299->86
+		// 2300 is floor 10, target next available or loop
+		targetMap := 0
+		if id >= 2293 && id <= 2299 {
+			targetMap = 80 + (id - 2293)
+		} else if id == 2300 {
+			targetMap = 79 // Or next logical map
+		}
+
+		if targetMap > 0 {
+			if err := h.teleportToMap(ctx, characterID, targetMap); err != nil {
+				return nil, err
+			}
+		} else {
+			ctx.Connection.SendCallback("onNpcMsg", id, "Tầng này chưa mở hoặc không có đường đi tiếp.")
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hlvt_explore_more_") {
+		idStr := funcID[len("hlvt_explore_more_"):]
+		id, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", id, "Tính năng đang phát triển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hlvt_boss_current_") {
+		idStr := funcID[len("hlvt_boss_current_"):]
+		id, _ := strconv.Atoi(idStr)
+		floor := id - 2300
+		ctx.Connection.SendCallback("a", fmt.Sprintf("Tầng Boss nhóm khiêu chiến: Tầng %d", floor))
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hlvt_kick_out_") {
+		idStr := funcID[len("hlvt_kick_out_"):]
+		id, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", id, "Tính năng đang phát triển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hlvt_continue_") {
+		idStr := funcID[len("hlvt_continue_"):]
+		id, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", id, "Tính năng đang phát triển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	// Farm prefix handlers
+	if strings.HasPrefix(funcID, "farm_map_1_") {
+		if err := h.teleportToMap(ctx, characterID, 57); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+	if strings.HasPrefix(funcID, "farm_map_2_") {
+		if err := h.teleportToMap(ctx, characterID, 58); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+	if strings.HasPrefix(funcID, "farm_quests_") {
+		idStr := funcID[len("farm_quests_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Hiện chưa có nhiệm vụ nông trường mới.")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "plant_short_term_") || strings.HasPrefix(funcID, "plant_long_term_") {
+		idStr := funcID[strings.LastIndex(funcID, "_")+1:]
+		npcID, _ := strconv.Atoi(idStr)
+		cropIDs := []int{1229, 1230, 1231, 1232, 1233, 1234, 1235, 1236, 1239, 1240, 1525, 1526, 1527, 1528, 1529}
+		var cropOptions []map[string]interface{}
+		for _, id := range cropIDs {
+			label := fmt.Sprintf("Nông sản %d", id)
+			if h.gameData != nil {
+				if npc := h.gameData.GetNPC(id); npc != nil {
+					label = fmt.Sprintf("%s (Lv %d)", npc.Name, int(npc.Lv))
+				}
+			}
+			cropOptions = append(cropOptions, map[string]interface{}{
+				"label": label,
+				"func":  fmt.Sprintf("plant_crop_%d_%d", id, npcID),
+			})
+		}
+		ctx.Connection.SendCallback("onList", npcID, "Trồng trọt", "Hãy chọn loại nông sản bạn muốn trồng:", cropOptions)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "plant_special_") {
+		idStr := funcID[len("plant_special_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		options := []map[string]interface{}{
+			{"label": "Trồng cây kim tiền ( cần hạt giống )", "func": fmt.Sprintf("plant_money_tree_%d", npcID)},
+		}
+		ctx.Connection.SendCallback("onList", npcID, "Nông sản đặc biệt", "Chọn loại nông sản đặc biệt:", options)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "farm_operation_") {
+		idStr := funcID[len("farm_operation_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		options := []map[string]interface{}{
+			{"label": "Sử dụng thuốc tăng trưởng", "func": fmt.Sprintf("farm_use_booster_%d", npcID)},
+			{"label": "Lập tức thu hoạch", "func": fmt.Sprintf("farm_harvest_now_%d", npcID)},
+			{"label": "Tiêu diệt", "func": fmt.Sprintf("farm_destroy_%d", npcID)},
+		}
+		ctx.Connection.SendCallback("onList", npcID, "Thao tác nông trường", "Bạn muốn thao tác gì?", options)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "farm_harvest_now_") {
+		idStr := funcID[len("farm_harvest_now_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Bạn chưa trồng")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "farm_destroy_") {
+		idStr := funcID[len("farm_destroy_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Bạn không phải là chủ nhân của khu đất này, không sở hữu nông sản ở đây nên không thế thao tác")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "farm_use_booster_") || strings.HasPrefix(funcID, "plant_money_tree_") {
+		idStr := funcID[strings.LastIndex(funcID, "_")+1:]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Tính năng đang phát triển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "view_planting_guide_") {
+		guide := `1. Muốn trồng nông sản trước tiên cần học kỹ năng trồng trọt, sau khi đạt cấp 50 có thể đến Điêu Linh Thôn gặp Đại Sư Kỹ Năng Sống để học.
+2. Khi trồng cần có đất trồng, có thể đến Nông Trường Pháp Thuật chọn 1 mảnh đất trống để trồng. Nông sản gồm có ngắn ngày và dài ngày, cấp thấp và cấp cao. Nông sản có cấp độ trồng trọt càng cao thì càng cần kỹ năng cao.
+3. Sau khi nông sản chín, người trồng cần thu hoạch ngay, nếu không sẽ bị người khác vào thu hoạch hộ (nông sản ngắn ngày có thể sẽ bị trộm hết, nông sản dài ngày sẽ được giữ lại 1 phần). Nếu sau 20 phút kể từ lúc chín mà không được thu hoạch thì nông sản sẽ héo, cần phải trồng lại.`
+		ctx.Connection.SendCallback("a", guide)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "chu_ma_dien_enter_") {
+		idStr := funcID[len("chu_ma_dien_enter_"):]
+		npcID, _ := strconv.Atoi(idStr)
+
+		now := time.Now()
+		hour := now.Hour()
+		minute := now.Minute()
+
+		// Check if time is between 13:00 and 13:05
+		if hour == 13 && (minute >= 0 && minute <= 5) {
+			// Teleport to Map 2005
+			if err := h.teleportToMap(ctx, characterID, 2005); err != nil {
+				return nil, err
+			}
+		} else {
+			ctx.Connection.SendCallback("onNpcMsg", npcID, "13:00-13:05 mỗi ngày đến kênh 7 để vào Chu Ma Điện!")
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "chu_ma_dien_guide_") {
+		guide := `1.13:00-13:05 mỗi ngày, ta có thể giúp các cư dân cấp độ 120 trở lên vào Chu Ma Điện, nhưng chỉ nhận 5 nhóm ít nhất 3 người (đề nghị 5 người)!
+2.Khi vào Chu Ma Điện phải nhớ luôn trong tư thế sẵn sàng chiến đấu! Sau 2 phút các yêu ma Chu Ma sẽ xuất hiện.
+3.Nếu đã vào Chu Ma Điện lại thoát ra thì không thể vào lại trong ngày hôm đó`
+		ctx.Connection.SendCallback("a", guide)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "quy_hut_mau_1_") || strings.HasPrefix(funcID, "quy_hut_mau_2_") || strings.HasPrefix(funcID, "quy_hut_mau_3_") {
+		idStr := funcID[strings.LastIndex(funcID, "_")+1:]
+		npcID, _ := strconv.Atoi(idStr)
+
+		if h.groupService != nil {
+			isLeader, err := h.groupService.IsGroupLeader(ctx.Context, characterID)
+			if err != nil || !isLeader {
+				ctx.Connection.SendCallback("onNpcMsg", npcID, "Bạn không phải là nhóm trưởng")
+				return map[string]interface{}{"success": true}, nil
+			}
+		}
+
+		// Teleport to Map 69
+		if err := h.teleportToMap(ctx, characterID, 69); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "quy_hut_mau_auto_") {
+		idStr := funcID[strings.LastIndex(funcID, "_")+1:]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Tính năng đang phát triển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "quy_hut_mau_guide_") {
+		guide := `1. Mỗi người cần mang theo vật phẩm vào phụ bản thì mới có thể tạo phụ bản
+2. Người tạo phụ bản sẽ mặc định trở thành trưởng nhóm phụ bản, tất cả các nhiệm vụ trong phụ bản chỉ có trưởng nhóm mới có thể nhận và trả, các thành viên còn lại cần làm theo các nhắc nhở mà hệ thống đưa ra 
+3. Trong bản đồ phụ bản, có thể rời nhóm và tạo lại nhóm bất kỳ lúc nào, tuy nhiên không thể đổi trưởng nhóm 
+4. Nếu đổi kênh sẽ bị đẩy ra khỏi phụ bản 
+5. Nếu bị rớt mạng trong phụ bản, khi đăng nhập cần chọn lại kênh lúc nãy, nếu chọn kênh khác sẽ bị đẩy ra khỏi phụ bản 
+6. Nếu nhóm trưởng rời khỏi phụ bản thì các nhiệm vụ sẽ không thể làm tiếp`
+		ctx.Connection.SendCallback("a", guide)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_challenge_start_") {
+		idStr := funcID[len("hmt_challenge_start_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		options := []map[string]interface{}{
+			{"label": "Ok", "func": fmt.Sprintf("hmt_tele_515_%d", npcID)},
+			{"label": "Hủy", "func": fmt.Sprintf("hmt_cancel_%d", npcID)},
+		}
+		ctx.Connection.SendCallback("onList", npcID, "Khiêu chiến Ảo Ma Tháp", "Bạn có muốn vào Ảo Ma Tháp không?", options)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_tele_515_") {
+		if err := h.teleportToMap(ctx, characterID, 515); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_reset_confirm_") {
+		ctx.Connection.SendCallback("resetHMTAlert", 999)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_guide_") {
+		guide := `1.Có thể khiêu chiến Ảo Ma Tháp không giới hạn. Số tầng càng cao (giới hạn 400 tầng) thì phần thưởng tu luyện càng nhiều. Khi hoàn thành tầng nào thì vĩnh viễn sẽ được ghi nhận tu luyện ở tầng đó, không cần khiêu chiến lại；
+2.Tu luyện chắc chắn sẽ nhận được exp và có cơ hội nhận Tinh Hoa Hắc Diệu Thạch, Ấn Chương Ảo Ma. Nhân vật có thú cưỡi tiến hóa đến cấp 8 còn được nhận Dược Thủy Tiến Hóa Cao Cấp；
+3.Sau khi tu luyện 10 phút sẽ có được 1 phần thưởng, tu luyện quá lâu sẽ không nhận được phần thưởng mà phải thoát ra vào lại；
+4.Phòng tu luyện cao cấp chỉ chứa được 5 người, mỗi ngày mỗi người tu luyện 1 lần, mỗi lần tiêu hao 1 lượng chiến tích, tối đa tu luyện 6 tiếng 1 lần, nhưng sau 120 phút tu luyện sẽ bị người khác vào cướp phòng；
+5.Phòng tu luyện công cộng không giới hạn số người vào, số lần tu luyện, tối đa tu luyện 9 tiếng 1 lần, phần thưởng tương đối thấp hơn phòng tu luyện cao cấp；
+6.Từ 3h - 8h mỗi ngày là thời gian quét dọn phòng tu luyện, người chơi không thể vào；
+7.Ở phòng tu luyện cần có đội pet thi đấu để giúp chủ nhân canh chừng.
+8.Mỗi tuần có 1 lượt dùng 999 vàng để tái thiết lập tiến độ khiêu chiến từ tầng 1 (cần rời Phòng Tu Luyện và nhận thưởng trước). 0 giờ thứ 2 hàng tuần bắt đầu tuần mới)`
+		ctx.Connection.SendCallback("a", guide)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_cancel_") {
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_guardian_fight_") {
+		idStr := funcID[len("hmt_guardian_fight_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Tính năng đang phát triển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_trans_252_") {
+		idStr := funcID[len("hmt_trans_252_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onNpcMsg", npcID, "Khiêu chiến cần có trình tự, bạn chưa khiêu chiến ở tầng 252, không thể chuyển")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_tower_info_") {
+		// For now showing progress: 0. Later this can be pulled from character data.
+		ctx.Connection.SendCallback("a", "Số tầng đã khiêu chiến: 0")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "hmt_exit_") || strings.HasPrefix(funcID, "hmt_tele_generic_") {
+		// Teleport to Map 38
+		if err := h.teleportToMap(ctx, characterID, 38); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "park_enter_") {
+		// Teleport to Map 515 (placeholder for park dungeon)
+		if err := h.teleportToMap(ctx, characterID, 515); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "park_status_") {
+		ctx.Connection.SendCallback("a", "Tiến độ lễ hội công viên trên không : Ải thứ 1")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "park_rules_") {
+		rules := `1. Tổ đội tham gia Công Viên Trên Không, hoàn thành mỗi màn chơi đều nhận thưởng tương ứng
+2. Công Viên Trên Không có thể vào/ra bất kỳ lúc nào; màn chưa vượt qua có thể tiếp tục lần sau, cũng có thể chơi cùng đội khác, nhưng mỗi màn chỉ được nhận thưởng một lần
+3. Nếu tiến độ trong đội không giống nhau, sẽ lấy tiến độ cao nhất để tiếp tục. Những màn chưa hoàn thành trước đó sẽ không thể quay lại nhận thưởng, hãy cố gắng tổ đội với người có tiến độ tương đương
+4. Bí kíp vượt ải có thể giảm độ khó một số màn; trong thời gian mở Công Viên Trên Không, hoàn thành 10 vòng nhiệm vụ học viện, nhiệm vụ trị an hoặc nhiệm vụ 200 vòng đều có xác suất rơi bí kíp
+5. Tiến độ Công Viên Trên Không sẽ được đặt lại sau bảo trì thứ Năm hằng tuần`
+		ctx.Connection.SendCallback("a", rules)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "park_shop_") {
+		// Open point shop - using ID 7 as it's common for point shops
+		if err := ctx.Connection.SendCallbackSync("openShopById", 7); err != nil {
+			h.logger.Error("Failed to send openShopById callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if strings.HasPrefix(funcID, "army_get_title_") {
+		idStr := funcID[len("army_get_title_"):]
+		npcID, _ := strconv.Atoi(idStr)
+		ctx.Connection.SendCallback("onSystemSay", npcID, " Đã nhận danh hiệu Quân Đoàn, sau khi hết hạn mới có thể nhận tiếp!")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	switch funcID {
+	case "trade_func":
+		// Mock opening a shop
+		h.logger.Info("Opening shop for player", zap.Int64("character_id", characterID))
+		// Send openShopById callback to client. shopId 1 is a mock value.
+		if err := ctx.Connection.SendCallbackSync("openShopById", 1); err != nil {
+			h.logger.Error("Failed to send openShopById callback", zap.Error(err))
+		}
+
+	case "quest_func":
+		// Mock opening quest list
+		h.logger.Info("Opening quest list for player", zap.Int64("character_id", characterID))
+
+		// Create a dummy quest object to send to the client
+		// We use a simple structure that typically matches what onAddChaQuest expects
+		// content of quest likely relies on client-side static data (TBL_QUEST) for qid=1
+		questData := map[string]interface{}{
+			"qid": 1, // Quest ID
+			"st":  1, // State (e.g., accepted)
+			"data": map[string]interface{}{ // Some fallback data if client doesn't find it
+				"id":   1,
+				"name": "Thử nghiệm nhiệm vụ",
+				"type": 1,
+			},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onAddChaQuest", questData); err != nil {
+			h.logger.Error("Failed to send onAddChaQuest callback", zap.Error(err))
+		}
+
+	case "gwc_register":
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err != nil {
+			return nil, err
+		}
+		if char.GuildID == nil || *char.GuildID == 0 {
+			ctx.Connection.SendCallback("onNpcMsg", 211, "Bạn chưa gia nhập bang hội.")
+			return map[string]interface{}{"success": true}, nil
+		}
+		// Send a popup with OK button (using 'a' function from client CallBack)
+
+	case "gwc_enter_map":
+		// Teleport to Map 54
+		if err := h.teleportToMap(ctx, characterID, 54); err != nil {
+			return nil, err
+		}
+		return map[string]interface{}{"success": true}, nil
+
+	case "gwc_view_team":
+		ctx.Connection.SendCallback("a", "Danh sách các đội")
+
+	case "gwc_view_rules":
+		// Send a popup with OK button
+		ctx.Connection.SendCallback("a", "Thông tin mô tả")
+
+	case "gwc_reward_personal_loss":
+		// Send system bar message
+		ctx.Connection.SendCallback("onSystemSay", "Nội trong 3 ngày khi Bang Hội Chiến kết thúc có thể nhận thưởng cá nhân!")
+
+	case "gwc_reward_ranking_month":
+		// Send a yellow speech bubble above the NPC (using 'onNpcMsg' with NPC ID 211)
+		ctx.Connection.SendCallback("onNpcMsg", 211, "Tính năng chiến trường đang phát triển")
+
+	case "receive_x2_spirit":
+		ctx.Connection.SendCallback("onNpcMsg", 186, "Tính năng đang phát triển")
+
+	case "receive_double_exp":
+		ctx.Connection.SendCallback("onNpcMsg", 186, "Tính năng đang phát triển")
+
+	case "exchange_war_god_token":
+		ctx.Connection.SendCallback("onNpcMsg", 186, "Tính năng đang phát triển")
+
+	case "receive_ma_huyet":
+		ctx.Connection.SendCallback("onNpcMsg", 186, "Tính năng đang phát triển")
+
+	case "view_activity_points":
+		ctx.Connection.SendCallback("onNpcMsg", 186, "Tính năng đang phát triển")
+
+	case "enter_secret_realm":
+		ctx.Connection.SendCallback("onNpcMsg", 2351, "Tính năng đang phát triển")
+	case "receive_ranking_reward":
+		ctx.Connection.SendCallback("onNpcMsg", 2351, "Tính năng đang phát triển")
+	case "receive_speed_ranking_reward":
+		ctx.Connection.SendCallback("onNpcMsg", 2351, "Tính năng đang phát triển")
+	case "secret_realm_guide":
+		ctx.Connection.SendCallback("onNpcMsg", 2351, "Tính năng đang phát triển")
+
+	case "enter_waiting_room_1":
+		ctx.Connection.SendCallback("onNpcMsg", 2071, "Tính năng đang phát triển")
+	case "enter_waiting_room_2":
+		ctx.Connection.SendCallback("onNpcMsg", 2071, "Tính năng đang phát triển")
+	case "enter_waiting_room_3":
+		ctx.Connection.SendCallback("onNpcMsg", 2071, "Tính năng đang phát triển")
+	case "receive_room_ranking_reward":
+		ctx.Connection.SendCallback("onNpcMsg", 2071, "Tính năng đang phát triển")
+	case "waiting_room_guide":
+		ctx.Connection.SendCallback("onNpcMsg", 2071, "Tính năng đang phát triển")
+
+	case "register_activity":
+		ctx.Connection.SendCallback("onNpcMsg", 47, "Tính năng đang phát triển")
+	case "view_rules":
+		ctx.Connection.SendCallback("onNpcMsg", 47, "Tính năng đang phát triển")
+
+	case "open_shop_45":
+		if err := ctx.Connection.SendCallbackSync("onOpenShop", 45); err != nil {
+			h.logger.Error("Failed to send onOpenShop callback", zap.Error(err))
+		}
+	case "exchange_pet_equip":
+		if err := ctx.Connection.SendCallbackSync("openShopById", 1); err != nil {
+			h.logger.Error("Failed to send openShopById callback", zap.Error(err))
+		}
+	case "related_quests_280":
+		ctx.Connection.SendCallback("onNpcMsg", 280, "Hiện chưa có nhiệm vụ nào.")
+
+	case "clan_training_ask":
+		ctx.Connection.SendCallback("onNpcMsg", 1153, "Bạn chưa khiêu chiến nhiệm vụ tu hành của gia tộc này, hãy đến gặp Trưởng Lão Vô")
+
+	case "view_battle":
+		ctx.Connection.SendCallback("onNpcMsg", 1153, "Tính năng đang phát triển")
+
+	case "close_dialog":
+		// Do nothing, just close
+
+	case "adopt_free_fairy":
+		ctx.Connection.SendCallback("onNpcMsg", 1637, "Bạn đã nhận nuôi 1 Tiểu Tinh Linh")
+	case "buy_other_fairy":
+		ctx.Connection.SendCallback("onNpcMsg", 1637, "Tính năng đang phát triển")
+	case "fairy_info":
+		npcID := 1637
+		npcName := "Tiểu Tinh Linh"
+		content := "Tìm hiểu các thông tin về Tiểu Tinh Linh:"
+		options := []map[string]interface{}{
+			{"label": "Nhận Tiểu Tinh Linh", "func": "adopt_free_fairy"},
+			{"label": "Thăng cấp Tiểu Tinh Linh", "func": "fairy_level_up"},
+			{"label": "Nuôi dưỡng Tiểu Tinh Linh", "func": "fairy_feed"},
+			{"label": "Cường hóa Tiểu Tinh Linh", "func": "fairy_enhance"},
+			{"label": "Cách thủ hộ chủ nhân", "func": "fairy_guard_guide"},
+		}
+		ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options)
+
+	case "fairy_level_up":
+		msg := `【Thăng Cấp Tinh Linh】
+Cấp độ ban đầu của Tiểu Tinh Linh là 1 và có thể tăng đến cấp 20. Thông qua [Quả Tinh Linh] để có thể tăng kinh nghiệm cho các tinh linh, khi điểm kinh nghiệm đạt đến độ nhất định, tinh linh sẽ được thăng cấp. {Quả Tinh Linh} này có thể dùng điểm đấu pet để đổi ở Shop Điểm Thưởng Giác Đấu Đông Huyền.`
+		ctx.Connection.SendCallback("a", msg)
+	case "fairy_feed":
+		msg := `【Nuôi Dưỡng Tinh Linh】
+Khi các tinh linh trong trạng thái thủ hộ, tùy thuộc vào số lần chiến đấu mà giảm Độ no. Thông qua việc Cho Ăn các nguyên liệu chế tạo để tăng Độ no này. Độ no càng cao thì lực thủ hộ của tinh linh sẽ càng mạnh và trợ thủ thuộc tính cho nhân vật càng nhiều.`
+		ctx.Connection.SendCallback("a", msg)
+	case "fairy_enhance":
+		msg := `【Cường Hóa Tinh Linh】
+Thông qua các cách nuôi dưỡng Tinh Linh mà tăng thuộc tính trưởng thành cho nó. Mỗi lần nuôi dưỡng tinh linh sẽ tăng được điểm trưởng thành. Khi điểm trưởng thành đầy thì tăng được cấp độ trưởng thành cho tinh linh cũng như có hệ số thuộc tính của tinh linh. Cấp độ trưởng thành được chia thành 5 giai đoạn (trắng -> lục -> lam -> tím -> cam). Mỗi giai đoạn chia từ cấp 1 - 10. Cứ tăng lên được 1 giai đoạn thì Lực thủ hộ cũng tăng theo.`
+		ctx.Connection.SendCallback("a", msg)
+	case "fairy_guard_guide":
+		msg := `【Cách Thủ Hộ Chủ Nhân】
+Sau khi tinh linh ở trạng thái {Thủ hộ} thì có thể tăng 5 thuộc tính của bản thân (nhẫn, lực, xảo, thần, trí). Thuộc tính của tinh linh và Lực Thủ Hộ càng cao thì thuộc tính cộng thêm cho nhân vật chủ nhân sẽ càng nhiều.`
+		ctx.Connection.SendCallback("a", msg)
+
+	case "auto_cultivation":
+		ctx.Connection.SendCallback("onNpcMsg", 434, "Tính năng đang phát triển")
+
+	case "potential_drug_use":
+		ctx.Connection.SendCallback("onNpcMsg", 1666, "Tính năng đang phát triển")
+	case "potential_drug_info":
+		ctx.Connection.SendCallback("onNpcMsg", 1666, "Tính năng đang phát triển")
+	case "potential_drug_count":
+		ctx.Connection.SendCallback("onNpcMsg", 1666, "Tính năng đang phát triển")
+
+	case "fishing_enter":
+		ctx.Connection.SendCallback("onNpcMsg", 1572, "Cuộc thi câu cá diễn ra từ 14h đến 15h Chủ nhật hàng tuần tại kênh 1, mọi người")
+	case "fishing_rules":
+		ctx.Connection.SendCallback("onNpcMsg", 1572, "Tính năng đang phát triển")
+	case "fishing_ranking":
+		ctx.Connection.SendCallback("onNpcMsg", 1572, "Bảng xếp hạng hiện tại đang trống")
+	case "fishing_reward":
+		ctx.Connection.SendCallback("onNpcMsg", 1572, "Ngươi không nằm trong top 3 thi câu cá, hãy cố gắng thêm nhé !")
+
+	case "battlefield_get_title":
+		ctx.Connection.SendCallback("onNpcMsg", 1860, "Tính năng đang phát triển")
+	case "battlefield_view_rewards":
+		ctx.Connection.SendCallback("a", "Bạn có tổng cộng x huy chương dũng sĩ")
+	case "battlefield_extra_reward":
+		ctx.Connection.SendCallback("onSystemSay", 1860, "Nhận quà bổ sung ở kênh 1")
+	case "battlefield_guide":
+		guide := `1. 20:40-21:00 thứ sáu, hệ thống sẽ thông báo sự kiện để cư dân chuẩn bị, 21:00-22:00 người chơi vào chiến trường 3v3 bằng cách chọn icon Chiến Trường Dũng Sĩ ở phía trên màn hình (trong thời gian sự kiện có thể vào bất cứ lúc nào)
+2. Sau khi vào chiến trường phải làm 1 phòng 3 người, người lập phòng là Phòng Trưởng, sau khi tất cả thành viên còn lại chuẩn bị sẵn sàng, Phòng Trưởng nhấp chọn "Bắt đầu" để hệ thống sắp xếp chiến đấu với các phòng khác.
+3. Khi sự kiện bắt đầu, dựa vào đấu sĩ các phòng mà sắp xếp thi đấu. Sau mỗi trận đấu sẽ hồi phục toàn bộ HP-MP và không bị trừng phạt. Phòng liên tiếp thua 5 lần sẽ nhận Buff Cổ Vũ Sĩ Khí (tăng 20% tấn công), tối đa tích lũy đến 100%, sau khi chiến thắng, Buff này sẽ biến mất.
+4. Sau khi kết thúc mỗi trận đấu, dựa vào kết quả thắng thua mà mỗi người chơi có lượng điểm nhất định, cuối cùng dựa vào các điểm này để xếp hạng và phát tặng 'Huy Chương Dũng Sĩ' tương ứng (người chơi có điểm >0 đều được xếp hạng).
+5. 'Huy Chương Dũng Sĩ' dùng để đổi lấy vật phẩm tẩy luyện thần khí phụ ở Shop Điểm Thưởng Giác Đấu Đông Huyền Thành (290,160). Khi sở hữu  1 lượng "Huy Chương Dũng Sĩ" nhất định còn thể đến Bàng Bối Thành gặp Bàng Bối Tế Tự để đổi Danh hiệu đặc biệt! Lượng Huy Chương Dũng Sĩ sẽ không mất! Danh hiệu chỉ có thời hạn 1 tháng.
+6. Nếu sau khi sự kiện kết thúc, không nhận được thưởng có thể đến kênh 1 Bàng Bối Thành (210,90) gặp Bàng Bối Tế Tự để nhận bổ sung! Thời gian lưu trữ quà chỉ đến sáng thứ năm bảo trì định kỳ!`
+		ctx.Connection.SendCallback("a", guide)
+
+	case "dye_self":
+		ctx.Connection.SendCallback("showColorPanel", 2)
+	case "dye_wings_orange":
+		ctx.Connection.SendCallback("onNpcMsg", 1502, "Chỉ có canh Thiên Sứ cam, cánh Bích Không cam, cánh Ác Ma cam mới có thể nhuộm")
+	case "dye_wings_war_god":
+		ctx.Connection.SendCallback("onNpcMsg", 1502, "Để nhuộm Cánh Chiến Thần cần tiêu phí 1 Chứng Nhận Chiến Thần!")
+	case "change_wing_peacock":
+		ctx.Connection.SendCallback("onNpcMsg", 1502, "Vật phẩm không đủ.")
+	case "dye_wings_timed":
+		ctx.Connection.SendCallback("onNpcMsg", 1502, "Tính năng đang phát triển")
+	case "change_char_shape":
+		ctx.Connection.SendCallback("onNpcMsg", 1502, "Tính năng đang phát triển")
+	case "dye_how_to":
+		howTo := `1.Nhuộm màu cần trả một lượng bạc và một số vật phẩm cần thiết. Nhuộm nhân vật cần 3 Thất Sắc Hoa, nhuộm pet cần 3 Cỏ Cầu Vồng.
+2.Thất Sắc Hoa và Cỏ Cầu Vồng có thể mua ở shop hoặc có được khi làm nhiệm vụ sự kiện hoặc nông trường.
+3.Nhuộm cánh cần 10 Lông Vũ Ngũ Sắc, có thể ngẫu nhiên chọn 1 trong 2 màu trong quá trình nhuộm. Hãy chọn cánh mà bạn muốn Nhuộm!
+4.Khi nhuộm cánh còn có cơ hội nhận được hình dáng cánh đặc biệt!
+5.Hình ảnh cánh giới hạn thời gian sẽ bị ghi đè bằng hình ảnh cánh giới hạn thời gian sau.`
+		ctx.Connection.SendCallback("a", howTo)
+
+	case "enter_zodiac_palace":
+		ctx.Connection.SendCallback("onNpcMsg", 1700, "Tính năng đang phát triển")
+	case "zodiac_info":
+		info := `1.Người chơi cấp 80 trở lên mới có thể vào Tinh Cung khiêu chiến với Thủ Hộ Tinh Cung.
+2.Khiêu chiến Thập Nhị Tinh Cung sẽ nhận được Tinh Toái cho Cung tương ứng，Tinh Toái dùng để tăng tốc độ tu luyện thuộc tính Tinh Cung. Khi bắt đầu tu luyện, người chơi mới có thể khiêu chiến với Cung tương ứng, cá nhân hoặc nhóm khiêu chiến đều được.
+3.Cấp cao nhất của các cung là 12, khiêu chiến dần từ Cung cấp thấp đến cao, cấp độ Tinh Cung càng cao thì Tinh Toái nhận được càng nhiều.
+4.Đánh giá khiêu chiến sẽ dựa vào thời gian khiêu chiến và số lần nhân vật tử vong`
+		ctx.Connection.SendCallback("a", info)
+	case "zodiac_title_guide":
+		guide := `1.Sau mỗi lần khiêu chiến thành công sẽ nhận được điểm tinh cung, cấp độ tinh cung khiêu chiến càng cao thì điểm nhận được càng nhiều.
+2.Danh hiệu tinh cung đổi được có hiệu lực trong 1 tháng, người chơi đã nhận được danh hiệu có thể kéo dài thời gian (1 tháng).
+3.Muốn đổi và kéo dài thời hạn phải mất 450 điểm tinh cung.`
+		ctx.Connection.SendCallback("a", guide)
+
+	case "boss_extra_reward":
+		ctx.Connection.SendCallback("onSystemSay", " Nhận phần thưởng ở kênh3 ")
+	case "boss_world_info":
+		info := `1.Tham gia sự kiện BOSS Thế Giới vào lúc 14:30 - 15:00 thứ ba, thứ năm, thứ bảy.
+2.Cá nhân cấp độ 50 trở lên mới được tham gia sự kiện này.
+3.Trong quá trình tham gia sự kiện nếu tử vong sẽ không phải chịu trừng phạt và tự động hồi phục toàn bộ HP - MP.
+4.Mỗi lần hoàn thành 1 trận đấu sẽ nhận được điểm kinh nghiệm và chiến tích. Hệ thống sẽ dựa vào độ sát thương tạo ra của người chơi mà xếp hạng mỗi gia tộc. Sát thương BOSS càng cao thì phần thưởng càng nhiều. Người chơi đạt hạng 1, 2, 3 sẽ nhận được phần thưởng lớn.
+5.Nếu trong quá trình phát thưởng, người chơi không online có thể đến kênh 3 tìm ta nhận thưởng bổ sung!`
+		ctx.Connection.SendCallback("a", info)
+
+	case "view_quest_937":
+		ctx.Connection.SendCallback("onNpcMsg", 937, "Nghe nói làm cận vệ ở Quyến Cố Thành được trả lương rất khá.")
+	case "exchange_250":
+		ctx.Connection.SendCallback("onNpcMsg", 937, "Tính năng đang phát triển")
+	case "exchange_25":
+		ctx.Connection.SendCallback("onNpcMsg", 937, "Tính năng đang phát triển")
+	case "view_spirit_points":
+		ctx.Connection.SendCallback("a", "Điểm thần tu 100")
+
+	case "quest_spirit_929":
+		ctx.Connection.SendCallback("onNpcMsg", 929, "Tính năng đang phát triển")
+	case "auto_spirit_929":
+		ctx.Connection.SendCallback("onNpcMsg", 929, "Tính năng đang phát triển")
+
+	case "hlvt_start":
+		// Teleport to Map 79 (Hành Lang Vô Tận)
+		if err := h.teleportToMap(ctx, characterID, 79); err != nil {
+			return nil, err
+		}
+
+	case "hlvt_prev_progress":
+		ctx.Connection.SendCallback("onSystemSay", "Tầng mới chưa mở, vui lòng quay lại sau")
+	case "hlvt_max_possible":
+		ctx.Connection.SendCallback("a", "Tiến độ nhóm khiêu chiến: Tầng 12")
+	case "hlvt_max_cleared":
+		ctx.Connection.SendCallback("a", "Tiến độ khiêu chiến : Tầng 11")
+	case "hlvt_daily_reward":
+		ctx.Connection.SendCallback("onNpcMsg", 2309, "Hôm nay bạn đã nhận thưởng")
+
+	case "hlvt_goto_dong_huyen":
+		if err := h.teleportToMap(ctx, characterID, 9); err != nil {
+			return nil, err
+		}
+	case "hlvt_goto_quyen_co":
+		if err := h.teleportToMap(ctx, characterID, 30); err != nil {
+			return nil, err
+		}
+	case "hlvt_one_floor_left":
+		ctx.Connection.SendCallback("onSystemSay", "Vẫn còn 1 tầng nữa đấy")
+
+	case "hlvt_kick_out":
+		ctx.Connection.SendCallback("onNpcMsg", 2301, "Tính năng đang phát triển")
+	case "hlvt_boss_current_info":
+		ctx.Connection.SendCallback("a", "Tầng Boss nhóm khiêu chiến: Tầng 1")
+	case "hlvt_continue":
+		ctx.Connection.SendCallback("onNpcMsg", 2301, "Tính năng đang phát triển")
+	case "hlvt_explore_more":
+		ctx.Connection.SendCallback("onNpcMsg", 2293, "Tính năng đang phát triển")
+
+	default:
+		h.logger.Warn("Unknown NPC script function", zap.String("func_id", funcID))
+	}
+
+	// Usually npcScript doesn't return data directly to the blocking call,
+	// but success: true is a safe default for the RPC response itself.
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) HitNpc(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var npcID int
+	switch v := args[0].(type) {
+	case float64:
+		npcID = int(v)
+	case int:
+		npcID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	battle, err := h.combatService.StartPVEBattle(ctx.Context, characterID, npcID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	if h.battleService != nil {
+		h.battleService.SetTurnDeadline(battle.ID, fmt.Sprintf("%d", characterID))
+	}
+
+	ctx.Connection.SetBattleID(battle.ID)
+
+	h.logger.Info("PVE battle initiated",
+		zap.Int64("character_id", characterID),
+		zap.Int("npc_id", npcID),
+		zap.String("battle_id", battle.ID))
+
+	battleDTO := battle.ToDTO()
+	cList := battleDTO["cList"]
+	battleData := map[string]interface{}{
+		"battleFieldId": battle.ID,
+		"nid":           npcID,
+		"battleType":    int(combat.BattleTypePVE),
+		"mapId":         battle.MapID,
+		"battleData":    battleDTO,
+		"cList":         cList,
+		"guest":         false,
+		"sneakFlag":     0,
+	}
+	if err := ctx.Connection.SendCallback("onBattleStart", battleData); err != nil {
+		h.logger.Error("Failed to send onBattleStart callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return map[string]interface{}{
+		"success":    true,
+		"battleId":   battle.ID,
+		"battleData": battleDTO,
+	}, nil
+}
+
+func (h *CombatHandler) ClickNpc(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var npcID int
+	switch v := args[0].(type) {
+	case float64:
+		npcID = int(v)
+	case int:
+		npcID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if npcID == 1287 {
+		safeX, safeY := h.sceneService.GetSafePoint(3)
+		h.charService.UpdatePosition(ctx.Context, characterID, character.Position{MapID: 3, X: safeX, Y: safeY})
+		ctx.Connection.SendCallback("onSceneEnter", 3, safeX, safeY, -1)
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 434 {
+		npcName := "Tu Hành"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn gì?"
+		options := []map[string]interface{}{
+			{"label": "Nhiệm vụ và trị liệu", "func": "heal_all"}, // Reuse existing heal_all for now or quest_func
+			{"label": "Tự động tu hành", "func": "auto_cultivation"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 413 {
+		npcName := "Bác sĩ"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn trị thương?"
+		options := []map[string]interface{}{
+			{"label": "Trị liệu nhân vật", "func": "heal_char"},
+			{"label": "Trị liệu pet", "func": "heal_pet"},
+			{"label": "Trị liệu nhân vật và pet", "func": "heal_all"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 211 {
+		npcName := "Chiến trường Bang Hội"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Bang Hội Chiến là nơi thể hiện sức mạnh của Bang hội. Hãy tham gia ngay để nhận nhiều phần quà hấp dẫn."
+		options := []map[string]interface{}{
+			{"label": "Báo danh tham chiến", "func": "gwc_register"},
+			{"label": "Xem phân đội", "func": "gwc_view_team"},
+			{"label": "Vào bản đồ bang hội chiến", "func": "gwc_enter_map"},
+			{"label": "Thưởng cá nhân BHC ( bang thua)", "func": "gwc_reward_personal_loss"},
+			{"label": "Thưởng xếp hạng BHC tháng", "func": "gwc_reward_ranking_month"},
+			{"label": "Xem báo danh bang hội chiến", "func": "gwc_view_registration"},
+			{"label": "Xem quy tắc", "func": "gwc_view_rules"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 186 {
+		npcName := "Phần Thưởng Hoạt Động"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn nhận thưởng gì?"
+		options := []map[string]interface{}{
+			{"label": "Nhận x2 thần tu", "func": "receive_x2_spirit"},
+			{"label": "Nhận exp gấp đôi", "func": "receive_double_exp"},
+			{"label": "Đổi chứng chiến thần", "func": "exchange_war_god_token"},
+			{"label": "Nhận ma huyết linh lung", "func": "receive_ma_huyet"},
+			{"label": "Xem tổng điểm năng nổ", "func": "view_activity_points"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+	// Sứ giả bí cảnh
+	if npcID == 2351 {
+		npcName := "Thám Hiểm Bí Cảnh"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn gì?"
+		options := []map[string]interface{}{
+			{"label": "Vào thám hiểm bí cảnh", "func": "enter_secret_realm"},
+			{"label": "Nhận thưởng xếp hạng điểm", "func": "receive_ranking_reward"},
+			{"label": "Nhận thưởng xếp hạng tốc đấu", "func": "receive_speed_ranking_reward"},
+			{"label": "Hướng dẫn", "func": "secret_realm_guide"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+	// Sứ giả ảo cảnh
+	if npcID == 2071 {
+		npcName := "Phòng Chờ"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn gì?"
+		options := []map[string]interface{}{
+			{"label": "Vào phòng chờ 1", "func": "enter_waiting_room_1"},
+			{"label": "Vào phòng chờ 2", "func": "enter_waiting_room_2"},
+			{"label": "Vào phòng chờ 3", "func": "enter_waiting_room_3"},
+			{"label": "Nhận phần thưởng xếp hạng", "func": "receive_room_ranking_reward"},
+			{"label": "Hướng dẫn", "func": "waiting_room_guide"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+	// Sứ giả  đoạt bảo
+	if npcID == 47 {
+		npcName := "Đăng Ký"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn gì?"
+		options := []map[string]interface{}{
+			{"label": "Ta muốn đăng kí", "func": "register_activity"},
+			{"label": "Tìm hiểu quy tắc", "func": "view_rules"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 489 {
+		ctx.Connection.SendCallback("onNpcMsg", 489, "Ở đây không có nhiệm vụ gia tộc bạn có thể nhận")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1153 {
+		npcName := "Thử Thách Gia Tộc"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ngươi muốn gì?"
+		options := []map[string]interface{}{
+			{"label": "Xin chỉ giáo", "func": "clan_training_ask"},
+			{"label": "Ta cần chuẩn bị đã", "func": "close_dialog"},
+			{"label": "Xem chiến đấu", "func": "view_battle"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1637 {
+		npcName := "Tiểu Tinh Linh"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Các Tiểu Tinh Linh khi mang bên mình không những trợ giúp sức mạnh cho các chủ nhân mà còn là 1 người bạn đồng hành lý tưởng."
+		options := []map[string]interface{}{
+			{"label": "Miễn phí nhận nuôi Tinh Linh ( Thiên sứ )", "func": "adopt_free_fairy"},
+			{"label": "Mua Tinh Linh khác", "func": "buy_other_fairy"},
+			{"label": "Tìm hiểu thông tin về Tiểu Tinh Linh", "func": "fairy_info"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID >= 1681 && npcID <= 1686 {
+		ctx.Connection.SendCallback("onSystemSay", "Bạn chưa nhận nhiệm vụ")
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1666 {
+		npcName := "Thuốc Tiềm Năng"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Người chơi có cấp độ≥140 có thể đến đổi lấy thuốc tiềm năng để tăng điểm cộng thuộc tính cho nhân vật."
+		options := []map[string]interface{}{
+			{"label": "Nhận và dùng thuốc tiềm năng", "func": "potential_drug_use"},
+			{"label": "Thuốc tiềm năng là gì ?", "func": "potential_drug_info"},
+			{"label": "Bạn đã đổi lấy bao nhiêu thuốc rồi", "func": "potential_drug_count"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1572 {
+		npcName := "Cuộc thi câu cá"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Chào mừng các bạn đến Cuộc thi câu cá !! Người thắng cuộc không chỉ nhận được những danh hiệu quý giá mà còn có thể nhận được các phần thưởng giá trị!\n\n<font color=\"#FF0000\">Thời gian: 14:00~15:00 Chủ nhật hàng tuần</font>"
+		options := []map[string]interface{}{
+			{"label": "Vào nơi thi câu cá", "func": "fishing_enter"},
+			{"label": "Quy định cuộc thi", "func": "fishing_rules"},
+			{"label": "Xem bảng xếp hạng", "func": "fishing_ranking"},
+			{"label": "Nhận thưởng bù", "func": "fishing_reward"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1860 {
+		npcName := "Bàng Bối Tế Tự"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Nơi này đã từng là 1 chiến trường khốc liệt, chỉ có những dũng sĩ tài năng mới trở thành truyền nhân chân chính"
+		options := []map[string]interface{}{
+			{"label": "Nhận danh hiệu", "func": "battlefield_get_title"},
+			{"label": "Xem tổng phần thưởng", "func": "battlefield_view_rewards"},
+			{"label": "Phần thưởng bổ sung", "func": "battlefield_extra_reward"},
+			{"label": "Dũng sĩ chiến trường", "func": "battlefield_guide"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1502 {
+		npcName := "NPC 1502"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Có muốn thay đổi hình dáng không? Thay đổi thành hình dáng những pet đáng yêu của Vua Pháp Thuật? Hay thay đổi cánh trở thành độc nhất vô nhị? Ta có thể giúp ngươi thay đổi!"
+		options := []map[string]interface{}{
+			{"label": "Ta muốn nhuộm màu cho bản thân", "func": "dye_self"},
+			{"label": "Ta muốn nhuộm cánh", "func": "dye_wings_orange"},
+			{"label": "Cánh Chiến Thần Hoàng Kim", "func": "dye_wings_war_god"},
+			{"label": "Đổi hình dạng cánh Khổng Tước", "func": "change_wing_peacock"},
+			{"label": "Nhuộm cánh (hiệu quả duy trì 21 ngày )", "func": "dye_wings_timed"},
+			{"label": "Đổi hình dạng nhân vật", "func": "change_char_shape"},
+			{"label": "Tìm hiểu cách nhuộm", "func": "dye_how_to"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1700 {
+		npcName := "Thành Chủ Đông Huyền"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ta có thể đưa ngươi đến Tinh Cung khiêu chiến với Thủ Hộ Tinh Cung(đề nghị lập nhóm khiêu chiến)."
+		options := []map[string]interface{}{
+			{"label": "Vào thập nhi tinh cung", "func": "enter_zodiac_palace"},
+			{"label": "Tìm hiểu thập nhị tinh cung", "func": "zodiac_info"},
+			{"label": "Hướng dẫn đổi danh hiệu tinh cung.", "func": "zodiac_title_guide"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 938 {
+		npcName := "Thương Nhân Thao Thiết"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Đại Lục Vô Ưu một lần nữa lại bị xâm lược, BOSS Xà Thần Hydra đang dẫn quân tiến vào kênh 3 của Đăng Vân Địa, các dũng sĩ hãy mau chóng đến đó phong ấn chúng!"
+		options := []map[string]interface{}{
+			{"label": "Phần thưởng bỗ sung", "func": "boss_extra_reward"},
+			{"label": "Sự kiện BOSS Thế Giới", "func": "boss_world_info"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 937 {
+		npcName := "NPC 937"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Hai anh em ta có nhiệm vụ bảo vệ thành phố này. Ở đây đầy rẫy cơ quan nguy hiểm. Hấy cẩn thận! Nếu không ngươi sẽ bị lạc trong đó. Có thể dùng điểm thần tu thừa để đổi"
+		options := []map[string]interface{}{
+			{"label": "Xem nhiệm vụ", "func": "view_quest_937"},
+			{"label": "Đổi 250", "func": "exchange_250"},
+			{"label": "Đổi 25", "func": "exchange_25"},
+			{"label": "Xem điểm thần tu", "func": "view_spirit_points"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 929 {
+		npcName := "NPC 929"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Chào mừng người lữ khách phương xa, nơi đây là Quyến Cố Thành xinh đẹp!"
+		options := []map[string]interface{}{
+			{"label": "Nhiệm vụ và thần tu", "func": "quest_spirit_929"},
+			{"label": "Tự động thần tu", "func": "auto_spirit_929"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 2309 {
+		npcName := "NPC 2309"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := `Chú ý:
+1. Mỗi người đều có lịch sử vượt ải các tầng.
+2. Cả nhóm sẽ dựa vào số tầng thấp nhất của thành viên vượt được.
+3. Trong Hành Lang Vô Tận có thể tùy ý lập nhóm và khiêu chiến Boss chuyển dịch đến tầng kế tiếp, dựa vào tầng thấp nhất của thành viên trong nhóm đã vượt.
+4. Lần đầu vượt qua mỗi tầng sẽ nhận được phần thưởng, mỗi ngày nhận 1 lần.`
+
+		options := []map[string]interface{}{
+			{"label": `Vào HLVT "Khởi Trình"`, "func": "hlvt_start"},
+			{"label": "Đến: Tiến độ trước (Tầng 12)", "func": "hlvt_prev_progress"},
+			{"label": "Xem tầng cao nhất có thể đến", "func": "hlvt_max_possible"},
+			{"label": "Xem tầng cao nhất đã vượt", "func": "hlvt_max_cleared"},
+			{"label": "Nhận thưởng hằng ngày", "func": "hlvt_daily_reward"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID >= 2310 && npcID <= 2317 {
+		npcName := "NPC"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Không có manh mối, về Đông Huyền Thành tìm đội trưởng thương lượng"
+		options := []map[string]interface{}{
+			{"label": "Chuyển đến Đông Huyền Thành", "func": "hlvt_goto_dong_huyen"},
+			{"label": "Chuyển Đến Quyến Cố Thành", "func": "hlvt_goto_quyen_co"},
+			{"label": "Vẫn còn 1 tầng nữa đấy", "func": "hlvt_one_floor_left"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID >= 2301 && npcID <= 2308 {
+		npcName := "NPC"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Chú ý: đừng tin vào mắt mình\nTrong nhóm, quái giao chiến được\nquyết định bởi số tầng thấp nhất của\nthành viên vượt được! Trước khi giao\nchiến có thể xem thông tin BOSS ở mỗi tầng"
+
+		options := []map[string]interface{}{
+			{"label": "Lại đây! Ta sẽ đá ngươi khỏi đây", "func": fmt.Sprintf("hlvt_kick_out_%d", npcID)},
+			{"label": "Cho ta biết ta đang đối mặt với ai?", "func": fmt.Sprintf("hlvt_boss_current_%d", npcID)},
+			{"label": "Ta muốn tiếp tục", "func": fmt.Sprintf("hlvt_continue_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID >= 2293 && npcID <= 2300 {
+		npcName := "NPC"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		// Calculate floor number for display
+		// 2293 -> 2, ..., 2300 -> 10 (as requested)
+		floorNum := npcID - 2291
+		if npcID == 2300 {
+			floorNum = 10
+		}
+
+		content := "Nơi này không có điểm cuối cùng, lẽ nào chúng ta không thể thoát được sao? Đây nhất định là biểu tượng mà chưa ai tìm thấy..."
+
+		options := []map[string]interface{}{
+			{"label": fmt.Sprintf("Đến: HLVT tầng kế (tầng %d)", floorNum), "func": fmt.Sprintf("hlvt_next_floor_%d", npcID)},
+			{"label": "Ta muốn thám hiểm tầng nữa", "func": fmt.Sprintf("hlvt_explore_more_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1227 {
+		npcName := "NPC 1227"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Cày đồng đang buổi ban trưa, mồ hồi thánh thót như mưa ruộng cày ... Việc đồng áng thật vất vả nhưng thành quả của nó thật to lớn, chính vì thế mà ta đã làm nghề này hơn 22 năm rồi, giờ ngươi muốn đến nông trường nào?"
+		options := []map[string]interface{}{
+			{"label": "Nông trường số 1", "func": fmt.Sprintf("farm_map_1_%d", npcID)},
+			{"label": "Nông trường số 2", "func": fmt.Sprintf("farm_map_2_%d", npcID)},
+			{"label": "Xem nhiệm vụ", "func": fmt.Sprintf("farm_quests_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if (npcID >= 1707 && npcID <= 1725) || npcID == 1228 {
+		npcName := "NPC"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Việc trồng trọt sẽ giúp ta thu hoạch được các nông sản phong phú! Nông sản có 2 loại là dài ngày và ngắn ngày, thời gian trưởng thành của loại ngắn ngày là 5 phút, loại dài ngày là 40 phút, 1 lần thu hoạch khá nhiều. Ngươi muốn trồng loại nào?"
+		options := []map[string]interface{}{
+			{"label": "Trồng cây ngắn ngày", "func": fmt.Sprintf("plant_short_term_%d", npcID)},
+			{"label": "Trồng cây dài ngày", "func": fmt.Sprintf("plant_long_term_%d", npcID)},
+			{"label": "Trồng nông sản đặc biệt", "func": fmt.Sprintf("plant_special_%d", npcID)},
+			{"label": "Thao tác nông trường", "func": fmt.Sprintf("farm_operation_%d", npcID)},
+			{"label": "Ta muốn xem cách trồng cây", "func": "view_planting_guide"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1776 {
+		npcName := "NPC 1776"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ma Vương lam le xâm chiếm Đại Lục Vô Ưu, các dũng sĩ cấp độ 120 trở lên hãy nhanh chóng chuẩn bị đánh đuổi bọn ma quái này."
+		options := []map[string]interface{}{
+			{"label": "Vào Chu Ma Điện", "func": fmt.Sprintf("chu_ma_dien_enter_%d", npcID)},
+			{"label": "Chu Ma Điện", "func": fmt.Sprintf("chu_ma_dien_guide_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 421 {
+		npcName := "NPC 421"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Lễ hội Công Viên Trên Không đang diễn ra cực kỳ sôi động! Mỗi tuần đều có trải nghiệm hấp dẫn và phần thưởng phong phú, mau rủ bạn bè cùng tham gia nhé!\n[Giới hạn cấp 50 trở lên]"
+		options := []map[string]interface{}{
+			{"label": "Vào phụ bản", "func": fmt.Sprintf("park_enter_%d", npcID)},
+			{"label": "Tra tiến độ", "func": fmt.Sprintf("park_status_%d", npcID)},
+			{"label": "Quy tắc", "func": fmt.Sprintf("park_rules_%d", npcID)},
+			{"label": "Cửa hàng điểm", "func": fmt.Sprintf("park_shop_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1893 {
+		npcName := "NPC 1893"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Từ lúc thành lập Quân Đoàn đến nay, bọn ác ma đã không ngừng hủy hoại đến thành tựu cống hiến của chúng ta. Sau khi chuyển sinh, phải gia nhậm Quân Đoàn đấy!"
+		options := []map[string]interface{}{
+			{"label": "Nhận danh hiệu Quân Hàm", "func": fmt.Sprintf("army_get_title_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1759 {
+		npcName := "NPC 1759"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Đề nghị nhóm ít nhất 2 người, trong nhóm mỗi người đều phải có [Thư Cầu Cứu Kỳ Quái], [Thư Cầu Cứu Kỳ Quái] có thể nhận tại Sứ Giả Mở Phụ Bản ở Tinh Linh Thành (309,169)."
+		options := []map[string]interface{}{
+			{"label": "Phụ Bản Quỷ Hút Máu (Dễ)", "func": fmt.Sprintf("quy_hut_mau_1_%d", npcID)},
+			{"label": "Phụ Bản Quỷ Hút Máu (Thường)", "func": fmt.Sprintf("quy_hut_mau_2_%d", npcID)},
+			{"label": "Phụ Bản Quỷ Hút Máu (Khó)", "func": fmt.Sprintf("quy_hut_mau_3_%d", npcID)},
+			{"label": "Tự động hoàn thành phụ bản", "func": fmt.Sprintf("quy_hut_mau_auto_%d", npcID)},
+			{"label": "Hướng dẫn phụ bản", "func": fmt.Sprintf("quy_hut_mau_guide_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1135 {
+		npcName := "NPC 1135"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ảo Ma Tháp dẫn đến ma giới, kẻ có năng lực có thể đến đây tu luyện. Cấp 60 trở lên có thể vào Tháp khiêu chiến.\nMỗi tuần có 1 lượt dùng 999 vàng tái thiết lập tiến độ khiêu chiến ở tầng 1 (cần nhận thưởng và thoát phòng tu luyện). 0 giờ thứ 2 hàng tuần sẽ bắt đầu lại tuần mới"
+		options := []map[string]interface{}{
+			{"label": "Khiêu chiến Ảo Ma Tháp", "func": fmt.Sprintf("hmt_challenge_start_%d", npcID)},
+			{"label": "Tái thiết lập tiến độ Ảo Ma Tháp", "func": fmt.Sprintf("hmt_reset_confirm_%d", npcID)},
+			{"label": "Ảo Ma Tháp", "func": fmt.Sprintf("hmt_guide_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1142 {
+		npcName := "NPC 1142"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Ta phụng lệnh Ma Vương canh giữ tầng này, nhận lời khiêu chiến của ngươi"
+		options := []map[string]interface{}{
+			{"label": "Xin chỉ giáo", "func": fmt.Sprintf("hmt_guardian_fight_%d", npcID)},
+			{"label": "Ta cần chuẫn bị đã", "func": fmt.Sprintf("hmt_cancel_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 1136 {
+		npcName := "NPC 1136"
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Theo lệnh của Ma Vương, ta phụ trách dịch chuyển trong Ảo Ma Tháp, chỉ có người đánh bại Ma Ảnh ở tầng này mới có thể lên tầng cao hơn"
+		options := []map[string]interface{}{
+			{"label": "Dịch Chuyển Ảo Ma Tháp", "func": fmt.Sprintf("hmt_tele_generic_%d", npcID)},
+			{"label": "Vào Ảo Ma Tháp tầng 252", "func": fmt.Sprintf("hmt_trans_252_%d", npcID)},
+			{"label": "Xem thông tin vượt tháp", "func": fmt.Sprintf("hmt_tower_info_%d", npcID)},
+			{"label": "Lưu và thoát tháp", "func": fmt.Sprintf("hmt_exit_%d", npcID)},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	if npcID == 280 {
+		npcName := "Thương Buôn" // Default name, will be overwritten by gameData if available
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		content := "Khách quan muốn mua gì?"
+		options := []map[string]interface{}{
+			{"label": "Mở cửa hàng", "func": "open_shop_45"},
+			{"label": "Đổi trang bị pet", "func": "exchange_pet_equip"},
+			{"label": "Nhiệm vụ liên quan", "func": "related_quests_280"},
+		}
+
+		if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, options); err != nil {
+			h.logger.Error("Failed to send onList callback", zap.Error(err))
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	// Check for direct shop opening NPCs
+	var directShopID int
+
+	if h.gameData != nil {
+		if npc := h.gameData.GetNPC(npcID); npc != nil {
+			if npc.ShopID > 0 {
+				directShopID = int(npc.ShopID)
+			}
+		}
+	}
+
+	// Check for transport NPC (FuncInfo starts with "|")
+	if h.gameData != nil {
+		if npc := h.gameData.GetNPC(npcID); npc != nil && strings.HasPrefix(npc.FuncInfo, "|") {
+			rawOps := strings.Split(npc.FuncInfo, "|")
+			var transportOptions []map[string]interface{}
+
+			for _, op := range rawOps {
+				if op == "" {
+					continue
+				}
+				// Format: MapID,Name,Cost,X,Y
+				parts := strings.Split(op, ",")
+				if len(parts) >= 5 {
+					mapID := parts[0]
+					name := parts[1]
+					cost := parts[2]
+					x := parts[3]
+					y := parts[4]
+
+					label := fmt.Sprintf("%s - %s Ngân phiếu", name, cost)
+					funcID := fmt.Sprintf("transport_%s_%s_%s_%s", mapID, cost, x, y)
+
+					transportOptions = append(transportOptions, map[string]interface{}{
+						"label": label,
+						"func":  funcID,
+					})
+				}
+			}
+
+			if len(transportOptions) > 0 {
+				npcName := npc.Name
+				content := "Xin chào! Bạn muốn chuyển đến đâu?"
+				if err := ctx.Connection.SendCallbackSync("onList", npcID, npcName, content, transportOptions); err != nil {
+					h.logger.Error("Failed to send onList callback", zap.Error(err))
+				}
+				return map[string]interface{}{"success": true}, nil
+			}
+		}
+	}
+
+	// Determine NPC State and Quests
+	npcState := 0
+	questList := make(map[string]interface{})
+	hasQuest := false
+
+	if h.questService != nil {
+		// 1. Get Available Quests (StartNPC)
+		availableQuests, err := h.questService.GetAvailableQuestsForNpc(ctx.Context, characterID, npcID)
+		if err == nil {
+			for _, q := range availableQuests {
+				hasQuest = true
+				if npcState < 102 { // Priority: Complete (104) > Active (103) > Available (102)
+					npcState = 102
+				}
+				questList[fmt.Sprintf("%d", q.ID)] = map[string]interface{}{
+					"id":    q.ID,
+					"qid":   q.ID,
+					"name":  q.Name,
+					"state": 102,
+					"type":  q.Type,
+				}
+			}
+		}
+
+		// 2. Get Active/Completed Quests (FinishNPC or In-Progress)
+		// We need to fetch ALL active quests and check if this NPC is involved
+		activeQuests, err := h.questService.GetActiveQuests(ctx.Context, characterID)
+		if err == nil {
+			for _, qp := range activeQuests {
+				if h.gameData != nil {
+					qTpl := h.gameData.GetQuest(qp.QuestID)
+					if qTpl != nil {
+						// Check if this NPC is the FinishNPC
+						if int(qTpl.FinishNPC) == npcID {
+							hasQuest = true
+							qState := 103 // In Progress
+							if qp.IsComplete() {
+								qState = 104 // Can Finish
+							}
+
+							// Update global NPC state priority
+							if qState == 104 {
+								npcState = 104
+							} else if qState == 103 && npcState < 103 {
+								npcState = 103
+							}
+
+							questList[fmt.Sprintf("%d", qp.QuestID)] = map[string]interface{}{
+								"id":    qp.QuestID,
+								"qid":   qp.QuestID,
+								"name":  qTpl.Name,
+								"state": qState,
+								"type":  qTpl.Type,
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if hasQuest {
+		npcName := fmt.Sprintf("NPC %d", npcID)
+		if h.gameData != nil {
+			if npc := h.gameData.GetNPC(npcID); npc != nil {
+				npcName = npc.Name
+			}
+		}
+
+		npcData := map[string]interface{}{
+			"npcId":   npcID,
+			"npcName": npcName,
+			"npcType": -1, // Default Normal
+			"loopInfo": map[string]interface{}{
+				"d":    nil,
+				"flag": false,
+			},
+		}
+
+		if directShopID > 0 {
+			npcData["npcType"] = 2 // Shop NPC
+		} else {
+			npcData["npcType"] = -1 // Quest NPC
+		}
+		npcData["npcQuest"] = map[string]interface{}{
+			"npcId": npcID,
+			"state": npcState,
+			"list":  questList,
+		}
+
+		if err := ctx.Connection.SendCallbackSync("npcFuncInit", npcData); err != nil {
+			h.logger.Error("Failed to send npcFuncInit callback", zap.Error(err))
+		}
+
+		h.logger.Debug("NPC interaction initiated (Quest)",
+			zap.Int64("character_id", characterID),
+			zap.Int("npc_id", npcID),
+			zap.Int("state", npcState))
+
+		return map[string]interface{}{"success": true}, nil
+	}
+	// Have shop, No quest
+	if directShopID > 0 {
+		h.logger.Info("Directly opening shop for player",
+			zap.Int64("character_id", characterID),
+			zap.Int("npc_id", npcID),
+			zap.Int("shop_id", directShopID))
+
+		// Client ViewManager.as defines NPCSHOP_CONFIG only for IDs 1-7 (Special/Point Shops).
+		// These must be used with "openShopById".
+		// Standard shops (like ID 23) must be used with "onOpenShop".
+		if directShopID <= 7 {
+			if err := ctx.Connection.SendCallbackSync("openShopById", directShopID); err != nil {
+				h.logger.Error("Failed to send openShopById callback", zap.Error(err))
+			}
+		} else {
+			if err := ctx.Connection.SendCallbackSync("onOpenShop", directShopID); err != nil {
+				h.logger.Error("Failed to send onOpenShop callback", zap.Error(err))
+			}
+		}
+		return map[string]interface{}{"success": true}, nil
+	}
+
+	// Fallback for normal NPCs (No Quest, No Shop)
+	npcName := fmt.Sprintf("NPC %d", npcID)
+	npcType := -1
+
+	if h.gameData != nil {
+		if npc := h.gameData.GetNPC(npcID); npc != nil {
+			npcName = npc.Name
+			// Check for special types
+			nType := int(npc.Type)
+			if nType == 5 || nType == 7 || nType == 13 { // Type Bank
+				npcType = nType
+			}
+		}
+	}
+
+	npcData := map[string]interface{}{
+		"npcId":   npcID,
+		"npcName": npcName,
+		"npcType": npcType,
+		"loopInfo": map[string]interface{}{
+			"d":    nil,
+			"flag": false,
+		},
+		"npcQuest": map[string]interface{}{
+			"npcId": npcID,
+			"state": -1,
+			"list":  make(map[string]interface{}),
+		},
+	}
+
+	if err := ctx.Connection.SendCallbackSync("npcFuncInit", npcData); err != nil {
+		h.logger.Error("Failed to send npcFuncInit callback", zap.Error(err))
+	}
+
+	h.logger.Debug("NPC interaction initiated",
+		zap.Int64("character_id", characterID),
+		zap.Int("npc_id", npcID),
+		zap.Int("state", npcState),
+		zap.Bool("has_quest", hasQuest))
+
+	return map[string]interface{}{"success": true}, nil
+}
+
+// CheckBattleOnMove checks for random battle encounters when player moves.
+// Client call: remote.cbom(posX, posY)
+// Parameters:
+//   - posX (Number): Current X position
+//   - posY (Number): Current Y position
+//
+// This is called periodically while player is moving to check for random encounters.
+// If a battle should trigger, the server will start a battle and notify the client.
+func (h *CombatHandler) CheckBattleOnMove(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var posX, posY int
+	switch v := args[0].(type) {
+	case float64:
+		posX = int(v)
+	case int:
+		posX = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	switch v := args[1].(type) {
+	case float64:
+		posY = int(v)
+	case int:
+		posY = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if player is already in battle
+	existingBattle, _ := h.combatService.GetPlayerBattle(characterID)
+	if existingBattle != nil && existingBattle.IsActive() {
+		// Already in battle, no need to check for new encounter
+		return map[string]interface{}{
+			"success":  true,
+			"inBattle": true,
+		}, nil
+	}
+
+	// Get current map ID
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID == 0 {
+		currentMapID = char.MapID
+	}
+
+	// Check if map is safe (no random battles)
+	// If gameData is available, check map's safeFlag
+	isSafeMap := false
+	if h.gameData != nil {
+		mapTemplate := h.gameData.GetMap(currentMapID)
+		if mapTemplate != nil {
+			// SafeFlag > 0 means safe map (no random battles)
+			isSafeMap = mapTemplate.SafeFlag > 0
+		}
+	}
+
+	if isSafeMap {
+		// Safe map, no random battles
+		return map[string]interface{}{
+			"success":     true,
+			"inBattle":    false,
+			"encountered": false,
+		}, nil
+	}
+
+	encounterRate := 0.10
+	if h.gameData != nil {
+		mapTemplate := h.gameData.GetMap(currentMapID)
+		if mapTemplate != nil && mapTemplate.BasicBattleRate > 0 {
+			encounterRate = mapTemplate.BasicBattleRate / 100.0
+		}
+	}
+
+	roll := rand.Float64()
+
+	h.logger.Debug("CheckBattleOnMove",
+		zap.Int64("character_id", characterID),
+		zap.Int("map_id", currentMapID),
+		zap.Int("pos_x", posX),
+		zap.Int("pos_y", posY),
+		zap.Float64("encounter_rate", encounterRate),
+		zap.Float64("roll", roll))
+
+	if roll < encounterRate {
+		// Random encounter triggered!
+		if h.gameData != nil {
+			mapCreatures := h.gameData.GetMapCreaturesByMapID(currentMapID)
+			normalCreatures := make([]*models.MapCreatureTemplate, 0, len(mapCreatures))
+			for _, mc := range mapCreatures {
+				if mc.BossFlag == 0 {
+					normalCreatures = append(normalCreatures, mc)
+				}
+			}
+
+			if len(normalCreatures) > 0 {
+				playerCount := 1
+				enemyCount := h.getEnemyCountForPlayers(playerCount)
+
+				if enemyCount > len(normalCreatures) {
+					enemyCount = len(normalCreatures)
+				}
+
+				selectedMapCreatures := h.selectRandomMapCreatures(normalCreatures, enemyCount)
+				creatureTemplates := make([]appcombat.NPCTemplateData, 0, len(selectedMapCreatures))
+				for _, mc := range selectedMapCreatures {
+					creature := h.gameData.GetCreature(int(mc.Cid))
+					if creature == nil {
+						continue
+					}
+					level := int(mc.Level)
+					if level <= 0 {
+						level = int(creature.UseLv)
+					}
+					if level <= 0 {
+						level = 10
+					}
+					t := appcombat.CalculateCreatureStats(creature, level)
+					t.Exp = int(mc.Exp)
+					t.ExpMulti = mc.ExpMulti
+					creatureTemplates = append(creatureTemplates, t)
+				}
+
+				if len(creatureTemplates) == 0 {
+					h.logger.Warn("No valid creatures found for map", zap.Int("map_id", currentMapID))
+					return map[string]interface{}{
+						"success":     true,
+						"inBattle":    false,
+						"encountered": false,
+					}, nil
+				}
+
+				h.logger.Info("Random encounter triggered",
+					zap.Int64("character_id", characterID),
+					zap.Int("map_id", currentMapID),
+					zap.Int("player_count", playerCount),
+					zap.Int("enemy_count", len(creatureTemplates)))
+
+				battle, err := h.combatService.StartPVEBattleWithMultipleEnemies(ctx.Context, characterID, currentMapID, creatureTemplates)
+				if err != nil {
+					h.logger.Warn("Failed to start random encounter battle",
+						zap.Int64("character_id", characterID),
+						zap.Error(err))
+					return map[string]interface{}{
+						"success":     true,
+						"inBattle":    false,
+						"encountered": false,
+					}, nil
+				}
+
+				if h.battleService != nil {
+					h.battleService.SetTurnDeadline(battle.ID, fmt.Sprintf("%d", characterID))
+				}
+
+				ctx.Connection.SetBattleID(battle.ID)
+
+				battleDTO := battle.ToDTO()
+				cList := battleDTO["cList"]
+				h.logger.Info("Battle cList data",
+					zap.Any("cList", cList),
+					zap.Bool("guest", false))
+
+				firstNPCID := 0
+				if len(creatureTemplates) > 0 {
+					firstNPCID = creatureTemplates[0].ID
+				}
+
+				battleData := map[string]interface{}{
+					"battleFieldId": battle.ID,
+					"nid":           firstNPCID,
+					"battleType":    int(combat.BattleTypePVE),
+					"mapId":         currentMapID,
+					"battleData":    battleDTO,
+					"cList":         cList,
+					"guest":         false,
+					"sneakFlag":     0,
+				}
+
+				if err := ctx.Connection.SendCallback("onBattleStart", battleData); err != nil {
+					h.logger.Error("Failed to send onBattleStart callback",
+						zap.Uint32("conn_id", ctx.ConnID),
+						zap.Error(err))
+				}
+
+				return map[string]interface{}{
+					"success":     true,
+					"inBattle":    true,
+					"encountered": true,
+					"battleId":    battle.ID,
+					"npcId":       firstNPCID,
+				}, nil
+			}
+		}
+	}
+
+	// No encounter this time
+	return map[string]interface{}{
+		"success":     true,
+		"inBattle":    false,
+		"encountered": false,
+	}, nil
+}
+
+func (h *CombatHandler) CombatAction(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 4 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var battleID string
+	var actionType, skillID int
+	var targetID string
+
+	switch v := args[0].(type) {
+	case string:
+		battleID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	switch v := args[1].(type) {
+	case float64:
+		actionType = int(v)
+	case int:
+		actionType = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	switch v := args[2].(type) {
+	case float64:
+		skillID = int(v)
+	case int:
+		skillID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	switch v := args[3].(type) {
+	case string:
+		targetID = v
+	case float64:
+		targetID = string(rune(int(v)))
+	case int:
+		targetID = string(rune(v))
+	default:
+		targetID = ""
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	playerAction, err := h.combatService.ExecuteAction(
+		ctx.Context,
+		battleID,
+		fmt.Sprintf("%d", characterID),
+		combat.ActionType(actionType),
+		skillID,
+		targetID,
+	)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	battle, err := h.combatService.GetBattle(battleID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	var npcActions []*combat.BattleAction
+	if battle.IsActive() {
+		npcActions = h.combatService.ProcessNPCTurn(ctx.Context, battle)
+	}
+
+	actionDTOs := make([]map[string]interface{}, 0)
+	actionDTOs = append(actionDTOs, playerAction.ToDTO())
+	for _, a := range npcActions {
+		actionDTOs = append(actionDTOs, a.ToDTO())
+	}
+
+	response := map[string]interface{}{
+		"success":      true,
+		"battleId":     battleID,
+		"round":        battle.CurrentRound,
+		"actions":      actionDTOs,
+		"participants": nil,
+	}
+
+	participants := make([]map[string]interface{}, len(battle.Participants))
+	for i, p := range battle.Participants {
+		participants[i] = p.ToDTO()
+	}
+	response["participants"] = participants
+
+	if battle.IsEnded() && battle.Result != nil {
+		response["battleEnded"] = true
+		response["result"] = battle.Result.ToDTO()
+	}
+
+	h.logger.Debug("Combat action processed",
+		zap.String("battle_id", battleID),
+		zap.Int64("character_id", characterID),
+		zap.Int("skill_id", skillID))
+
+	return response, nil
+}
+
+func (h *CombatHandler) GetBattleInfo(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var battleID string
+	switch v := args[0].(type) {
+	case string:
+		battleID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	battle, err := h.combatService.GetBattle(battleID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	return map[string]interface{}{
+		"success":    true,
+		"battleData": battle.ToDTO(),
+	}, nil
+}
+
+func (h *CombatHandler) EndBattle(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	var battleID string
+	if len(args) >= 1 && args[0] != nil {
+		switch v := args[0].(type) {
+		case string:
+			battleID = v
+		}
+	}
+	if battleID == "" {
+		battleID = ctx.Connection.GetBattleID()
+	}
+	if battleID == "" {
+		return map[string]interface{}{
+			"success": true,
+			"rewards": map[string]interface{}{
+				"exp":   0,
+				"money": 0,
+				"items": []interface{}{},
+			},
+		}, nil
+	}
+
+	battle, err := h.combatService.GetBattle(battleID)
+	if err != nil {
+		return map[string]interface{}{
+			"success": true,
+			"rewards": map[string]interface{}{
+				"exp":   0,
+				"money": 0,
+				"items": []interface{}{},
+			},
+		}, nil
+	}
+
+	if battle.IsActive() {
+		ended, winner := battle.CheckVictory()
+		if !ended {
+			winner = combat.SideEnemy
+		}
+		h.combatService.EndBattle(ctx.Context, battle, winner)
+
+		// Handle quest updates if player won
+		if winner == combat.SidePlayer && h.questService != nil {
+			characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+			if err == nil {
+				enemies := battle.GetParticipantsBySide(combat.SideEnemy)
+				for _, enemy := range enemies {
+					if enemy.EntityType == combat.ParticipantTypeCreature {
+						updatedQuests, err := h.questService.OnMonsterKilled(ctx.Context, characterID, enemy.EntityID)
+						if err != nil {
+							h.logger.Warn("Failed to update quest progress", zap.Error(err))
+							continue
+						}
+						// Send callbacks for updated quests
+						for _, qp := range updatedQuests {
+							dto := h.questService.EnrichQuestDTO(ctx.Context, qp)
+							if err := ctx.Connection.SendCallback("onAddChaQuest", dto); err != nil {
+								h.logger.Warn("Failed to send onAddChaQuest callback",
+									zap.Int64("char_id", characterID),
+									zap.Int("quest_id", qp.QuestID),
+									zap.Error(err))
+							}
+
+							// If quest is complete, push NPC state update
+							if qp.IsComplete() && h.questNotify != nil {
+								questTemplate := h.gameData.GetQuest(qp.QuestID)
+								if questTemplate != nil {
+									finishNPC := int(questTemplate.FinishNPC)
+									if finishNPC > 0 {
+										h.questNotify.PushNpcQuestStates(ctx, characterID, []int{finishNPC})
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	characterID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	playerParticipant := battle.GetParticipant(fmt.Sprintf("%d", characterID))
+	if playerParticipant != nil {
+		char, charErr := h.charService.GetByID(ctx.Context, characterID)
+		if charErr == nil {
+			char.CurrentHP = playerParticipant.CurrentHP
+			char.CurrentMP = playerParticipant.CurrentMP
+			if err := h.charService.Save(ctx.Context, char); err != nil {
+				h.logger.Warn("Failed to save character HP after battle", zap.Error(err))
+			}
+			ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+				"currentHp": char.CurrentHP,
+				"currentMp": char.CurrentMP,
+			})
+		}
+	}
+
+	if h.battleService != nil {
+		h.battleService.ClearBattleDeadlines(battleID)
+	}
+
+	ctx.Connection.ClearBattle()
+
+	result := battle.Result
+	if result == nil {
+		result = &combat.BattleResult{
+			WinnerSide:  combat.SideEnemy,
+			ItemRewards: []int{},
+		}
+	}
+
+	h.logger.Info("Battle play ended",
+		zap.String("battle_id", battleID),
+		zap.Int64("exp_reward", result.ExpReward),
+		zap.Int64("money_reward", result.MoneyReward))
+
+	return map[string]interface{}{
+		"success": true,
+		"rewards": result.ToDTO(),
+	}, nil
+}
+
+func (h *CombatHandler) LearnSkill(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var skillID int
+	switch v := args[0].(type) {
+	case float64:
+		skillID = int(v)
+	case int:
+		skillID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	charSkill, err := h.combatService.LearnSkill(ctx.Context, characterID, skillID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Skill learned",
+		zap.Int64("character_id", characterID),
+		zap.Int("skill_id", skillID))
+
+	return map[string]interface{}{
+		"success": true,
+		"skill":   charSkill.ToDTO(),
+	}, nil
+}
+
+func (h *CombatHandler) ReliveSwitch(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Debug("Relive switch requested",
+		zap.String("character_id", ctx.CharacterID))
+
+	return 1, nil
+}
+
+func (h *CombatHandler) BattleUpdateCmd(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("BattleUpdateCmd called with no arguments")
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	battle, err := h.combatService.GetPlayerBattle(characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	if h.battleService != nil {
+		h.battleService.ClearTurnDeadline(battle.ID, fmt.Sprintf("%d", characterID))
+	}
+
+	if !battle.IsActive() {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "Battle is not active",
+		}, nil
+	}
+
+	var cmdArray []interface{}
+	switch v := args[0].(type) {
+	case []interface{}:
+		cmdArray = v
+	case amf0.ECMAArray:
+		maxIdx := 0
+		for key := range v {
+			if idx, err := strconv.Atoi(key); err == nil && idx >= maxIdx {
+				maxIdx = idx + 1
+			}
+		}
+		cmdArray = make([]interface{}, maxIdx)
+		for key, val := range v {
+			if idx, err := strconv.Atoi(key); err == nil && idx >= 0 && idx < len(cmdArray) {
+				cmdArray[idx] = val
+			}
+		}
+		h.logger.Debug("BattleUpdateCmd parsed ECMAArray", zap.Int("count", len(cmdArray)))
+	case map[string]interface{}:
+		maxIdx := 0
+		for key := range v {
+			if idx, err := strconv.Atoi(key); err == nil && idx >= maxIdx {
+				maxIdx = idx + 1
+			}
+		}
+		cmdArray = make([]interface{}, maxIdx)
+		for key, val := range v {
+			if idx, err := strconv.Atoi(key); err == nil && idx >= 0 && idx < len(cmdArray) {
+				cmdArray[idx] = val
+			}
+		}
+	case nil:
+		h.logger.Warn("BattleUpdateCmd received nil argument, treating as empty array")
+		cmdArray = []interface{}{}
+	default:
+		h.logger.Warn("BattleUpdateCmd received unexpected argument type",
+			zap.String("type", fmt.Sprintf("%T", args[0])),
+			zap.Any("value", args[0]))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	commands := h.parseCommands(cmdArray, characterID)
+
+	participantIDs := make([]string, len(battle.Participants))
+	for i, p := range battle.Participants {
+		participantIDs[i] = p.ID
+	}
+
+	hasNewCommands := len(commands) > 0
+	if hasNewCommands {
+		h.logger.Info("BattleUpdateCmd participants",
+			zap.String("battle_id", battle.ID),
+			zap.Strings("participant_ids", participantIDs),
+			zap.Int("command_count", len(commands)))
+
+		cmdMap := make(map[string]*combat.BattleCommand)
+		for _, cmd := range commands {
+			cmdMap[cmd.ActorID] = cmd
+		}
+		battle.SetPendingCommands(cmdMap)
+
+		for _, cmd := range commands {
+			h.logger.Info("BattleUpdateCmd command",
+				zap.String("actor_id", cmd.ActorID),
+				zap.String("target_id", cmd.TargetID),
+				zap.Int("action_type", cmd.ActionType))
+		}
+	} else {
+		h.logger.Info("BattleUpdateCmd continuation call",
+			zap.String("battle_id", battle.ID),
+			zap.Bool("has_pending_commands", battle.HasPendingCommands()))
+	}
+
+	if !battle.HasPendingCommands() {
+		h.logger.Warn("No pending commands to process")
+		return map[string]interface{}{
+			"success": false,
+			"error":   "No pending commands",
+		}, nil
+	}
+
+	processor := combat.NewTurnProcessor(battle, nil)
+	pendingCmds := battle.GetPendingCommands()
+	for _, cmd := range pendingCmds {
+		processor.SetCommand(cmd)
+	}
+
+	result := processor.ProcessRound()
+
+	actionDTOs := make([]map[string]interface{}, 0, len(result.Actions))
+	skipActionDTOs := make([]map[string]interface{}, 0)
+	for i, a := range result.Actions {
+		dto := a.ToDTO()
+		if effects, ok := dto["effects"].([]string); ok && len(effects) > 0 && effects[0] == "skip" {
+			skipActionDTOs = append(skipActionDTOs, dto)
+			h.logger.Info("Skip action for dead actor", zap.Int("index", i), zap.Any("sid", dto["sid"]))
+		} else {
+			actionDTOs = append(actionDTOs, dto)
+		}
+	}
+
+	if result.BattleEnded {
+		winType := 0
+		if result.Winner == combat.SidePlayer {
+			winType = 1
+		}
+		endAction := map[string]interface{}{
+			"end":    true,
+			"type":   winType,
+			"result": 1,
+		}
+		actionDTOs = append(actionDTOs, endAction)
+		h.logger.Info("Battle ended, added end marker", zap.Int("winner", int(result.Winner)))
+		battle.SetRoundComplete()
+
+		playerParticipant := battle.GetParticipant(fmt.Sprintf("%d", characterID))
+		if playerParticipant != nil {
+			char, charErr := h.charService.GetByID(ctx.Context, characterID)
+			if charErr == nil {
+				char.CurrentHP = playerParticipant.CurrentHP
+				char.CurrentMP = playerParticipant.CurrentMP
+				if err := h.charService.Save(ctx.Context, char); err != nil {
+					h.logger.Warn("Failed to save character HP after battle in BattleUpdateCmd", zap.Error(err))
+				}
+			}
+			ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+				"currentHp": playerParticipant.CurrentHP,
+				"currentMp": playerParticipant.CurrentMP,
+			})
+		}
+	}
+
+	cList := make([]map[string]interface{}, len(battle.Participants))
+	for i, p := range battle.Participants {
+		cList[i] = p.ToDTO()
+	}
+
+	response := map[string]interface{}{
+		"success":  true,
+		"battleId": battle.ID,
+		"round":    result.Round,
+		"actions":  actionDTOs,
+		"cList":    cList,
+	}
+
+	if result.BattleEnded {
+		response["battleEnded"] = true
+	}
+
+	if result.MoreTurns && !result.BattleEnded {
+		response["moreTurns"] = true
+		h.logger.Info("More turns remaining in round", zap.Int("round", result.Round))
+	}
+
+	for i, actionDTO := range actionDTOs {
+		h.logger.Info("Action DTO",
+			zap.Int("index", i),
+			zap.Any("sid", actionDTO["sid"]),
+			zap.Any("tid", actionDTO["tid"]),
+			zap.Any("bid", actionDTO["bid"]),
+			zap.Any("sSObj", actionDTO["sSObj"]),
+			zap.Any("tSObj", actionDTO["tSObj"]),
+			zap.Any("delay", actionDTO["delay"]),
+			zap.Any("end", actionDTO["end"]))
+	}
+
+	nestedActions := make([]interface{}, 0, len(actionDTOs))
+	for i := 0; i < len(actionDTOs); i++ {
+		dto := actionDTOs[i]
+		bid, _ := dto["bid"]
+		bidVal, _ := bid.(int)
+		if i+1 < len(actionDTOs) {
+			nextBid, _ := actionDTOs[i+1]["bid"]
+			nextBidVal, _ := nextBid.(int)
+			if (bidVal == 3 || bidVal == 7) && nextBidVal == 5 {
+				nestedActions = append(nestedActions, []map[string]interface{}{dto, actionDTOs[i+1]})
+				i++
+				continue
+			}
+		}
+		nestedActions = append(nestedActions, []map[string]interface{}{dto})
+	}
+	h.logger.Info("Action sequence created", zap.Int("total_actions", len(nestedActions)))
+
+	if err := ctx.Connection.SendCallback("onBattlePlayList", nestedActions); err != nil {
+		h.logger.Error("Failed to send onBattlePlayList callback", zap.Error(err))
+	}
+	h.logger.Info("Sent onBattlePlayList callback", zap.Int("steps", len(actionDTOs)))
+
+	if !result.BattleEnded && !result.MoreTurns {
+		if h.battleService != nil {
+			h.battleService.SetTurnDeadline(battle.ID, fmt.Sprintf("%d", characterID))
+			h.battleService.OnRoundProcessed()
+		}
+	}
+
+	h.logger.Debug("Battle round processed",
+		zap.String("battle_id", battle.ID),
+		zap.Int64("character_id", characterID),
+		zap.Int("round", result.Round),
+		zap.Int("actions", len(result.Actions)),
+		zap.Bool("more_turns", result.MoreTurns))
+
+	return response, nil
+}
+
+func (h *CombatHandler) parseCommands(cmdArray []interface{}, characterID int64) []*combat.BattleCommand {
+	commands := make([]*combat.BattleCommand, 0, len(cmdArray))
+
+	for i, item := range cmdArray {
+		var cmdMap map[string]interface{}
+		switch v := item.(type) {
+		case map[string]interface{}:
+			cmdMap = v
+		case amf0.ECMAArray:
+			cmdMap = map[string]interface{}(v)
+		default:
+			h.logger.Debug("parseCommands skipping non-map item", zap.Int("index", i), zap.String("type", fmt.Sprintf("%T", item)))
+			continue
+		}
+
+		cmd := &combat.BattleCommand{}
+
+		if i == 0 {
+			cmd.ActorID = fmt.Sprintf("%d", characterID)
+		} else {
+			cmd.ActorID = fmt.Sprintf("%d_pet", characterID)
+		}
+
+		if tid, ok := cmdMap["tid"]; ok {
+			cmd.TargetID = h.parseTargetID(tid)
+		}
+
+		if action, ok := cmdMap["action"]; ok {
+			switch v := action.(type) {
+			case float64:
+				cmd.ActionType = int(v)
+			case int:
+				cmd.ActionType = v
+			}
+		}
+
+		if id, ok := cmdMap["id"]; ok {
+			switch v := id.(type) {
+			case float64:
+				cmd.SkillID = int(v)
+				cmd.ItemSlot = int(v)
+			case int:
+				cmd.SkillID = v
+				cmd.ItemSlot = v
+			}
+		}
+
+		if level, ok := cmdMap["level"]; ok {
+			switch v := level.(type) {
+			case float64:
+				cmd.SkillLevel = int(v)
+			case int:
+				cmd.SkillLevel = v
+			}
+		}
+
+		h.logger.Debug("Parsed battle command",
+			zap.String("actor_id", cmd.ActorID),
+			zap.String("target_id", cmd.TargetID),
+			zap.Int("action_type", cmd.ActionType),
+			zap.Int("skill_id", cmd.SkillID),
+			zap.Int("skill_level", cmd.SkillLevel))
+
+		commands = append(commands, cmd)
+	}
+
+	return commands
+}
+
+func (h *CombatHandler) parseTargetID(tid interface{}) string {
+	switch v := tid.(type) {
+	case string:
+		return v
+	case float64:
+		return fmt.Sprintf("%d", int(v))
+	case int:
+		return fmt.Sprintf("%d", v)
+	default:
+		return ""
+	}
+}
+
+func (h *CombatHandler) getEnemyCountForPlayers(playerCount int) int {
+	var minEnemies, maxEnemies int
+	switch playerCount {
+	case 1:
+		minEnemies, maxEnemies = 1, 2
+	case 2:
+		minEnemies, maxEnemies = 2, 4
+	case 3:
+		minEnemies, maxEnemies = 3, 5
+	case 4, 5:
+		minEnemies, maxEnemies = 4, 5
+	default:
+		minEnemies, maxEnemies = 1, 2
+	}
+	return minEnemies + rand.Intn(maxEnemies-minEnemies+1)
+}
+
+func (h *CombatHandler) selectRandomMapCreatures(entries []*models.MapCreatureTemplate, count int) []*models.MapCreatureTemplate {
+	if count >= len(entries) {
+		return entries
+	}
+
+	shuffled := make([]*models.MapCreatureTemplate, len(entries))
+	copy(shuffled, entries)
+	rand.Shuffle(len(shuffled), func(i, j int) {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	})
+
+	return shuffled[:count]
+}
+
+func (h *CombatHandler) BattleReplayEnd(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("Battle replay ended",
+		zap.String("character_id", ctx.CharacterID))
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) MazeRecover(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var hp int
+	switch v := args[0].(type) {
+	case float64:
+		hp = int(v)
+	case int:
+		hp = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Info("Maze recover",
+		zap.Int64("character_id", characterID),
+		zap.Int("hp", hp))
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	if hp > 0 {
+		char.CurrentHP += hp
+		if char.CurrentHP > char.MaxHP {
+			char.CurrentHP = char.MaxHP
+		}
+
+		ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+			"hp": char.CurrentHP,
+		})
+	}
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) UseBloodBag(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Info("Use blood bag",
+		zap.Int64("character_id", characterID))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) BBGoldRelive(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	char.CurrentHP = char.MaxHP
+	char.CurrentMP = char.MaxMP
+	if err := h.charService.Save(ctx.Context, char); err != nil {
+		h.logger.Warn("Failed to save character after bb gold relive", zap.Error(err))
+	}
+
+	ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+		"currentHp": char.CurrentHP,
+		"currentMp": char.CurrentMP,
+	})
+
+	h.logger.Info("Battle boss gold relive",
+		zap.Int64("character_id", characterID))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) BBNormalRelive(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	char.CurrentHP = char.MaxHP / 2
+	char.CurrentMP = char.MaxMP / 2
+	if char.CurrentHP < 1 {
+		char.CurrentHP = 1
+	}
+	if err := h.charService.Save(ctx.Context, char); err != nil {
+		h.logger.Warn("Failed to save character after bb normal relive", zap.Error(err))
+	}
+
+	ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+		"currentHp": char.CurrentHP,
+		"currentMp": char.CurrentMP,
+	})
+
+	h.logger.Info("Battle boss normal relive",
+		zap.Int64("character_id", characterID))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) FreeRelive(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	var reliveType int
+	if len(args) >= 1 {
+		switch v := args[0].(type) {
+		case float64:
+			reliveType = int(v)
+		case int:
+			reliveType = v
+		}
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	char.CurrentHP = char.MaxHP
+	char.CurrentMP = char.MaxMP
+	if err := h.charService.Save(ctx.Context, char); err != nil {
+		h.logger.Warn("Failed to save character after free relive", zap.Error(err))
+	}
+
+	ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+		"currentHp": char.CurrentHP,
+		"currentMp": char.CurrentMP,
+	})
+
+	h.logger.Info("Free relive",
+		zap.Int64("character_id", characterID),
+		zap.Int("type", reliveType))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) ReliveUseItem(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	char.CurrentHP = char.MaxHP
+	char.CurrentMP = char.MaxMP
+	if err := h.charService.Save(ctx.Context, char); err != nil {
+		h.logger.Warn("Failed to save character after relive", zap.Error(err))
+	}
+
+	ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+		"currentHp": char.CurrentHP,
+		"currentMp": char.CurrentMP,
+	})
+
+	h.logger.Info("Relive use item",
+		zap.Int64("character_id", characterID),
+		zap.Int("new_hp", char.CurrentHP))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) QuitWatch(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("Quit watch battle",
+		zap.String("character_id", ctx.CharacterID))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *CombatHandler) teleportToMap(ctx *rtmp.RPCContext, characterID int64, mapID int) error {
+	safeX, safeY := h.sceneService.GetSafePoint(mapID)
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return err
+	}
+
+	oldRoomID, _ := ctx.Connection.GetSceneInfo()
+	channelID := ctx.Connection.GetChannelID()
+
+	if oldRoomID != 0 && oldRoomID != mapID {
+		h.sceneManager.BroadcastToScene(channelID, oldRoomID, ctx.ConnID, "onCharLeaveScene", characterID)
+		ctx.Connection.SetSceneInfo(mapID, characterID)
+		h.sceneManager.MoveToScene(channelID, oldRoomID, mapID, ctx.Connection)
+	} else if oldRoomID == 0 {
+		ctx.Connection.SetSceneInfo(mapID, characterID)
+		h.sceneManager.AddToScene(channelID, mapID, ctx.Connection)
+	}
+
+	if err := h.charService.UpdatePosition(ctx.Context, characterID, character.Position{MapID: mapID, X: safeX, Y: safeY}); err != nil {
+		h.logger.Error("Failed to update position", zap.Error(err))
+	}
+	ctx.Connection.SendCallback("onSceneEnter", mapID, safeX, safeY, -1)
+
+	if oldRoomID != 0 && oldRoomID != mapID {
+		char.MapID = mapID
+		char.PosX = safeX
+		char.PosY = safeY
+		playerData := h.sceneService.GetCharacterForClient(char)
+		h.sceneManager.BroadcastToScene(channelID, mapID, ctx.ConnID, "onScenePlayerEntered", playerData)
+	}
+	return nil
+}

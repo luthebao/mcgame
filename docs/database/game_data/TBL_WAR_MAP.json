@@ -1,0 +1,92 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_WAR_MAP",
+  "recordCount": 12,
+  "records": [
+    {
+      "id": "1",
+      "name": "Cung Bạch Dương",
+      "pid": "10-1",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "2",
+      "name": "Cung Kim Ngưu",
+      "pid": "10-2",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "3",
+      "name": "Cung Song Tử",
+      "pid": "10-3",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "4",
+      "name": "Cung Cự Giải",
+      "pid": "10-4",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "5",
+      "name": "Cung Sư Tử",
+      "pid": "10-5",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "6",
+      "name": "Cung Xử Nữ",
+      "pid": "10-6",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "7",
+      "name": "Cung Thiên Bình",
+      "pid": "10-7",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "8",
+      "name": "Cung Hổ Cáp",
+      "pid": "10-8",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "9",
+      "name": "Cung Nhân Mã",
+      "pid": "10-9",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "10",
+      "name": "Cung Ma Kết",
+      "pid": "10-10",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "11",
+      "name": "Cung Bảo Bình",
+      "pid": "10-11",
+      "rc": "",
+      "type": "1"
+    },
+    {
+      "id": "12",
+      "name": "Cung Song Ngư",
+      "pid": "10-12",
+      "rc": "",
+      "type": "1"
+    }
+  ]
+}

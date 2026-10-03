@@ -1,0 +1,248 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_CREATUREH_CONTAIN",
+  "recordCount": 30,
+  "records": [
+    {
+      "exp": "15400",
+      "goldNum": "2400",
+      "id": "11",
+      "line": "3|5|6|8|9|12",
+      "name": "Hoang Nguyên Thời Kế",
+      "num": "10000"
+    },
+    {
+      "exp": "30800",
+      "goldNum": "4800",
+      "id": "12",
+      "line": "3|5|6|8|9|12",
+      "name": "Hoang Nguyên Thời Kế",
+      "num": "12000"
+    },
+    {
+      "exp": "46200",
+      "goldNum": "7200",
+      "id": "13",
+      "line": "3|5|6|8|9|12",
+      "name": "Hoang Nguyên Thời Kế",
+      "num": "14000"
+    },
+    {
+      "exp": "77000",
+      "goldNum": "12000",
+      "id": "14",
+      "line": "3|5|6|8|9|12",
+      "name": "Hoang Nguyên Thời Kế",
+      "num": "16000"
+    },
+    {
+      "exp": "138600",
+      "goldNum": "21600",
+      "id": "15",
+      "line": "3|5|6|8|9|12",
+      "name": "Hoang Nguyên Thời Kế",
+      "num": "18000"
+    },
+    {
+      "exp": "0",
+      "goldNum": "0",
+      "id": "16",
+      "line": "3|5|6|8|9|12",
+      "name": "Hoang Nguyên Thời Kế",
+      "num": "20000"
+    },
+    {
+      "exp": "15400",
+      "goldNum": "2400",
+      "id": "21",
+      "line": "1|5|6|7|8|12",
+      "name": "Hỏa Diệm Thánh Bôi",
+      "num": "10000"
+    },
+    {
+      "exp": "30800",
+      "goldNum": "4800",
+      "id": "22",
+      "line": "1|5|6|7|8|12",
+      "name": "Hỏa Diệm Thánh Bôi",
+      "num": "12000"
+    },
+    {
+      "exp": "46200",
+      "goldNum": "7200",
+      "id": "23",
+      "line": "1|5|6|7|8|12",
+      "name": "Hỏa Diệm Thánh Bôi",
+      "num": "14000"
+    },
+    {
+      "exp": "77000",
+      "goldNum": "12000",
+      "id": "24",
+      "line": "1|5|6|7|8|12",
+      "name": "Hỏa Diệm Thánh Bôi",
+      "num": "16000"
+    },
+    {
+      "exp": "138600",
+      "goldNum": "21600",
+      "id": "25",
+      "line": "1|5|6|7|8|12",
+      "name": "Hỏa Diệm Thánh Bôi",
+      "num": "18000"
+    },
+    {
+      "exp": "0",
+      "goldNum": "0",
+      "id": "26",
+      "line": "1|5|6|7|8|12",
+      "name": "Hỏa Diệm Thánh Bôi",
+      "num": "20000"
+    },
+    {
+      "exp": "15400",
+      "goldNum": "2400",
+      "id": "31",
+      "line": "1|2|6|8|9|12",
+      "name": "Vương Miện Pha Lê",
+      "num": "10000"
+    },
+    {
+      "exp": "30800",
+      "goldNum": "4800",
+      "id": "32",
+      "line": "1|2|6|8|9|12",
+      "name": "Vương Miện Pha Lê",
+      "num": "12000"
+    },
+    {
+      "exp": "46200",
+      "goldNum": "7200",
+      "id": "33",
+      "line": "1|2|6|8|9|12",
+      "name": "Vương Miện Pha Lê",
+      "num": "14000"
+    },
+    {
+      "exp": "77000",
+      "goldNum": "12000",
+      "id": "34",
+      "line": "1|2|6|8|9|12",
+      "name": "Vương Miện Pha Lê",
+      "num": "16000"
+    },
+    {
+      "exp": "138600",
+      "goldNum": "21600",
+      "id": "35",
+      "line": "1|2|6|8|9|12",
+      "name": "Vương Miện Pha Lê",
+      "num": "18000"
+    },
+    {
+      "exp": "0",
+      "goldNum": "0",
+      "id": "36",
+      "line": "1|2|6|8|9|12",
+      "name": "Vương Miện Pha Lê",
+      "num": "20000"
+    },
+    {
+      "exp": "15400",
+      "goldNum": "2400",
+      "id": "41",
+      "line": "1|2|6|7|8|10",
+      "name": "Tử Điện Bảo Thạch",
+      "num": "10000"
+    },
+    {
+      "exp": "30800",
+      "goldNum": "4800",
+      "id": "42",
+      "line": "1|2|6|7|8|10",
+      "name": "Tử Điện Bảo Thạch",
+      "num": "12000"
+    },
+    {
+      "exp": "46200",
+      "goldNum": "7200",
+      "id": "43",
+      "line": "1|2|6|7|8|10",
+      "name": "Tử Điện Bảo Thạch",
+      "num": "14000"
+    },
+    {
+      "exp": "77000",
+      "goldNum": "12000",
+      "id": "44",
+      "line": "1|2|6|7|8|10",
+      "name": "Tử Điện Bảo Thạch",
+      "num": "16000"
+    },
+    {
+      "exp": "138600",
+      "goldNum": "21600",
+      "id": "45",
+      "line": "1|2|6|7|8|10",
+      "name": "Tử Điện Bảo Thạch",
+      "num": "18000"
+    },
+    {
+      "exp": "0",
+      "goldNum": "0",
+      "id": "46",
+      "line": "1|2|6|7|8|10",
+      "name": "Tử Điện Bảo Thạch",
+      "num": "20000"
+    },
+    {
+      "exp": "15400",
+      "goldNum": "2400",
+      "id": "51",
+      "line": "2|3|6|7|11|12",
+      "name": "Quang Huy Chi Hoàn",
+      "num": "10000"
+    },
+    {
+      "exp": "30800",
+      "goldNum": "4800",
+      "id": "52",
+      "line": "2|3|6|7|11|12",
+      "name": "Quang Huy Chi Hoàn",
+      "num": "12000"
+    },
+    {
+      "exp": "46200",
+      "goldNum": "7200",
+      "id": "53",
+      "line": "2|3|6|7|11|12",
+      "name": "Quang Huy Chi Hoàn",
+      "num": "14000"
+    },
+    {
+      "exp": "77000",
+      "goldNum": "12000",
+      "id": "54",
+      "line": "2|3|6|7|11|12",
+      "name": "Quang Huy Chi Hoàn",
+      "num": "16000"
+    },
+    {
+      "exp": "138600",
+      "goldNum": "21600",
+      "id": "55",
+      "line": "2|3|6|7|11|12",
+      "name": "Quang Huy Chi Hoàn",
+      "num": "18000"
+    },
+    {
+      "exp": "0",
+      "goldNum": "0",
+      "id": "56",
+      "line": "2|3|6|7|11|12",
+      "name": "Quang Huy Chi Hoàn",
+      "num": "20000"
+    }
+  ]
+}

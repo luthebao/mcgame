@@ -1,0 +1,63 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_SKILL_TYPE",
+  "recordCount": 11,
+  "records": [
+    {
+      "id": "1",
+      "kid": "1",
+      "name": "物理近战"
+    },
+    {
+      "id": "2",
+      "kid": "2",
+      "name": "物理远程(子弹)"
+    },
+    {
+      "id": "3",
+      "kid": "3",
+      "name": "魔法直接伤害"
+    },
+    {
+      "id": "4",
+      "kid": "8",
+      "name": "魔法子弹伤害"
+    },
+    {
+      "id": "5",
+      "kid": "5",
+      "name": "魔法恢复"
+    },
+    {
+      "id": "6",
+      "kid": "4",
+      "name": "状态施加"
+    },
+    {
+      "id": "7",
+      "kid": "6",
+      "name": "状态清除"
+    },
+    {
+      "id": "8",
+      "kid": "7",
+      "name": "功能伤害"
+    },
+    {
+      "id": "9",
+      "kid": "9",
+      "name": "功能恢复"
+    },
+    {
+      "id": "10",
+      "kid": "10",
+      "name": "其他(被动等)"
+    },
+    {
+      "id": "11",
+      "kid": "11",
+      "name": "护卫"
+    }
+  ]
+}

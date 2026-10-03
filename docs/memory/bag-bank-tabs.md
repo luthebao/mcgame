@@ -1,0 +1,7 @@
+# PAGE_TYPE_BAG / PAGE_TYPE_BANK Tab Routing
+
+`BagPanel.as` has 9 tabs (`btnTabBag0..btnTabBag8`) dispatched through `tabDragDropHandler` as `moveItemToPage(srcSID, PAGE_TYPE_BAG=1, tabNumber)` where `tabNumber` is 1..9. `BankPanel.as` follows the same pattern with `PAGE_TYPE_BANK=2` and `tabNumber` 1..5. `GamePredef.SLOT_SID_BAG = [2100,2130,...,2370]` confirms 9 contiguous pages of 30 slots each; `SLOT_SID_BANK = [300,...,450]` confirms 5 bank pages.
+
+Tabs 1–7 map to `SlotTypeBag` slot indexes `(tabNumber-1)*30 .. tabNumber*30 - 1` (SID 2101–2310). **Tab 8 maps to `SlotTypeQuestBag` (SID 2311–2340)** and **tab 9 maps to `SlotTypePetItemBag` (SID 2341–2370)** — these are distinct slot types in the Go domain model, not just different indexes inside `SlotTypeBag`.
+
+`MoveItemToPage` in `internal/presentation/rtmp/handlers/item/bag.go` interprets `args[2]` as the 1-based tab number, resolves the correct `SlotType` and slot range, and finds the first empty slot in that range. Acceptance is asymmetric: **tabs 1–7 accept any item** (regular, quest, and pet items can all be stashed in the normal bag pages), but **tab 8 only accepts quest items** and **tab 9 only accepts pet items/equipment** (template `Kind == 9` or pet-only item types). Capacity is bounded by `character.BagSlotNum` (tabs 1–7) and `character.BankSlotNum` (bank tabs), matching the unlocked-page counter the client displays.

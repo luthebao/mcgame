@@ -1,0 +1,336 @@
+// Pet arena handler for competitive pet battles.
+// Handles arena matchmaking, fights, rankings, and season rewards.
+// Uses Elo-based rating system for matchmaking.
+package handlers
+
+import (
+	"strconv"
+
+	"go.uber.org/zap"
+	apppetarena "mcgame-server/internal/application/petarena"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+)
+
+type PetArenaHandler struct {
+	arenaService *apppetarena.Service
+	logger       *zap.Logger
+}
+
+func NewPetArenaHandler(arenaService *apppetarena.Service, logger *zap.Logger) *PetArenaHandler {
+	return &PetArenaHandler{
+		arenaService: arenaService,
+		logger:       logger,
+	}
+}
+
+func (h *PetArenaHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("getPetArenaData", h.GetPetArenaData)
+	dispatcher.Register("getPetArenaActivityInfo", h.GetPetArenaActivityInfo)
+	dispatcher.Register("getPetArenaDataActivity", h.GetPetArenaDataActivity)
+	dispatcher.Register("getPetArenaRank", h.GetPetArenaRank)
+	dispatcher.Register("getPetRankAward", h.GetPetRankAward)
+	dispatcher.Register("getPetArenaSysMsg", h.GetPetArenaSysMsg)
+	dispatcher.Register("getPetArenaConf", h.GetPetArenaConf)
+	dispatcher.Register("getPetConf", h.GetPetConf)
+	dispatcher.Register("petArenaFight", h.PetArenaFight)
+	dispatcher.Register("petArenaFightActivity", h.PetArenaFightActivity)
+	dispatcher.Register("petArenaTicket", h.PetArenaTicket)
+	dispatcher.Register("petFightResult", h.PetFightResult)
+	dispatcher.Register("addPetFightNum", h.AddPetFightNum)
+	dispatcher.Register("clearArenaCD", h.ClearArenaCD)
+	dispatcher.Register("replayPetFight", h.ReplayPetFight)
+	dispatcher.Register("replayPetPVEFight", h.ReplayPetPVEFight)
+	dispatcher.Register("getLastPetArenaRank", h.GetLastPetArenaRank)
+}
+
+func (h *PetArenaHandler) GetPetArenaData(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	ranking, rank, err := h.arenaService.GetArenaData(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	dto := ranking.ToDTO()
+	dto["rank"] = rank
+
+	h.logger.Debug("Pet arena data retrieved",
+		zap.Int64("character_id", characterID))
+
+	return dto, nil
+}
+
+func (h *PetArenaHandler) GetPetArenaActivityInfo(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return h.arenaService.GetActivityInfo(ctx.Context), nil
+}
+
+func (h *PetArenaHandler) GetPetArenaDataActivity(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return h.arenaService.GetActivityInfo(ctx.Context), nil
+}
+
+func (h *PetArenaHandler) GetPetArenaRank(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	page := 0
+	if len(args) >= 1 {
+		switch v := args[0].(type) {
+		case float64:
+			page = int(v)
+		case int:
+			page = v
+		}
+	}
+
+	rankings, err := h.arenaService.GetArenaRankings(ctx.Context, page)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	dtos := make([]map[string]interface{}, len(rankings))
+	for i, r := range rankings {
+		dto := r.ToDTO()
+		dto["rank"] = page*20 + i + 1
+		dtos[i] = dto
+	}
+
+	return map[string]interface{}{
+		"rankings": dtos,
+		"page":     page,
+	}, nil
+}
+
+func (h *PetArenaHandler) GetPetRankAward(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	rewards, err := h.arenaService.ClaimSeasonReward(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet arena rank award claimed",
+		zap.Int64("character_id", characterID))
+
+	return map[string]interface{}{
+		"success": true,
+		"rewards": rewards,
+	}, nil
+}
+
+func (h *PetArenaHandler) GetPetArenaSysMsg(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return map[string]interface{}{
+		"messages": h.arenaService.GetSystemMessages(ctx.Context),
+	}, nil
+}
+
+func (h *PetArenaHandler) GetPetArenaConf(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	config := h.arenaService.GetConfig()
+	return map[string]interface{}{
+		"season":              config.Season,
+		"maxTickets":          config.MaxTickets,
+		"ticketRefreshHours":  config.TicketRefreshHours,
+		"baseRating":          config.BaseRating,
+		"ratingKFactor":       config.RatingKFactor,
+		"winStreakBonusStart": config.WinStreakBonusStart,
+	}, nil
+}
+
+func (h *PetArenaHandler) GetPetConf(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return h.GetPetArenaConf(ctx, args)
+}
+
+func (h *PetArenaHandler) PetArenaFight(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var opponentID int64
+	switch v := args[0].(type) {
+	case string:
+		opponentID, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+	case float64:
+		opponentID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	battle, result, err := h.arenaService.Fight(ctx.Context, characterID, opponentID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet arena fight completed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("opponent_id", opponentID),
+		zap.Bool("won", result.AttackerWon))
+
+	return map[string]interface{}{
+		"success":      true,
+		"battleId":     battle.ID,
+		"won":          result.AttackerWon,
+		"ratingChange": result.AttackerRatingChange,
+		"battleLog":    battle.ToDTO()["battleLog"],
+	}, nil
+}
+
+func (h *PetArenaHandler) PetArenaFightActivity(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return h.PetArenaFight(ctx, args)
+}
+
+func (h *PetArenaHandler) PetArenaTicket(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	tickets, maxTickets, err := h.arenaService.GetTickets(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	return map[string]interface{}{
+		"tickets":    tickets,
+		"maxTickets": maxTickets,
+	}, nil
+}
+
+func (h *PetArenaHandler) PetFightResult(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var battleID int64
+	switch v := args[0].(type) {
+	case float64:
+		battleID = int64(v)
+	case int64:
+		battleID = v
+	case int:
+		battleID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	battle, err := h.arenaService.GetBattle(ctx.Context, battleID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	return battle.ToDTO(), nil
+}
+
+func (h *PetArenaHandler) AddPetFightNum(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	amount := 5
+	if len(args) >= 1 {
+		switch v := args[0].(type) {
+		case float64:
+			amount = int(v)
+		case int:
+			amount = v
+		}
+	}
+
+	if err := h.arenaService.AddTickets(ctx.Context, characterID, amount); err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	tickets, maxTickets, _ := h.arenaService.GetTickets(ctx.Context, characterID)
+
+	h.logger.Info("Pet arena tickets added",
+		zap.Int64("character_id", characterID),
+		zap.Int("amount", amount))
+
+	return map[string]interface{}{
+		"success":    true,
+		"tickets":    tickets,
+		"maxTickets": maxTickets,
+	}, nil
+}
+
+func (h *PetArenaHandler) ClearArenaCD(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if err := h.arenaService.ClearCooldown(ctx.Context, characterID); err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	tickets, maxTickets, _ := h.arenaService.GetTickets(ctx.Context, characterID)
+
+	h.logger.Info("Pet arena cooldown cleared",
+		zap.Int64("character_id", characterID))
+
+	return map[string]interface{}{
+		"success":    true,
+		"cost":       100,
+		"tickets":    tickets,
+		"maxTickets": maxTickets,
+	}, nil
+}
+
+func (h *PetArenaHandler) ReplayPetFight(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var battleID int64
+	switch v := args[0].(type) {
+	case float64:
+		battleID = int64(v)
+	case int64:
+		battleID = v
+	case int:
+		battleID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	battle, err := h.arenaService.GetBattle(ctx.Context, battleID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	return map[string]interface{}{
+		"battleLog": battle.ToDTO()["battleLog"],
+	}, nil
+}
+
+func (h *PetArenaHandler) ReplayPetPVEFight(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return h.ReplayPetFight(ctx, args)
+}
+
+func (h *PetArenaHandler) GetLastPetArenaRank(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	rank, rating, err := h.arenaService.GetLastSeasonRank(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	return map[string]interface{}{
+		"rank":   rank,
+		"rating": rating,
+	}, nil
+}

@@ -1,0 +1,448 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_DIARY",
+  "recordCount": 44,
+  "records": [
+    {
+      "act": "1",
+      "id": "30",
+      "info": "Mỗi lần giết 1 quái vật, nhận 1 điểm năng nổ",
+      "linkType": "3",
+      "max": "-1",
+      "name": "Hoàn Thành Sự Kiện Bảo Vệ Vô Ưu",
+      "nid": "15",
+      "pos": "24"
+    },
+    {
+      "act": "1",
+      "id": "29",
+      "info": "Mỗi ngày dăng nhập lần đầu, nhận 1 điểm năng nổ",
+      "linkType": "-1",
+      "max": "1",
+      "name": "Mỗi ngày đăng nhập",
+      "nid": "-1",
+      "pos": "7"
+    },
+    {
+      "act": "1",
+      "id": "28",
+      "info": "Thu thập Tinh Quái ở Trang Viên bạn bè, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Thu hoạch Trang Viên bạn bè",
+      "nid": "801",
+      "pos": "11"
+    },
+    {
+      "act": "1",
+      "id": "27",
+      "info": "Thu thập Tinh Quái ở Trang Viên, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Thu hoạch Trang Viên",
+      "nid": "801",
+      "pos": "10"
+    },
+    {
+      "act": "3",
+      "id": "26",
+      "info": "Trong trận đấu Pet, chủ động khiêu chiến người khác, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "30",
+      "name": "Tham gia Đấu Pet",
+      "nid": "834",
+      "pos": "9"
+    },
+    {
+      "act": "30",
+      "id": "25",
+      "info": "Hoàn thành Phụ bản Trở Về Lang Huyệt cấp 100, nhận 30 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành Phụ bản Trở Về Lang Huyệt cấp 100",
+      "nid": "200",
+      "pos": "33"
+    },
+    {
+      "act": "30",
+      "id": "24",
+      "info": "Hoàn thành Phụ bản Liệt Diễm Thâm Uyên cấp 90, nhận 30 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành Phụ bản Liệt Diễm Thâm Uyên cấp 90",
+      "nid": "200",
+      "pos": "32"
+    },
+    {
+      "act": "20",
+      "id": "23",
+      "info": "Hoàn thành Phụ bản Lục Tiên Cảnh cấp 80, nhận 20 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành Phụ bản Lục Tiên Cảnh cấp 80",
+      "nid": "200",
+      "pos": "31"
+    },
+    {
+      "act": "20",
+      "id": "22",
+      "info": "Hoàn thành Phụ bản Kho Báu Đại Mạc cấp 60, nhận 20 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành Phụ bản Kho Báu Đại Mạc cấp 60",
+      "nid": "200",
+      "pos": "30"
+    },
+    {
+      "act": "20",
+      "id": "21",
+      "info": "Hoàn thành Phụ bản Mê Huyễn Động cấp 50, nhận 20 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành Phụ bản Mê Huyễn Động cấp 50",
+      "nid": "200",
+      "pos": "29"
+    },
+    {
+      "act": "2",
+      "id": "20",
+      "info": "Hoàn thành Nhiệm vụ Rèn Luyện Pet, nhận 2 điểm năng nổ",
+      "linkType": "1",
+      "max": "20",
+      "name": "Hoàn Thành Nhiệm Vụ Rèn Luyện Pet",
+      "nid": "280",
+      "pos": "20"
+    },
+    {
+      "act": "4",
+      "id": "19",
+      "info": "Hoàn thành 1 Nhiệm Vụ Trị An, nhận 4 điểm năng nổ",
+      "linkType": "1",
+      "max": "10",
+      "name": "Hoàn Thành Nhiệm Vụ Trị An",
+      "nid": "277",
+      "pos": "16"
+    },
+    {
+      "act": "4",
+      "id": "17",
+      "info": "Hoàn thành 1 Nhiệm Vụ Trừ Ma, nhận 4 điểm năng nổ",
+      "linkType": "1",
+      "max": "10",
+      "name": "Hoàn Thành Nhiệm Vụ Trừ Ma",
+      "nid": "3",
+      "pos": "17"
+    },
+    {
+      "act": "45",
+      "id": "16",
+      "info": "Hoàn thành 200 vòng Nhiệm vụ 200 vòng, nhận 45 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành 200 vòng Nhiệm vụ 200 vòng",
+      "nid": "48",
+      "pos": "43"
+    },
+    {
+      "act": "45",
+      "id": "15",
+      "info": "Hoàn thành 150 vòng Nhiệm vụ 200 vòng, nhận 45 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành 150 vòng Nhiệm vụ 200 vòng",
+      "nid": "48",
+      "pos": "42"
+    },
+    {
+      "act": "45",
+      "id": "14",
+      "info": "Hoàn thành 100 vòng Nhiệm vụ 200 vòng, nhận 45 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành 100 vòng Nhiệm vụ 200 vòng",
+      "nid": "48",
+      "pos": "41"
+    },
+    {
+      "act": "45",
+      "id": "13",
+      "info": "Hoàn thành 50 vòng Nhiệm vụ 200 vòng, nhận 45 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành 50 vòng Nhiệm vụ 200 vòng",
+      "nid": "48",
+      "pos": "40"
+    },
+    {
+      "act": "40",
+      "id": "12",
+      "info": "Hoàn thành 1 lần vượt tháp dạng khiêu chiến nhận phần thưởng, nhận 40 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Vượt Ảo Ma Tháp Dạng Khiêu Chiến 1 Lần",
+      "nid": "993",
+      "pos": "39"
+    },
+    {
+      "act": "30",
+      "id": "11",
+      "info": "Hoàn thành 3 lần vượt tháp dạng thường nhận phần thưởng, nhận 30 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Vượt Ảo Ma Tháp Dạng Thường 3 Lần",
+      "nid": "993",
+      "pos": "38"
+    },
+    {
+      "act": "20",
+      "id": "10",
+      "info": "Hoàn thành 2 lần vượt tháp dạng thường nhận phần thưởng, nhận 20 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Vượt Ảo Ma Tháp Dạng Thường 2 Lần",
+      "nid": "993",
+      "pos": "37"
+    },
+    {
+      "act": "10",
+      "id": "9",
+      "info": "Hoàn thành 1 lần vượt tháp dạng thường nhận phần thưởng, nhận 10 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Vượt Ảo Ma Tháp Dạng Thường 1 Lần",
+      "nid": "993",
+      "pos": "36"
+    },
+    {
+      "act": "5",
+      "id": "8",
+      "info": "Hoàn thành 1 Nhiệm vụ Nông Trường Pháp Thuật, nhận 5 điểm năng nổ",
+      "linkType": "1",
+      "max": "2",
+      "name": "Hoàn thành Nhiệm vụ Nông Trường Pháp Thuật",
+      "nid": "1263",
+      "pos": "23"
+    },
+    {
+      "act": "5",
+      "id": "7",
+      "info": "Hoàn thành 1 Nhiệm vụ Tiệm Thuốc Đông Huyền, nhận 5 điểm năng nổ",
+      "linkType": "1",
+      "max": "2",
+      "name": "Hoàn thành Nhiệm vụ Tiệm Thuốc Đông Huyền",
+      "nid": "412",
+      "pos": "22"
+    },
+    {
+      "act": "5",
+      "id": "6",
+      "info": "Hoàn thành 1 Nhiệm vụ Hồ Đông Huyền, nhận 5 điểm năng nổ",
+      "linkType": "1",
+      "max": "2",
+      "name": "Hoàn thành Nhiệm vụ Hồ Đông Huyền",
+      "nid": "280",
+      "pos": "21"
+    },
+    {
+      "act": "2",
+      "id": "5",
+      "info": "Hoàn thành 1 nhiệm vụ Bang hội, nhận 2 điểm năng nổ",
+      "linkType": "1",
+      "max": "15",
+      "name": "Hoàn thành nhiệm vụ Bang Hội",
+      "nid": "1069",
+      "pos": "15"
+    },
+    {
+      "act": "5",
+      "id": "4",
+      "info": "Hoàn thành 1 Nhiệm vụ thần tu, nhận 1 điểm năng nổ",
+      "linkType": "1",
+      "max": "10",
+      "name": "Hoàn thành Nhiệm vụ thần tu",
+      "nid": "929",
+      "pos": "18"
+    },
+    {
+      "act": "2",
+      "id": "3",
+      "info": "Hoàn thành 1 Nhiệm vụ tu hành, nhận 2 điểm năng nổ",
+      "linkType": "1",
+      "max": "20",
+      "name": "Hoàn thành Nhiệm vụ tu hành",
+      "nid": "434",
+      "pos": "19"
+    },
+    {
+      "act": "1",
+      "id": "2",
+      "info": "Hoàn thành 1 Nhiệm vụ treo thưởng, nhận 1 điểm năng nổ",
+      "linkType": "1",
+      "max": "50",
+      "name": "Hoàn thành Nhiệm vụ treo thưởng",
+      "nid": "568",
+      "pos": "13"
+    },
+    {
+      "act": "1",
+      "id": "1",
+      "info": "Hoàn thành 1 Nhiệm vụ gia tộc, nhận 1 điểm năng nổ",
+      "linkType": "-1",
+      "max": "20",
+      "name": "Hoàn thành Nhiệm vụ gia tộc",
+      "nid": "-1",
+      "pos": "14"
+    },
+    {
+      "act": "1",
+      "id": "31",
+      "info": "Mỗi lần giết 1 quái vật, nhận 1 điểm năng nổ",
+      "linkType": "3",
+      "max": "-1",
+      "name": "Hoàn Thành Sự Kiện Ác Linh Hiện Thế",
+      "nid": "14",
+      "pos": "25"
+    },
+    {
+      "act": "1",
+      "id": "33",
+      "info": "Tích lũy online 30 phút",
+      "linkType": "-1",
+      "max": "12",
+      "name": "Tích lũy online 30 phút",
+      "nid": "-1",
+      "pos": "8"
+    },
+    {
+      "act": "1",
+      "id": "34",
+      "info": "Trong phần [Nhóm] sử dụng chức năng mời nhóm, mỗi lần tạo hoặc gia nhập nhóm, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Tạo hoặc Gia nhập 1 nhóm",
+      "nid": "560",
+      "pos": "12"
+    },
+    {
+      "act": "30",
+      "id": "35",
+      "info": "Hoàn thành phụ bản Trở Về Lang Huyệt cấp 100, nhận 30 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành Phụ bản Quỷ Hút Máu cấp 120\\t\\t\\t\\t\\t\\t\\r",
+      "nid": "200",
+      "pos": "34"
+    },
+    {
+      "act": "40",
+      "id": "36",
+      "info": "Hoàn thành phụ bản Mê Trận, nhận 40 điểm năng nổ",
+      "linkType": "-1",
+      "max": "1",
+      "name": "Hoàn thành phụ bản Mê Trận",
+      "nid": "-1",
+      "pos": "26"
+    },
+    {
+      "act": "5",
+      "id": "37",
+      "info": "Mỗi lần khiêu chiến nhận thưởng, nhận 5 điểm năng nổ",
+      "linkType": "2",
+      "max": "10",
+      "name": "Hoàn thành Sổ Tay Ma Vật",
+      "nid": "931",
+      "pos": "27"
+    },
+    {
+      "act": "30",
+      "id": "38",
+      "info": "Nhận thưởng Kiếp Nạn Vô Ưu, nhận 30 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Hoàn thành Kiếp Nạn Vô Ưu",
+      "nid": "-1",
+      "pos": "28"
+    },
+    {
+      "act": "1",
+      "id": "42",
+      "info": "Nuôi dưỡng Tiểu Tinh Linh một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Nuôi dưỡng Tiểu Tinh Linh một lần",
+      "nid": "838",
+      "pos": "0"
+    },
+    {
+      "act": "30",
+      "id": "41",
+      "info": "Hoàn thành phụ bản Thế Giới Số lv150, nhận 30 điểm năng nổ",
+      "linkType": "1",
+      "max": "1",
+      "name": "Hoàn thành phụ bản Thế Giới Số lv150",
+      "nid": "200",
+      "pos": "35"
+    },
+    {
+      "act": "1",
+      "id": "43",
+      "info": "Thu thập Năng Lượng Tự Nhiên một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Thu thập Năng Lượng Tự Nhiên một lần",
+      "nid": "883",
+      "pos": "1"
+    },
+    {
+      "act": "1",
+      "id": "44",
+      "info": "Rút Công Thức Thời Trang một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Rút Công Thức Thời Trang một lần",
+      "nid": "926",
+      "pos": "2"
+    },
+    {
+      "act": "1",
+      "id": "45",
+      "info": "Chế tạo Bí Bảo một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Chế tạo Bí Bảo một lần",
+      "nid": "941",
+      "pos": "3"
+    },
+    {
+      "act": "1",
+      "id": "46",
+      "info": "Rút Thẻ Pha Lê một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Rút Thẻ Pha Lê một lần",
+      "nid": "849",
+      "pos": "4"
+    },
+    {
+      "act": "1",
+      "id": "47",
+      "info": "Tu Luyện Tinh Cung một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Tu Luyện Tinh Cung một lần",
+      "nid": "230",
+      "pos": "5"
+    },
+    {
+      "act": "1",
+      "id": "48",
+      "info": "Đổi thưởng tại Không Gian Điêu Khắc một lần, nhận 1 điểm năng nổ",
+      "linkType": "2",
+      "max": "1",
+      "name": "Đổi thưởng tại Không Gian Điêu Khắc một lần",
+      "nid": "979",
+      "pos": "6"
+    }
+  ]
+}

@@ -1,0 +1,388 @@
+// Marriage handler for marriage-related RPC calls.
+// Handles marriage panel initialization, seeking, requests, and management.
+package handlers
+
+import (
+	"strconv"
+
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+type MarriageHandler struct {
+	logger *zap.Logger
+}
+
+func NewMarriageHandler(logger *zap.Logger) *MarriageHandler {
+	return &MarriageHandler{
+		logger: logger,
+	}
+}
+
+func (h *MarriageHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("initMarriage", h.InitMarriage)
+	dispatcher.Register("marriageSeeking", h.MarriageSeeking)
+	dispatcher.Register("marriageRequest", h.MarriageRequest)
+	dispatcher.Register("marriageReqFeedback", h.MarriageReqFeedback)
+	dispatcher.Register("cancelMarriageSekInfo", h.CancelMarriageSekInfo)
+	dispatcher.Register("getCoupleRank", h.GetCoupleRank)
+}
+
+// InitMarriage initializes the marriage panel.
+// Client call: _core.remote.initMarriage(firstFlag)
+// Parameters:
+//   - firstFlag (Boolean): Whether this is the first time opening the panel
+//
+// Response: Sends callbacks:
+//   - onInitMarriageSekList({seekingList[]}) - List of characters seeking marriage
+//   - onInitCharMarriageList({marriageList[]}) - List of character's marriage requests/seeking info
+func (h *MarriageHandler) InitMarriage(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("InitMarriage: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("InitMarriage: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	firstFlag := false
+	if len(args) > 0 {
+		if flag, ok := args[0].(bool); ok {
+			firstFlag = flag
+		}
+	}
+
+	h.logger.Debug("InitMarriage: initializing marriage panel",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Bool("first_flag", firstFlag))
+
+	// Default response - empty lists
+	// In a full implementation, this would:
+	// 1. Get list of characters seeking marriage (marriage seeking list)
+	// 2. Get character's own marriage seeking info (if any)
+	// 3. Get character's marriage requests (sent and received)
+	seekingList := []interface{}{}
+	charMarriageList := []interface{}{}
+
+	// Send callback for seeking list
+	if err := ctx.Connection.SendCallback("onInitMarriageSekList", seekingList); err != nil {
+		h.logger.Error("InitMarriage: failed to send onInitMarriageSekList callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	// Send callback for character's marriage list
+	if err := ctx.Connection.SendCallback("onInitCharMarriageList", charMarriageList); err != nil {
+		h.logger.Error("InitMarriage: failed to send onInitCharMarriageList callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	h.logger.Info("InitMarriage: returning marriage data",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("seeking_count", len(seekingList)),
+		zap.Int("marriage_count", len(charMarriageList)))
+
+	return nil, nil
+}
+
+// MarriageSeeking registers or updates marriage seeking information.
+// Client call: _core.remote.marriageSeeking(introduce, flag)
+// Parameters:
+//   - introduce (String): Introduction text
+//   - flag (Number): Flag (0 = normal, 1 = advanced/premium)
+//
+// Response: Sends callback onInitCharMarriageList({marriageList[]})
+func (h *MarriageHandler) MarriageSeeking(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("MarriageSeeking: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if len(args) < 2 {
+		h.logger.Warn("MarriageSeeking: missing parameters",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	introduce, _ := args[0].(string)
+	var flag int
+	switch v := args[1].(type) {
+	case float64:
+		flag = int(v)
+	case int:
+		flag = v
+	case int64:
+		flag = int(v)
+	default:
+		flag = 0
+	}
+
+	h.logger.Info("MarriageSeeking: registering marriage seeking",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr),
+		zap.String("introduce", introduce),
+		zap.Int("flag", flag))
+
+	// Default response
+	// In a full implementation, this would:
+	// 1. Create or update marriage seeking record in database
+	// 2. Return updated character marriage list
+	charMarriageList := []interface{}{}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onInitCharMarriageList", charMarriageList); err != nil {
+		h.logger.Error("MarriageSeeking: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+// MarriageRequest sends a marriage request to another character.
+// Client call: _core.remote.marriageRequest(cid, name, introduce)
+// Parameters:
+//   - cid (Number): Target character ID
+//   - name (String): Target character name
+//   - introduce (String): Introduction text
+//
+// Response: Sends callback onInitCharMarriageList({marriageList[]})
+func (h *MarriageHandler) MarriageRequest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("MarriageRequest: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if len(args) < 3 {
+		h.logger.Warn("MarriageRequest: missing parameters",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var targetCID int64
+	switch v := args[0].(type) {
+	case float64:
+		targetCID = int64(v)
+	case int:
+		targetCID = int64(v)
+	case int64:
+		targetCID = v
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	targetName, _ := args[1].(string)
+	introduce, _ := args[2].(string)
+
+	h.logger.Info("MarriageRequest: sending marriage request",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr),
+		zap.Int64("target_cid", targetCID),
+		zap.String("target_name", targetName),
+		zap.String("introduce", introduce))
+
+	// Default response
+	// In a full implementation, this would:
+	// 1. Create marriage request in database
+	// 2. Notify target character
+	// 3. Return updated character marriage list
+	charMarriageList := []interface{}{}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onInitCharMarriageList", charMarriageList); err != nil {
+		h.logger.Error("MarriageRequest: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+// MarriageReqFeedback responds to a marriage request.
+// Client call: _core.remote.marriageReqFeedback(requestId, response)
+// Parameters:
+//   - requestId (Number): Marriage request ID
+//   - response (Number): Response (1 = accept, 2 = refuse)
+//
+// Response: Sends callback onInitCharMarriageList({marriageList[]})
+func (h *MarriageHandler) MarriageReqFeedback(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("MarriageReqFeedback: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if len(args) < 2 {
+		h.logger.Warn("MarriageReqFeedback: missing parameters",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var requestID int64
+	switch v := args[0].(type) {
+	case float64:
+		requestID = int64(v)
+	case int:
+		requestID = int64(v)
+	case int64:
+		requestID = v
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	var response int
+	switch v := args[1].(type) {
+	case float64:
+		response = int(v)
+	case int:
+		response = v
+	case int64:
+		response = int(v)
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	if response != 1 && response != 2 {
+		h.logger.Warn("MarriageReqFeedback: invalid response",
+			zap.Int("response", response))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	responseText := "refuse"
+	if response == 1 {
+		responseText = "accept"
+	}
+
+	h.logger.Info("MarriageReqFeedback: responding to marriage request",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr),
+		zap.Int64("request_id", requestID),
+		zap.String("response", responseText))
+
+	// Default response
+	// In a full implementation, this would:
+	// 1. Update marriage request status in database
+	// 2. If accepted, create marriage record
+	// 3. Notify both characters
+	// 4. Return updated character marriage list
+	charMarriageList := []interface{}{}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onInitCharMarriageList", charMarriageList); err != nil {
+		h.logger.Error("MarriageReqFeedback: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+// CancelMarriageSekInfo cancels the character's marriage seeking registration.
+// Client call: _core.remote.cancelMarriageSekInfo()
+// Parameters: None
+//
+// Response: Sends callback onInitCharMarriageList({marriageList[]})
+func (h *MarriageHandler) CancelMarriageSekInfo(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("CancelMarriageSekInfo: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("CancelMarriageSekInfo: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("CancelMarriageSekInfo: canceling marriage seeking",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	// Default response
+	// In a full implementation, this would:
+	// 1. Delete marriage seeking record from database
+	// 2. Return updated character marriage list
+	charMarriageList := []interface{}{}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onInitCharMarriageList", charMarriageList); err != nil {
+		h.logger.Error("CancelMarriageSekInfo: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+// GetCoupleRank returns the couple ranking list.
+// Client call: _core.remote.call("getCoupleRank", responder, page)
+// Parameters:
+//   - page (Number): Page number
+//
+// Response: Returns couple ranking data via callback onAddCoupleData({couples[]})
+func (h *MarriageHandler) GetCoupleRank(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("GetCoupleRank: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var page int
+	if len(args) > 0 {
+		switch v := args[0].(type) {
+		case float64:
+			page = int(v)
+		case int:
+			page = v
+		case int64:
+			page = int(v)
+		default:
+			page = 0
+		}
+	}
+
+	h.logger.Debug("GetCoupleRank: fetching couple ranking",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr),
+		zap.Int("page", page))
+
+	// Default response - empty ranking
+	// In a full implementation, this would fetch from database
+	couples := []interface{}{}
+
+	h.logger.Info("GetCoupleRank: returning couple ranking",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("page", page),
+		zap.Int("count", len(couples)))
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onAddCoupleData", couples); err != nil {
+		h.logger.Error("GetCoupleRank: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return couples, nil
+}

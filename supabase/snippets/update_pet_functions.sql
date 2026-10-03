@@ -1,0 +1,195 @@
+CREATE OR REPLACE FUNCTION player.create_character_pet(
+    p_character_id bigint,
+    p_template_id integer,
+    p_name text,
+    p_level integer,
+    p_experience bigint,
+    p_apt_strength integer,
+    p_apt_agility integer,
+    p_apt_stamina integer,
+    p_apt_intelligence integer,
+    p_apt_energy integer,
+    p_apt_strength_ex integer,
+    p_apt_agility_ex integer,
+    p_apt_stamina_ex integer,
+    p_apt_intelligence_ex integer,
+    p_apt_energy_ex integer,
+    p_grow_rate double precision,
+    p_grow_rate_add double precision,
+    p_upgrade_num integer,
+    p_evolution_lv integer,
+    p_element integer,
+    p_current_hp integer,
+    p_current_mp integer,
+    p_max_hp integer,
+    p_max_mp integer,
+    p_is_following boolean,
+    p_is_mounting boolean,
+    p_property jsonb,
+    p_created_at timestamp with time zone,
+    p_updated_at timestamp with time zone,
+    p_attr_points integer DEFAULT 0,
+    p_max_attr_points integer DEFAULT 0,
+    p_distributed_attr_points integer DEFAULT 0,
+    p_life integer DEFAULT 10000
+)
+RETURNS bigint
+LANGUAGE plpgsql
+AS $function$
+declare
+    new_id bigint;
+begin
+    insert into player.character_pets (
+        character_id,
+        template_id,
+        name,
+        level,
+        experience,
+        apt_strength,
+        apt_agility,
+        apt_stamina,
+        apt_intelligence,
+        apt_energy,
+        apt_strength_ex,
+        apt_agility_ex,
+        apt_stamina_ex,
+        apt_intelligence_ex,
+        apt_energy_ex,
+        grow_rate,
+        grow_rate_add,
+        upgrade_num,
+        evolution_lv,
+        element,
+        current_hp,
+        current_mp,
+        max_hp,
+        max_mp,
+        is_following,
+        is_mounting,
+        property,
+        created_at,
+        updated_at,
+        attr_points,
+        max_attr_points,
+        distributed_attr_points,
+        life
+    )
+    values (
+        p_character_id,
+        p_template_id,
+        p_name,
+        p_level,
+        p_experience,
+        p_apt_strength,
+        p_apt_agility,
+        p_apt_stamina,
+        p_apt_intelligence,
+        p_apt_energy,
+        p_apt_strength_ex,
+        p_apt_agility_ex,
+        p_apt_stamina_ex,
+        p_apt_intelligence_ex,
+        p_apt_energy_ex,
+        p_grow_rate,
+        p_grow_rate_add,
+        p_upgrade_num,
+        p_evolution_lv,
+        p_element,
+        p_current_hp,
+        p_current_mp,
+        p_max_hp,
+        p_max_mp,
+        p_is_following,
+        p_is_mounting,
+        p_property,
+        p_created_at,
+        p_updated_at,
+        p_attr_points,
+        p_max_attr_points,
+        p_distributed_attr_points,
+        p_life
+    )
+    returning id into new_id;
+
+    return new_id;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION player.update_character_pet(
+    p_id bigint,
+    p_template_id integer,
+    p_name text,
+    p_level integer,
+    p_experience bigint,
+    p_apt_strength integer,
+    p_apt_agility integer,
+    p_apt_stamina integer,
+    p_apt_intelligence integer,
+    p_apt_energy integer,
+    p_apt_strength_ex integer,
+    p_apt_agility_ex integer,
+    p_apt_stamina_ex integer,
+    p_apt_intelligence_ex integer,
+    p_apt_energy_ex integer,
+    p_grow_rate double precision,
+    p_grow_rate_add double precision,
+    p_upgrade_num integer,
+    p_evolution_lv integer,
+    p_element integer,
+    p_current_hp integer,
+    p_current_mp integer,
+    p_max_hp integer,
+    p_max_mp integer,
+    p_is_following boolean,
+    p_is_mounting boolean,
+    p_property jsonb,
+    p_updated_at timestamp with time zone,
+    p_attr_points integer DEFAULT 0,
+    p_max_attr_points integer DEFAULT 0,
+    p_distributed_attr_points integer DEFAULT 0,
+    p_life integer DEFAULT 10000
+)
+RETURNS boolean
+LANGUAGE plpgsql
+AS $function$
+declare
+    updated_count bigint;
+begin
+    update player.character_pets
+    set template_id = p_template_id,
+        name = p_name,
+        level = p_level,
+        experience = p_experience,
+        apt_strength = p_apt_strength,
+        apt_agility = p_apt_agility,
+        apt_stamina = p_apt_stamina,
+        apt_intelligence = p_apt_intelligence,
+        apt_energy = p_apt_energy,
+        apt_strength_ex = p_apt_strength_ex,
+        apt_agility_ex = p_apt_agility_ex,
+        apt_stamina_ex = p_apt_stamina_ex,
+        apt_intelligence_ex = p_apt_intelligence_ex,
+        apt_energy_ex = p_apt_energy_ex,
+        grow_rate = p_grow_rate,
+        grow_rate_add = p_grow_rate_add,
+        upgrade_num = p_upgrade_num,
+        evolution_lv = p_evolution_lv,
+        element = p_element,
+        current_hp = p_current_hp,
+        current_mp = p_current_mp,
+        max_hp = p_max_hp,
+        max_mp = p_max_mp,
+        is_following = p_is_following,
+        is_mounting = p_is_mounting,
+        property = p_property,
+        updated_at = p_updated_at,
+        attr_points = p_attr_points,
+        max_attr_points = p_max_attr_points,
+        distributed_attr_points = p_distributed_attr_points,
+        life = p_life
+    where id = p_id;
+
+    get diagnostics updated_count = row_count;
+    return updated_count > 0;
+end;
+$function$;

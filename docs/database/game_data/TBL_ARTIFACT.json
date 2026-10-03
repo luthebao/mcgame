@@ -1,0 +1,3008 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_ARTIFACT",
+  "recordCount": 300,
+  "records": [
+    {
+      "id": "1",
+      "itemNum": "10",
+      "level": "1",
+      "propNum1": "1462",
+      "propNum2": "41",
+      "rate": "100",
+      "spiritNum": "100000",
+      "tid": "1348"
+    },
+    {
+      "id": "2",
+      "itemNum": "10",
+      "level": "2",
+      "propNum1": "1468",
+      "propNum2": "41",
+      "rate": "90",
+      "spiritNum": "200000",
+      "tid": "1348"
+    },
+    {
+      "id": "3",
+      "itemNum": "10",
+      "level": "3",
+      "propNum1": "1474",
+      "propNum2": "42",
+      "rate": "80",
+      "spiritNum": "300000",
+      "tid": "1348"
+    },
+    {
+      "id": "4",
+      "itemNum": "10",
+      "level": "4",
+      "propNum1": "1479",
+      "propNum2": "42",
+      "rate": "70",
+      "spiritNum": "400000",
+      "tid": "1348"
+    },
+    {
+      "id": "5",
+      "itemNum": "10",
+      "level": "5",
+      "propNum1": "1485",
+      "propNum2": "42",
+      "rate": "60",
+      "spiritNum": "500000",
+      "tid": "1348"
+    },
+    {
+      "id": "6",
+      "itemNum": "20",
+      "level": "6",
+      "propNum1": "1497",
+      "propNum2": "42",
+      "rate": "50",
+      "spiritNum": "600000",
+      "tid": "1348"
+    },
+    {
+      "id": "7",
+      "itemNum": "20",
+      "level": "7",
+      "propNum1": "1509",
+      "propNum2": "43",
+      "rate": "45",
+      "spiritNum": "700000",
+      "tid": "1348"
+    },
+    {
+      "id": "8",
+      "itemNum": "20",
+      "level": "8",
+      "propNum1": "1520",
+      "propNum2": "43",
+      "rate": "40",
+      "spiritNum": "800000",
+      "tid": "1348"
+    },
+    {
+      "id": "9",
+      "itemNum": "20",
+      "level": "9",
+      "propNum1": "1532",
+      "propNum2": "43",
+      "rate": "35",
+      "spiritNum": "900000",
+      "tid": "1348"
+    },
+    {
+      "id": "10",
+      "itemNum": "20",
+      "level": "10",
+      "propNum1": "1544",
+      "propNum2": "44",
+      "rate": "30",
+      "spiritNum": "1000000",
+      "tid": "1348"
+    },
+    {
+      "id": "11",
+      "itemNum": "30",
+      "level": "11",
+      "propNum1": "1561",
+      "propNum2": "44",
+      "rate": "70",
+      "spiritNum": "1100000",
+      "tid": "1348"
+    },
+    {
+      "id": "12",
+      "itemNum": "30",
+      "level": "12",
+      "propNum1": "1579",
+      "propNum2": "45",
+      "rate": "65",
+      "spiritNum": "1200000",
+      "tid": "1348"
+    },
+    {
+      "id": "13",
+      "itemNum": "30",
+      "level": "13",
+      "propNum1": "1596",
+      "propNum2": "45",
+      "rate": "60",
+      "spiritNum": "1300000",
+      "tid": "1348"
+    },
+    {
+      "id": "14",
+      "itemNum": "30",
+      "level": "14",
+      "propNum1": "1614",
+      "propNum2": "46",
+      "rate": "55",
+      "spiritNum": "1400000",
+      "tid": "1348"
+    },
+    {
+      "id": "15",
+      "itemNum": "30",
+      "level": "15",
+      "propNum1": "1631",
+      "propNum2": "46",
+      "rate": "50",
+      "spiritNum": "1500000",
+      "tid": "1348"
+    },
+    {
+      "id": "16",
+      "itemNum": "50",
+      "level": "16",
+      "propNum1": "1654",
+      "propNum2": "47",
+      "rate": "45",
+      "spiritNum": "1600000",
+      "tid": "1348"
+    },
+    {
+      "id": "17",
+      "itemNum": "50",
+      "level": "17",
+      "propNum1": "1678",
+      "propNum2": "47",
+      "rate": "40",
+      "spiritNum": "1700000",
+      "tid": "1348"
+    },
+    {
+      "id": "18",
+      "itemNum": "50",
+      "level": "18",
+      "propNum1": "1701",
+      "propNum2": "48",
+      "rate": "35",
+      "spiritNum": "1800000",
+      "tid": "1348"
+    },
+    {
+      "id": "19",
+      "itemNum": "50",
+      "level": "19",
+      "propNum1": "1724",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "1900000",
+      "tid": "1348"
+    },
+    {
+      "id": "20",
+      "itemNum": "50",
+      "level": "20",
+      "propNum1": "1748",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "2000000",
+      "tid": "1348"
+    },
+    {
+      "id": "21",
+      "itemNum": "70",
+      "level": "21",
+      "propNum1": "1783",
+      "propNum2": "50",
+      "rate": "65",
+      "spiritNum": "2100000",
+      "tid": "1348"
+    },
+    {
+      "id": "22",
+      "itemNum": "70",
+      "level": "22",
+      "propNum1": "1818",
+      "propNum2": "51",
+      "rate": "60",
+      "spiritNum": "2200000",
+      "tid": "1348"
+    },
+    {
+      "id": "23",
+      "itemNum": "70",
+      "level": "23",
+      "propNum1": "1853",
+      "propNum2": "52",
+      "rate": "55",
+      "spiritNum": "2300000",
+      "tid": "1348"
+    },
+    {
+      "id": "24",
+      "itemNum": "70",
+      "level": "24",
+      "propNum1": "1888",
+      "propNum2": "53",
+      "rate": "50",
+      "spiritNum": "2400000",
+      "tid": "1348"
+    },
+    {
+      "id": "25",
+      "itemNum": "70",
+      "level": "25",
+      "propNum1": "1923",
+      "propNum2": "54",
+      "rate": "45",
+      "spiritNum": "2500000",
+      "tid": "1348"
+    },
+    {
+      "id": "26",
+      "itemNum": "90",
+      "level": "26",
+      "propNum1": "1964",
+      "propNum2": "56",
+      "rate": "40",
+      "spiritNum": "2600000",
+      "tid": "1348"
+    },
+    {
+      "id": "27",
+      "itemNum": "90",
+      "level": "27",
+      "propNum1": "2005",
+      "propNum2": "57",
+      "rate": "35",
+      "spiritNum": "2700000",
+      "tid": "1348"
+    },
+    {
+      "id": "28",
+      "itemNum": "90",
+      "level": "28",
+      "propNum1": "2045",
+      "propNum2": "58",
+      "rate": "30",
+      "spiritNum": "2800000",
+      "tid": "1348"
+    },
+    {
+      "id": "29",
+      "itemNum": "90",
+      "level": "29",
+      "propNum1": "2086",
+      "propNum2": "59",
+      "rate": "30",
+      "spiritNum": "2900000",
+      "tid": "1348"
+    },
+    {
+      "id": "30",
+      "itemNum": "90",
+      "level": "30",
+      "propNum1": "2127",
+      "propNum2": "60",
+      "rate": "30",
+      "spiritNum": "3000000",
+      "tid": "1348"
+    },
+    {
+      "id": "31",
+      "itemNum": "110",
+      "level": "31",
+      "propNum1": "2174",
+      "propNum2": "62",
+      "rate": "60",
+      "spiritNum": "3100000",
+      "tid": "1348"
+    },
+    {
+      "id": "32",
+      "itemNum": "110",
+      "level": "32",
+      "propNum1": "2221",
+      "propNum2": "63",
+      "rate": "55",
+      "spiritNum": "3200000",
+      "tid": "1348"
+    },
+    {
+      "id": "33",
+      "itemNum": "110",
+      "level": "33",
+      "propNum1": "2267",
+      "propNum2": "64",
+      "rate": "50",
+      "spiritNum": "3300000",
+      "tid": "1348"
+    },
+    {
+      "id": "34",
+      "itemNum": "110",
+      "level": "34",
+      "propNum1": "2314",
+      "propNum2": "66",
+      "rate": "45",
+      "spiritNum": "3400000",
+      "tid": "1348"
+    },
+    {
+      "id": "35",
+      "itemNum": "110",
+      "level": "35",
+      "propNum1": "2361",
+      "propNum2": "67",
+      "rate": "40",
+      "spiritNum": "3500000",
+      "tid": "1348"
+    },
+    {
+      "id": "36",
+      "itemNum": "130",
+      "level": "36",
+      "propNum1": "2413",
+      "propNum2": "68",
+      "rate": "35",
+      "spiritNum": "3600000",
+      "tid": "1348"
+    },
+    {
+      "id": "37",
+      "itemNum": "130",
+      "level": "37",
+      "propNum1": "2466",
+      "propNum2": "70",
+      "rate": "30",
+      "spiritNum": "3700000",
+      "tid": "1348"
+    },
+    {
+      "id": "38",
+      "itemNum": "130",
+      "level": "38",
+      "propNum1": "2518",
+      "propNum2": "71",
+      "rate": "30",
+      "spiritNum": "3800000",
+      "tid": "1348"
+    },
+    {
+      "id": "39",
+      "itemNum": "130",
+      "level": "39",
+      "propNum1": "2571",
+      "propNum2": "73",
+      "rate": "30",
+      "spiritNum": "3900000",
+      "tid": "1348"
+    },
+    {
+      "id": "40",
+      "itemNum": "130",
+      "level": "40",
+      "propNum1": "2623",
+      "propNum2": "74",
+      "rate": "30",
+      "spiritNum": "4000000",
+      "tid": "1348"
+    },
+    {
+      "id": "41",
+      "itemNum": "150",
+      "level": "41",
+      "propNum1": "2682",
+      "propNum2": "76",
+      "rate": "55",
+      "spiritNum": "4100000",
+      "tid": "1348"
+    },
+    {
+      "id": "42",
+      "itemNum": "150",
+      "level": "42",
+      "propNum1": "2740",
+      "propNum2": "78",
+      "rate": "50",
+      "spiritNum": "4200000",
+      "tid": "1348"
+    },
+    {
+      "id": "43",
+      "itemNum": "150",
+      "level": "43",
+      "propNum1": "2798",
+      "propNum2": "79",
+      "rate": "45",
+      "spiritNum": "4300000",
+      "tid": "1348"
+    },
+    {
+      "id": "44",
+      "itemNum": "150",
+      "level": "44",
+      "propNum1": "2857",
+      "propNum2": "81",
+      "rate": "40",
+      "spiritNum": "4400000",
+      "tid": "1348"
+    },
+    {
+      "id": "45",
+      "itemNum": "150",
+      "level": "45",
+      "propNum1": "2915",
+      "propNum2": "83",
+      "rate": "35",
+      "spiritNum": "4500000",
+      "tid": "1348"
+    },
+    {
+      "id": "46",
+      "itemNum": "170",
+      "level": "46",
+      "propNum1": "2979",
+      "propNum2": "85",
+      "rate": "30",
+      "spiritNum": "4600000",
+      "tid": "1348"
+    },
+    {
+      "id": "47",
+      "itemNum": "170",
+      "level": "47",
+      "propNum1": "3043",
+      "propNum2": "86",
+      "rate": "30",
+      "spiritNum": "4700000",
+      "tid": "1348"
+    },
+    {
+      "id": "48",
+      "itemNum": "170",
+      "level": "48",
+      "propNum1": "3108",
+      "propNum2": "88",
+      "rate": "30",
+      "spiritNum": "4800000",
+      "tid": "1348"
+    },
+    {
+      "id": "49",
+      "itemNum": "170",
+      "level": "49",
+      "propNum1": "3172",
+      "propNum2": "90",
+      "rate": "30",
+      "spiritNum": "4900000",
+      "tid": "1348"
+    },
+    {
+      "id": "50",
+      "itemNum": "170",
+      "level": "50",
+      "propNum1": "3236",
+      "propNum2": "92",
+      "rate": "30",
+      "spiritNum": "5000000",
+      "tid": "1348"
+    },
+    {
+      "id": "51",
+      "itemNum": "10",
+      "level": "1",
+      "propNum1": "1006",
+      "propNum2": "41",
+      "rate": "100",
+      "spiritNum": "100000",
+      "tid": "1349"
+    },
+    {
+      "id": "52",
+      "itemNum": "10",
+      "level": "2",
+      "propNum1": "1010",
+      "propNum2": "41",
+      "rate": "90",
+      "spiritNum": "200000",
+      "tid": "1349"
+    },
+    {
+      "id": "53",
+      "itemNum": "10",
+      "level": "3",
+      "propNum1": "1014",
+      "propNum2": "42",
+      "rate": "80",
+      "spiritNum": "300000",
+      "tid": "1349"
+    },
+    {
+      "id": "54",
+      "itemNum": "10",
+      "level": "4",
+      "propNum1": "1018",
+      "propNum2": "42",
+      "rate": "70",
+      "spiritNum": "400000",
+      "tid": "1349"
+    },
+    {
+      "id": "55",
+      "itemNum": "10",
+      "level": "5",
+      "propNum1": "1022",
+      "propNum2": "42",
+      "rate": "60",
+      "spiritNum": "500000",
+      "tid": "1349"
+    },
+    {
+      "id": "56",
+      "itemNum": "20",
+      "level": "6",
+      "propNum1": "1030",
+      "propNum2": "42",
+      "rate": "50",
+      "spiritNum": "600000",
+      "tid": "1349"
+    },
+    {
+      "id": "57",
+      "itemNum": "20",
+      "level": "7",
+      "propNum1": "1038",
+      "propNum2": "43",
+      "rate": "45",
+      "spiritNum": "700000",
+      "tid": "1349"
+    },
+    {
+      "id": "58",
+      "itemNum": "20",
+      "level": "8",
+      "propNum1": "1046",
+      "propNum2": "43",
+      "rate": "40",
+      "spiritNum": "800000",
+      "tid": "1349"
+    },
+    {
+      "id": "59",
+      "itemNum": "20",
+      "level": "9",
+      "propNum1": "1054",
+      "propNum2": "43",
+      "rate": "35",
+      "spiritNum": "900000",
+      "tid": "1349"
+    },
+    {
+      "id": "60",
+      "itemNum": "20",
+      "level": "10",
+      "propNum1": "1062",
+      "propNum2": "44",
+      "rate": "30",
+      "spiritNum": "1000000",
+      "tid": "1349"
+    },
+    {
+      "id": "61",
+      "itemNum": "30",
+      "level": "11",
+      "propNum1": "1074",
+      "propNum2": "44",
+      "rate": "70",
+      "spiritNum": "1100000",
+      "tid": "1349"
+    },
+    {
+      "id": "62",
+      "itemNum": "30",
+      "level": "12",
+      "propNum1": "1086",
+      "propNum2": "45",
+      "rate": "65",
+      "spiritNum": "1200000",
+      "tid": "1349"
+    },
+    {
+      "id": "63",
+      "itemNum": "30",
+      "level": "13",
+      "propNum1": "1098",
+      "propNum2": "45",
+      "rate": "60",
+      "spiritNum": "1300000",
+      "tid": "1349"
+    },
+    {
+      "id": "64",
+      "itemNum": "30",
+      "level": "14",
+      "propNum1": "1111",
+      "propNum2": "46",
+      "rate": "55",
+      "spiritNum": "1400000",
+      "tid": "1349"
+    },
+    {
+      "id": "65",
+      "itemNum": "30",
+      "level": "15",
+      "propNum1": "1123",
+      "propNum2": "46",
+      "rate": "50",
+      "spiritNum": "1500000",
+      "tid": "1349"
+    },
+    {
+      "id": "66",
+      "itemNum": "50",
+      "level": "16",
+      "propNum1": "1139",
+      "propNum2": "47",
+      "rate": "45",
+      "spiritNum": "1600000",
+      "tid": "1349"
+    },
+    {
+      "id": "67",
+      "itemNum": "50",
+      "level": "17",
+      "propNum1": "1155",
+      "propNum2": "47",
+      "rate": "40",
+      "spiritNum": "1700000",
+      "tid": "1349"
+    },
+    {
+      "id": "68",
+      "itemNum": "50",
+      "level": "18",
+      "propNum1": "1171",
+      "propNum2": "48",
+      "rate": "35",
+      "spiritNum": "1800000",
+      "tid": "1349"
+    },
+    {
+      "id": "69",
+      "itemNum": "50",
+      "level": "19",
+      "propNum1": "1187",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "1900000",
+      "tid": "1349"
+    },
+    {
+      "id": "70",
+      "itemNum": "50",
+      "level": "20",
+      "propNum1": "1203",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "2000000",
+      "tid": "1349"
+    },
+    {
+      "id": "71",
+      "itemNum": "70",
+      "level": "21",
+      "propNum1": "1227",
+      "propNum2": "50",
+      "rate": "65",
+      "spiritNum": "2100000",
+      "tid": "1349"
+    },
+    {
+      "id": "72",
+      "itemNum": "70",
+      "level": "22",
+      "propNum1": "1251",
+      "propNum2": "51",
+      "rate": "60",
+      "spiritNum": "2200000",
+      "tid": "1349"
+    },
+    {
+      "id": "73",
+      "itemNum": "70",
+      "level": "23",
+      "propNum1": "1275",
+      "propNum2": "52",
+      "rate": "55",
+      "spiritNum": "2300000",
+      "tid": "1349"
+    },
+    {
+      "id": "74",
+      "itemNum": "70",
+      "level": "24",
+      "propNum1": "1299",
+      "propNum2": "53",
+      "rate": "50",
+      "spiritNum": "2400000",
+      "tid": "1349"
+    },
+    {
+      "id": "75",
+      "itemNum": "70",
+      "level": "25",
+      "propNum1": "1324",
+      "propNum2": "54",
+      "rate": "45",
+      "spiritNum": "2500000",
+      "tid": "1349"
+    },
+    {
+      "id": "76",
+      "itemNum": "90",
+      "level": "26",
+      "propNum1": "1352",
+      "propNum2": "56",
+      "rate": "40",
+      "spiritNum": "2600000",
+      "tid": "1349"
+    },
+    {
+      "id": "77",
+      "itemNum": "90",
+      "level": "27",
+      "propNum1": "1380",
+      "propNum2": "57",
+      "rate": "35",
+      "spiritNum": "2700000",
+      "tid": "1349"
+    },
+    {
+      "id": "78",
+      "itemNum": "90",
+      "level": "28",
+      "propNum1": "1408",
+      "propNum2": "58",
+      "rate": "30",
+      "spiritNum": "2800000",
+      "tid": "1349"
+    },
+    {
+      "id": "79",
+      "itemNum": "90",
+      "level": "29",
+      "propNum1": "1436",
+      "propNum2": "59",
+      "rate": "30",
+      "spiritNum": "2900000",
+      "tid": "1349"
+    },
+    {
+      "id": "80",
+      "itemNum": "90",
+      "level": "30",
+      "propNum1": "1464",
+      "propNum2": "60",
+      "rate": "30",
+      "spiritNum": "3000000",
+      "tid": "1349"
+    },
+    {
+      "id": "81",
+      "itemNum": "110",
+      "level": "31",
+      "propNum1": "1496",
+      "propNum2": "62",
+      "rate": "60",
+      "spiritNum": "3100000",
+      "tid": "1349"
+    },
+    {
+      "id": "82",
+      "itemNum": "110",
+      "level": "32",
+      "propNum1": "1529",
+      "propNum2": "63",
+      "rate": "55",
+      "spiritNum": "3200000",
+      "tid": "1349"
+    },
+    {
+      "id": "83",
+      "itemNum": "110",
+      "level": "33",
+      "propNum1": "1561",
+      "propNum2": "64",
+      "rate": "50",
+      "spiritNum": "3300000",
+      "tid": "1349"
+    },
+    {
+      "id": "84",
+      "itemNum": "110",
+      "level": "34",
+      "propNum1": "1593",
+      "propNum2": "66",
+      "rate": "45",
+      "spiritNum": "3400000",
+      "tid": "1349"
+    },
+    {
+      "id": "85",
+      "itemNum": "110",
+      "level": "35",
+      "propNum1": "1625",
+      "propNum2": "67",
+      "rate": "40",
+      "spiritNum": "3500000",
+      "tid": "1349"
+    },
+    {
+      "id": "86",
+      "itemNum": "130",
+      "level": "36",
+      "propNum1": "1661",
+      "propNum2": "68",
+      "rate": "35",
+      "spiritNum": "3600000",
+      "tid": "1349"
+    },
+    {
+      "id": "87",
+      "itemNum": "130",
+      "level": "37",
+      "propNum1": "1697",
+      "propNum2": "70",
+      "rate": "30",
+      "spiritNum": "3700000",
+      "tid": "1349"
+    },
+    {
+      "id": "88",
+      "itemNum": "130",
+      "level": "38",
+      "propNum1": "1734",
+      "propNum2": "71",
+      "rate": "30",
+      "spiritNum": "3800000",
+      "tid": "1349"
+    },
+    {
+      "id": "89",
+      "itemNum": "130",
+      "level": "39",
+      "propNum1": "1770",
+      "propNum2": "73",
+      "rate": "30",
+      "spiritNum": "3900000",
+      "tid": "1349"
+    },
+    {
+      "id": "90",
+      "itemNum": "130",
+      "level": "40",
+      "propNum1": "1806",
+      "propNum2": "74",
+      "rate": "30",
+      "spiritNum": "4000000",
+      "tid": "1349"
+    },
+    {
+      "id": "91",
+      "itemNum": "150",
+      "level": "41",
+      "propNum1": "1846",
+      "propNum2": "76",
+      "rate": "55",
+      "spiritNum": "4100000",
+      "tid": "1349"
+    },
+    {
+      "id": "92",
+      "itemNum": "150",
+      "level": "42",
+      "propNum1": "1886",
+      "propNum2": "78",
+      "rate": "50",
+      "spiritNum": "4200000",
+      "tid": "1349"
+    },
+    {
+      "id": "93",
+      "itemNum": "150",
+      "level": "43",
+      "propNum1": "1927",
+      "propNum2": "79",
+      "rate": "45",
+      "spiritNum": "4300000",
+      "tid": "1349"
+    },
+    {
+      "id": "94",
+      "itemNum": "150",
+      "level": "44",
+      "propNum1": "1967",
+      "propNum2": "81",
+      "rate": "40",
+      "spiritNum": "4400000",
+      "tid": "1349"
+    },
+    {
+      "id": "95",
+      "itemNum": "150",
+      "level": "45",
+      "propNum1": "2007",
+      "propNum2": "83",
+      "rate": "35",
+      "spiritNum": "4500000",
+      "tid": "1349"
+    },
+    {
+      "id": "96",
+      "itemNum": "170",
+      "level": "46",
+      "propNum1": "2051",
+      "propNum2": "85",
+      "rate": "30",
+      "spiritNum": "4600000",
+      "tid": "1349"
+    },
+    {
+      "id": "97",
+      "itemNum": "170",
+      "level": "47",
+      "propNum1": "2095",
+      "propNum2": "86",
+      "rate": "30",
+      "spiritNum": "4700000",
+      "tid": "1349"
+    },
+    {
+      "id": "98",
+      "itemNum": "170",
+      "level": "48",
+      "propNum1": "2140",
+      "propNum2": "88",
+      "rate": "30",
+      "spiritNum": "4800000",
+      "tid": "1349"
+    },
+    {
+      "id": "99",
+      "itemNum": "170",
+      "level": "49",
+      "propNum1": "2184",
+      "propNum2": "90",
+      "rate": "30",
+      "spiritNum": "4900000",
+      "tid": "1349"
+    },
+    {
+      "id": "100",
+      "itemNum": "170",
+      "level": "50",
+      "propNum1": "2228",
+      "propNum2": "92",
+      "rate": "30",
+      "spiritNum": "5000000",
+      "tid": "1349"
+    },
+    {
+      "id": "101",
+      "itemNum": "10",
+      "level": "1",
+      "propNum1": "823",
+      "propNum2": "41",
+      "rate": "100",
+      "spiritNum": "100000",
+      "tid": "1350"
+    },
+    {
+      "id": "102",
+      "itemNum": "10",
+      "level": "2",
+      "propNum1": "827",
+      "propNum2": "41",
+      "rate": "90",
+      "spiritNum": "200000",
+      "tid": "1350"
+    },
+    {
+      "id": "103",
+      "itemNum": "10",
+      "level": "3",
+      "propNum1": "830",
+      "propNum2": "42",
+      "rate": "80",
+      "spiritNum": "300000",
+      "tid": "1350"
+    },
+    {
+      "id": "104",
+      "itemNum": "10",
+      "level": "4",
+      "propNum1": "833",
+      "propNum2": "42",
+      "rate": "70",
+      "spiritNum": "400000",
+      "tid": "1350"
+    },
+    {
+      "id": "105",
+      "itemNum": "10",
+      "level": "5",
+      "propNum1": "836",
+      "propNum2": "42",
+      "rate": "60",
+      "spiritNum": "500000",
+      "tid": "1350"
+    },
+    {
+      "id": "106",
+      "itemNum": "20",
+      "level": "6",
+      "propNum1": "843",
+      "propNum2": "42",
+      "rate": "50",
+      "spiritNum": "600000",
+      "tid": "1350"
+    },
+    {
+      "id": "107",
+      "itemNum": "20",
+      "level": "7",
+      "propNum1": "850",
+      "propNum2": "43",
+      "rate": "45",
+      "spiritNum": "700000",
+      "tid": "1350"
+    },
+    {
+      "id": "108",
+      "itemNum": "20",
+      "level": "8",
+      "propNum1": "856",
+      "propNum2": "43",
+      "rate": "40",
+      "spiritNum": "800000",
+      "tid": "1350"
+    },
+    {
+      "id": "109",
+      "itemNum": "20",
+      "level": "9",
+      "propNum1": "863",
+      "propNum2": "43",
+      "rate": "35",
+      "spiritNum": "900000",
+      "tid": "1350"
+    },
+    {
+      "id": "110",
+      "itemNum": "20",
+      "level": "10",
+      "propNum1": "869",
+      "propNum2": "44",
+      "rate": "30",
+      "spiritNum": "1000000",
+      "tid": "1350"
+    },
+    {
+      "id": "111",
+      "itemNum": "30",
+      "level": "11",
+      "propNum1": "879",
+      "propNum2": "44",
+      "rate": "70",
+      "spiritNum": "1100000",
+      "tid": "1350"
+    },
+    {
+      "id": "112",
+      "itemNum": "30",
+      "level": "12",
+      "propNum1": "889",
+      "propNum2": "45",
+      "rate": "65",
+      "spiritNum": "1200000",
+      "tid": "1350"
+    },
+    {
+      "id": "113",
+      "itemNum": "30",
+      "level": "13",
+      "propNum1": "899",
+      "propNum2": "45",
+      "rate": "60",
+      "spiritNum": "1300000",
+      "tid": "1350"
+    },
+    {
+      "id": "114",
+      "itemNum": "30",
+      "level": "14",
+      "propNum1": "909",
+      "propNum2": "46",
+      "rate": "55",
+      "spiritNum": "1400000",
+      "tid": "1350"
+    },
+    {
+      "id": "115",
+      "itemNum": "30",
+      "level": "15",
+      "propNum1": "919",
+      "propNum2": "46",
+      "rate": "50",
+      "spiritNum": "1500000",
+      "tid": "1350"
+    },
+    {
+      "id": "116",
+      "itemNum": "50",
+      "level": "16",
+      "propNum1": "932",
+      "propNum2": "47",
+      "rate": "45",
+      "spiritNum": "1600000",
+      "tid": "1350"
+    },
+    {
+      "id": "117",
+      "itemNum": "50",
+      "level": "17",
+      "propNum1": "945",
+      "propNum2": "47",
+      "rate": "40",
+      "spiritNum": "1700000",
+      "tid": "1350"
+    },
+    {
+      "id": "118",
+      "itemNum": "50",
+      "level": "18",
+      "propNum1": "958",
+      "propNum2": "48",
+      "rate": "35",
+      "spiritNum": "1800000",
+      "tid": "1350"
+    },
+    {
+      "id": "119",
+      "itemNum": "50",
+      "level": "19",
+      "propNum1": "971",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "1900000",
+      "tid": "1350"
+    },
+    {
+      "id": "120",
+      "itemNum": "50",
+      "level": "20",
+      "propNum1": "985",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "2000000",
+      "tid": "1350"
+    },
+    {
+      "id": "121",
+      "itemNum": "70",
+      "level": "21",
+      "propNum1": "1004",
+      "propNum2": "50",
+      "rate": "65",
+      "spiritNum": "2100000",
+      "tid": "1350"
+    },
+    {
+      "id": "122",
+      "itemNum": "70",
+      "level": "22",
+      "propNum1": "1024",
+      "propNum2": "51",
+      "rate": "60",
+      "spiritNum": "2200000",
+      "tid": "1350"
+    },
+    {
+      "id": "123",
+      "itemNum": "70",
+      "level": "23",
+      "propNum1": "1044",
+      "propNum2": "52",
+      "rate": "55",
+      "spiritNum": "2300000",
+      "tid": "1350"
+    },
+    {
+      "id": "124",
+      "itemNum": "70",
+      "level": "24",
+      "propNum1": "1064",
+      "propNum2": "53",
+      "rate": "50",
+      "spiritNum": "2400000",
+      "tid": "1350"
+    },
+    {
+      "id": "125",
+      "itemNum": "70",
+      "level": "25",
+      "propNum1": "1083",
+      "propNum2": "54",
+      "rate": "45",
+      "spiritNum": "2500000",
+      "tid": "1350"
+    },
+    {
+      "id": "126",
+      "itemNum": "90",
+      "level": "26",
+      "propNum1": "1106",
+      "propNum2": "56",
+      "rate": "40",
+      "spiritNum": "2600000",
+      "tid": "1350"
+    },
+    {
+      "id": "127",
+      "itemNum": "90",
+      "level": "27",
+      "propNum1": "1129",
+      "propNum2": "57",
+      "rate": "35",
+      "spiritNum": "2700000",
+      "tid": "1350"
+    },
+    {
+      "id": "128",
+      "itemNum": "90",
+      "level": "28",
+      "propNum1": "1152",
+      "propNum2": "58",
+      "rate": "30",
+      "spiritNum": "2800000",
+      "tid": "1350"
+    },
+    {
+      "id": "129",
+      "itemNum": "90",
+      "level": "29",
+      "propNum1": "1176",
+      "propNum2": "59",
+      "rate": "30",
+      "spiritNum": "2900000",
+      "tid": "1350"
+    },
+    {
+      "id": "130",
+      "itemNum": "90",
+      "level": "30",
+      "propNum1": "1199",
+      "propNum2": "60",
+      "rate": "30",
+      "spiritNum": "3000000",
+      "tid": "1350"
+    },
+    {
+      "id": "131",
+      "itemNum": "110",
+      "level": "31",
+      "propNum1": "1225",
+      "propNum2": "62",
+      "rate": "60",
+      "spiritNum": "3100000",
+      "tid": "1350"
+    },
+    {
+      "id": "132",
+      "itemNum": "110",
+      "level": "32",
+      "propNum1": "1251",
+      "propNum2": "63",
+      "rate": "55",
+      "spiritNum": "3200000",
+      "tid": "1350"
+    },
+    {
+      "id": "133",
+      "itemNum": "110",
+      "level": "33",
+      "propNum1": "1278",
+      "propNum2": "64",
+      "rate": "50",
+      "spiritNum": "3300000",
+      "tid": "1350"
+    },
+    {
+      "id": "134",
+      "itemNum": "110",
+      "level": "34",
+      "propNum1": "1304",
+      "propNum2": "66",
+      "rate": "45",
+      "spiritNum": "3400000",
+      "tid": "1350"
+    },
+    {
+      "id": "135",
+      "itemNum": "110",
+      "level": "35",
+      "propNum1": "1330",
+      "propNum2": "67",
+      "rate": "40",
+      "spiritNum": "3500000",
+      "tid": "1350"
+    },
+    {
+      "id": "136",
+      "itemNum": "130",
+      "level": "36",
+      "propNum1": "1360",
+      "propNum2": "68",
+      "rate": "35",
+      "spiritNum": "3600000",
+      "tid": "1350"
+    },
+    {
+      "id": "137",
+      "itemNum": "130",
+      "level": "37",
+      "propNum1": "1389",
+      "propNum2": "70",
+      "rate": "30",
+      "spiritNum": "3700000",
+      "tid": "1350"
+    },
+    {
+      "id": "138",
+      "itemNum": "130",
+      "level": "38",
+      "propNum1": "1419",
+      "propNum2": "71",
+      "rate": "30",
+      "spiritNum": "3800000",
+      "tid": "1350"
+    },
+    {
+      "id": "139",
+      "itemNum": "130",
+      "level": "39",
+      "propNum1": "1449",
+      "propNum2": "73",
+      "rate": "30",
+      "spiritNum": "3900000",
+      "tid": "1350"
+    },
+    {
+      "id": "140",
+      "itemNum": "130",
+      "level": "40",
+      "propNum1": "1478",
+      "propNum2": "74",
+      "rate": "30",
+      "spiritNum": "4000000",
+      "tid": "1350"
+    },
+    {
+      "id": "141",
+      "itemNum": "150",
+      "level": "41",
+      "propNum1": "1511",
+      "propNum2": "76",
+      "rate": "55",
+      "spiritNum": "4100000",
+      "tid": "1350"
+    },
+    {
+      "id": "142",
+      "itemNum": "150",
+      "level": "42",
+      "propNum1": "1544",
+      "propNum2": "78",
+      "rate": "50",
+      "spiritNum": "4200000",
+      "tid": "1350"
+    },
+    {
+      "id": "143",
+      "itemNum": "150",
+      "level": "43",
+      "propNum1": "1577",
+      "propNum2": "79",
+      "rate": "45",
+      "spiritNum": "4300000",
+      "tid": "1350"
+    },
+    {
+      "id": "144",
+      "itemNum": "150",
+      "level": "44",
+      "propNum1": "1610",
+      "propNum2": "81",
+      "rate": "40",
+      "spiritNum": "4400000",
+      "tid": "1350"
+    },
+    {
+      "id": "145",
+      "itemNum": "150",
+      "level": "45",
+      "propNum1": "1643",
+      "propNum2": "83",
+      "rate": "35",
+      "spiritNum": "4500000",
+      "tid": "1350"
+    },
+    {
+      "id": "146",
+      "itemNum": "170",
+      "level": "46",
+      "propNum1": "1679",
+      "propNum2": "85",
+      "rate": "30",
+      "spiritNum": "4600000",
+      "tid": "1350"
+    },
+    {
+      "id": "147",
+      "itemNum": "170",
+      "level": "47",
+      "propNum1": "1715",
+      "propNum2": "86",
+      "rate": "30",
+      "spiritNum": "4700000",
+      "tid": "1350"
+    },
+    {
+      "id": "148",
+      "itemNum": "170",
+      "level": "48",
+      "propNum1": "1752",
+      "propNum2": "88",
+      "rate": "30",
+      "spiritNum": "4800000",
+      "tid": "1350"
+    },
+    {
+      "id": "149",
+      "itemNum": "170",
+      "level": "49",
+      "propNum1": "1788",
+      "propNum2": "90",
+      "rate": "30",
+      "spiritNum": "4900000",
+      "tid": "1350"
+    },
+    {
+      "id": "150",
+      "itemNum": "170",
+      "level": "50",
+      "propNum1": "1824",
+      "propNum2": "92",
+      "rate": "30",
+      "spiritNum": "5000000",
+      "tid": "1350"
+    },
+    {
+      "id": "151",
+      "itemNum": "10",
+      "level": "1",
+      "propNum1": "733",
+      "propNum2": "41",
+      "rate": "100",
+      "spiritNum": "100000",
+      "tid": "1351"
+    },
+    {
+      "id": "152",
+      "itemNum": "10",
+      "level": "2",
+      "propNum1": "736",
+      "propNum2": "41",
+      "rate": "90",
+      "spiritNum": "200000",
+      "tid": "1351"
+    },
+    {
+      "id": "153",
+      "itemNum": "10",
+      "level": "3",
+      "propNum1": "739",
+      "propNum2": "42",
+      "rate": "80",
+      "spiritNum": "300000",
+      "tid": "1351"
+    },
+    {
+      "id": "154",
+      "itemNum": "10",
+      "level": "4",
+      "propNum1": "742",
+      "propNum2": "42",
+      "rate": "70",
+      "spiritNum": "400000",
+      "tid": "1351"
+    },
+    {
+      "id": "155",
+      "itemNum": "10",
+      "level": "5",
+      "propNum1": "745",
+      "propNum2": "42",
+      "rate": "60",
+      "spiritNum": "500000",
+      "tid": "1351"
+    },
+    {
+      "id": "156",
+      "itemNum": "20",
+      "level": "6",
+      "propNum1": "751",
+      "propNum2": "42",
+      "rate": "50",
+      "spiritNum": "600000",
+      "tid": "1351"
+    },
+    {
+      "id": "157",
+      "itemNum": "20",
+      "level": "7",
+      "propNum1": "756",
+      "propNum2": "43",
+      "rate": "45",
+      "spiritNum": "700000",
+      "tid": "1351"
+    },
+    {
+      "id": "158",
+      "itemNum": "20",
+      "level": "8",
+      "propNum1": "762",
+      "propNum2": "43",
+      "rate": "40",
+      "spiritNum": "800000",
+      "tid": "1351"
+    },
+    {
+      "id": "159",
+      "itemNum": "20",
+      "level": "9",
+      "propNum1": "768",
+      "propNum2": "43",
+      "rate": "35",
+      "spiritNum": "900000",
+      "tid": "1351"
+    },
+    {
+      "id": "160",
+      "itemNum": "20",
+      "level": "10",
+      "propNum1": "774",
+      "propNum2": "44",
+      "rate": "30",
+      "spiritNum": "1000000",
+      "tid": "1351"
+    },
+    {
+      "id": "161",
+      "itemNum": "30",
+      "level": "11",
+      "propNum1": "783",
+      "propNum2": "44",
+      "rate": "70",
+      "spiritNum": "1100000",
+      "tid": "1351"
+    },
+    {
+      "id": "162",
+      "itemNum": "30",
+      "level": "12",
+      "propNum1": "792",
+      "propNum2": "45",
+      "rate": "65",
+      "spiritNum": "1200000",
+      "tid": "1351"
+    },
+    {
+      "id": "163",
+      "itemNum": "30",
+      "level": "13",
+      "propNum1": "800",
+      "propNum2": "45",
+      "rate": "60",
+      "spiritNum": "1300000",
+      "tid": "1351"
+    },
+    {
+      "id": "164",
+      "itemNum": "30",
+      "level": "14",
+      "propNum1": "809",
+      "propNum2": "46",
+      "rate": "55",
+      "spiritNum": "1400000",
+      "tid": "1351"
+    },
+    {
+      "id": "165",
+      "itemNum": "30",
+      "level": "15",
+      "propNum1": "818",
+      "propNum2": "46",
+      "rate": "50",
+      "spiritNum": "1500000",
+      "tid": "1351"
+    },
+    {
+      "id": "166",
+      "itemNum": "50",
+      "level": "16",
+      "propNum1": "830",
+      "propNum2": "47",
+      "rate": "45",
+      "spiritNum": "1600000",
+      "tid": "1351"
+    },
+    {
+      "id": "167",
+      "itemNum": "50",
+      "level": "17",
+      "propNum1": "841",
+      "propNum2": "47",
+      "rate": "40",
+      "spiritNum": "1700000",
+      "tid": "1351"
+    },
+    {
+      "id": "168",
+      "itemNum": "50",
+      "level": "18",
+      "propNum1": "853",
+      "propNum2": "48",
+      "rate": "35",
+      "spiritNum": "1800000",
+      "tid": "1351"
+    },
+    {
+      "id": "169",
+      "itemNum": "50",
+      "level": "19",
+      "propNum1": "865",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "1900000",
+      "tid": "1351"
+    },
+    {
+      "id": "170",
+      "itemNum": "50",
+      "level": "20",
+      "propNum1": "877",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "2000000",
+      "tid": "1351"
+    },
+    {
+      "id": "171",
+      "itemNum": "70",
+      "level": "21",
+      "propNum1": "894",
+      "propNum2": "50",
+      "rate": "65",
+      "spiritNum": "2100000",
+      "tid": "1351"
+    },
+    {
+      "id": "172",
+      "itemNum": "70",
+      "level": "22",
+      "propNum1": "912",
+      "propNum2": "51",
+      "rate": "60",
+      "spiritNum": "2200000",
+      "tid": "1351"
+    },
+    {
+      "id": "173",
+      "itemNum": "70",
+      "level": "23",
+      "propNum1": "929",
+      "propNum2": "52",
+      "rate": "55",
+      "spiritNum": "2300000",
+      "tid": "1351"
+    },
+    {
+      "id": "174",
+      "itemNum": "70",
+      "level": "24",
+      "propNum1": "947",
+      "propNum2": "53",
+      "rate": "50",
+      "spiritNum": "2400000",
+      "tid": "1351"
+    },
+    {
+      "id": "175",
+      "itemNum": "70",
+      "level": "25",
+      "propNum1": "964",
+      "propNum2": "54",
+      "rate": "45",
+      "spiritNum": "2500000",
+      "tid": "1351"
+    },
+    {
+      "id": "176",
+      "itemNum": "90",
+      "level": "26",
+      "propNum1": "985",
+      "propNum2": "56",
+      "rate": "40",
+      "spiritNum": "2600000",
+      "tid": "1351"
+    },
+    {
+      "id": "177",
+      "itemNum": "90",
+      "level": "27",
+      "propNum1": "1006",
+      "propNum2": "57",
+      "rate": "35",
+      "spiritNum": "2700000",
+      "tid": "1351"
+    },
+    {
+      "id": "178",
+      "itemNum": "90",
+      "level": "28",
+      "propNum1": "1026",
+      "propNum2": "58",
+      "rate": "30",
+      "spiritNum": "2800000",
+      "tid": "1351"
+    },
+    {
+      "id": "179",
+      "itemNum": "90",
+      "level": "29",
+      "propNum1": "1047",
+      "propNum2": "59",
+      "rate": "30",
+      "spiritNum": "2900000",
+      "tid": "1351"
+    },
+    {
+      "id": "180",
+      "itemNum": "90",
+      "level": "30",
+      "propNum1": "1067",
+      "propNum2": "60",
+      "rate": "30",
+      "spiritNum": "3000000",
+      "tid": "1351"
+    },
+    {
+      "id": "181",
+      "itemNum": "110",
+      "level": "31",
+      "propNum1": "1091",
+      "propNum2": "62",
+      "rate": "60",
+      "spiritNum": "3100000",
+      "tid": "1351"
+    },
+    {
+      "id": "182",
+      "itemNum": "110",
+      "level": "32",
+      "propNum1": "1114",
+      "propNum2": "63",
+      "rate": "55",
+      "spiritNum": "3200000",
+      "tid": "1351"
+    },
+    {
+      "id": "183",
+      "itemNum": "110",
+      "level": "33",
+      "propNum1": "1137",
+      "propNum2": "64",
+      "rate": "50",
+      "spiritNum": "3300000",
+      "tid": "1351"
+    },
+    {
+      "id": "184",
+      "itemNum": "110",
+      "level": "34",
+      "propNum1": "1161",
+      "propNum2": "66",
+      "rate": "45",
+      "spiritNum": "3400000",
+      "tid": "1351"
+    },
+    {
+      "id": "185",
+      "itemNum": "110",
+      "level": "35",
+      "propNum1": "1184",
+      "propNum2": "67",
+      "rate": "40",
+      "spiritNum": "3500000",
+      "tid": "1351"
+    },
+    {
+      "id": "186",
+      "itemNum": "130",
+      "level": "36",
+      "propNum1": "1211",
+      "propNum2": "68",
+      "rate": "35",
+      "spiritNum": "3600000",
+      "tid": "1351"
+    },
+    {
+      "id": "187",
+      "itemNum": "130",
+      "level": "37",
+      "propNum1": "1237",
+      "propNum2": "70",
+      "rate": "30",
+      "spiritNum": "3700000",
+      "tid": "1351"
+    },
+    {
+      "id": "188",
+      "itemNum": "130",
+      "level": "38",
+      "propNum1": "1263",
+      "propNum2": "71",
+      "rate": "30",
+      "spiritNum": "3800000",
+      "tid": "1351"
+    },
+    {
+      "id": "189",
+      "itemNum": "130",
+      "level": "39",
+      "propNum1": "1290",
+      "propNum2": "73",
+      "rate": "30",
+      "spiritNum": "3900000",
+      "tid": "1351"
+    },
+    {
+      "id": "190",
+      "itemNum": "130",
+      "level": "40",
+      "propNum1": "1316",
+      "propNum2": "74",
+      "rate": "30",
+      "spiritNum": "4000000",
+      "tid": "1351"
+    },
+    {
+      "id": "191",
+      "itemNum": "150",
+      "level": "41",
+      "propNum1": "1346",
+      "propNum2": "76",
+      "rate": "55",
+      "spiritNum": "4100000",
+      "tid": "1351"
+    },
+    {
+      "id": "192",
+      "itemNum": "150",
+      "level": "42",
+      "propNum1": "1375",
+      "propNum2": "78",
+      "rate": "50",
+      "spiritNum": "4200000",
+      "tid": "1351"
+    },
+    {
+      "id": "193",
+      "itemNum": "150",
+      "level": "43",
+      "propNum1": "1404",
+      "propNum2": "79",
+      "rate": "45",
+      "spiritNum": "4300000",
+      "tid": "1351"
+    },
+    {
+      "id": "194",
+      "itemNum": "150",
+      "level": "44",
+      "propNum1": "1433",
+      "propNum2": "81",
+      "rate": "40",
+      "spiritNum": "4400000",
+      "tid": "1351"
+    },
+    {
+      "id": "195",
+      "itemNum": "150",
+      "level": "45",
+      "propNum1": "1463",
+      "propNum2": "83",
+      "rate": "35",
+      "spiritNum": "4500000",
+      "tid": "1351"
+    },
+    {
+      "id": "196",
+      "itemNum": "170",
+      "level": "46",
+      "propNum1": "1495",
+      "propNum2": "85",
+      "rate": "30",
+      "spiritNum": "4600000",
+      "tid": "1351"
+    },
+    {
+      "id": "197",
+      "itemNum": "170",
+      "level": "47",
+      "propNum1": "1527",
+      "propNum2": "86",
+      "rate": "30",
+      "spiritNum": "4700000",
+      "tid": "1351"
+    },
+    {
+      "id": "198",
+      "itemNum": "170",
+      "level": "48",
+      "propNum1": "1560",
+      "propNum2": "88",
+      "rate": "30",
+      "spiritNum": "4800000",
+      "tid": "1351"
+    },
+    {
+      "id": "199",
+      "itemNum": "170",
+      "level": "49",
+      "propNum1": "1592",
+      "propNum2": "90",
+      "rate": "30",
+      "spiritNum": "4900000",
+      "tid": "1351"
+    },
+    {
+      "id": "200",
+      "itemNum": "170",
+      "level": "50",
+      "propNum1": "1624",
+      "propNum2": "92",
+      "rate": "30",
+      "spiritNum": "5000000",
+      "tid": "1351"
+    },
+    {
+      "id": "201",
+      "itemNum": "10",
+      "level": "1",
+      "propNum1": "1096",
+      "propNum2": "41",
+      "rate": "100",
+      "spiritNum": "100000",
+      "tid": "1352"
+    },
+    {
+      "id": "202",
+      "itemNum": "10",
+      "level": "2",
+      "propNum1": "1101",
+      "propNum2": "41",
+      "rate": "90",
+      "spiritNum": "200000",
+      "tid": "1352"
+    },
+    {
+      "id": "203",
+      "itemNum": "10",
+      "level": "3",
+      "propNum1": "1105",
+      "propNum2": "42",
+      "rate": "80",
+      "spiritNum": "300000",
+      "tid": "1352"
+    },
+    {
+      "id": "204",
+      "itemNum": "10",
+      "level": "4",
+      "propNum1": "1110",
+      "propNum2": "42",
+      "rate": "70",
+      "spiritNum": "400000",
+      "tid": "1352"
+    },
+    {
+      "id": "205",
+      "itemNum": "10",
+      "level": "5",
+      "propNum1": "1114",
+      "propNum2": "42",
+      "rate": "60",
+      "spiritNum": "500000",
+      "tid": "1352"
+    },
+    {
+      "id": "206",
+      "itemNum": "20",
+      "level": "6",
+      "propNum1": "1123",
+      "propNum2": "42",
+      "rate": "50",
+      "spiritNum": "600000",
+      "tid": "1352"
+    },
+    {
+      "id": "207",
+      "itemNum": "20",
+      "level": "7",
+      "propNum1": "1131",
+      "propNum2": "43",
+      "rate": "45",
+      "spiritNum": "700000",
+      "tid": "1352"
+    },
+    {
+      "id": "208",
+      "itemNum": "20",
+      "level": "8",
+      "propNum1": "1140",
+      "propNum2": "43",
+      "rate": "40",
+      "spiritNum": "800000",
+      "tid": "1352"
+    },
+    {
+      "id": "209",
+      "itemNum": "20",
+      "level": "9",
+      "propNum1": "1149",
+      "propNum2": "43",
+      "rate": "35",
+      "spiritNum": "900000",
+      "tid": "1352"
+    },
+    {
+      "id": "210",
+      "itemNum": "20",
+      "level": "10",
+      "propNum1": "1158",
+      "propNum2": "44",
+      "rate": "30",
+      "spiritNum": "1000000",
+      "tid": "1352"
+    },
+    {
+      "id": "211",
+      "itemNum": "30",
+      "level": "11",
+      "propNum1": "1171",
+      "propNum2": "44",
+      "rate": "70",
+      "spiritNum": "1100000",
+      "tid": "1352"
+    },
+    {
+      "id": "212",
+      "itemNum": "30",
+      "level": "12",
+      "propNum1": "1184",
+      "propNum2": "45",
+      "rate": "65",
+      "spiritNum": "1200000",
+      "tid": "1352"
+    },
+    {
+      "id": "213",
+      "itemNum": "30",
+      "level": "13",
+      "propNum1": "1197",
+      "propNum2": "45",
+      "rate": "60",
+      "spiritNum": "1300000",
+      "tid": "1352"
+    },
+    {
+      "id": "214",
+      "itemNum": "30",
+      "level": "14",
+      "propNum1": "1210",
+      "propNum2": "46",
+      "rate": "55",
+      "spiritNum": "1400000",
+      "tid": "1352"
+    },
+    {
+      "id": "215",
+      "itemNum": "30",
+      "level": "15",
+      "propNum1": "1223",
+      "propNum2": "46",
+      "rate": "50",
+      "spiritNum": "1500000",
+      "tid": "1352"
+    },
+    {
+      "id": "216",
+      "itemNum": "50",
+      "level": "16",
+      "propNum1": "1241",
+      "propNum2": "47",
+      "rate": "45",
+      "spiritNum": "1600000",
+      "tid": "1352"
+    },
+    {
+      "id": "217",
+      "itemNum": "50",
+      "level": "17",
+      "propNum1": "1258",
+      "propNum2": "47",
+      "rate": "40",
+      "spiritNum": "1700000",
+      "tid": "1352"
+    },
+    {
+      "id": "218",
+      "itemNum": "50",
+      "level": "18",
+      "propNum1": "1276",
+      "propNum2": "48",
+      "rate": "35",
+      "spiritNum": "1800000",
+      "tid": "1352"
+    },
+    {
+      "id": "219",
+      "itemNum": "50",
+      "level": "19",
+      "propNum1": "1293",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "1900000",
+      "tid": "1352"
+    },
+    {
+      "id": "220",
+      "itemNum": "50",
+      "level": "20",
+      "propNum1": "1311",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "2000000",
+      "tid": "1352"
+    },
+    {
+      "id": "221",
+      "itemNum": "70",
+      "level": "21",
+      "propNum1": "1337",
+      "propNum2": "50",
+      "rate": "65",
+      "spiritNum": "2100000",
+      "tid": "1352"
+    },
+    {
+      "id": "222",
+      "itemNum": "70",
+      "level": "22",
+      "propNum1": "1364",
+      "propNum2": "51",
+      "rate": "60",
+      "spiritNum": "2200000",
+      "tid": "1352"
+    },
+    {
+      "id": "223",
+      "itemNum": "70",
+      "level": "23",
+      "propNum1": "1390",
+      "propNum2": "52",
+      "rate": "55",
+      "spiritNum": "2300000",
+      "tid": "1352"
+    },
+    {
+      "id": "224",
+      "itemNum": "70",
+      "level": "24",
+      "propNum1": "1416",
+      "propNum2": "53",
+      "rate": "50",
+      "spiritNum": "2400000",
+      "tid": "1352"
+    },
+    {
+      "id": "225",
+      "itemNum": "70",
+      "level": "25",
+      "propNum1": "1442",
+      "propNum2": "54",
+      "rate": "45",
+      "spiritNum": "2500000",
+      "tid": "1352"
+    },
+    {
+      "id": "226",
+      "itemNum": "90",
+      "level": "26",
+      "propNum1": "1473",
+      "propNum2": "56",
+      "rate": "40",
+      "spiritNum": "2600000",
+      "tid": "1352"
+    },
+    {
+      "id": "227",
+      "itemNum": "90",
+      "level": "27",
+      "propNum1": "1504",
+      "propNum2": "57",
+      "rate": "35",
+      "spiritNum": "2700000",
+      "tid": "1352"
+    },
+    {
+      "id": "228",
+      "itemNum": "90",
+      "level": "28",
+      "propNum1": "1534",
+      "propNum2": "58",
+      "rate": "30",
+      "spiritNum": "2800000",
+      "tid": "1352"
+    },
+    {
+      "id": "229",
+      "itemNum": "90",
+      "level": "29",
+      "propNum1": "1565",
+      "propNum2": "59",
+      "rate": "30",
+      "spiritNum": "2900000",
+      "tid": "1352"
+    },
+    {
+      "id": "230",
+      "itemNum": "90",
+      "level": "30",
+      "propNum1": "1596",
+      "propNum2": "60",
+      "rate": "30",
+      "spiritNum": "3000000",
+      "tid": "1352"
+    },
+    {
+      "id": "231",
+      "itemNum": "110",
+      "level": "31",
+      "propNum1": "1631",
+      "propNum2": "62",
+      "rate": "60",
+      "spiritNum": "3100000",
+      "tid": "1352"
+    },
+    {
+      "id": "232",
+      "itemNum": "110",
+      "level": "32",
+      "propNum1": "1666",
+      "propNum2": "63",
+      "rate": "55",
+      "spiritNum": "3200000",
+      "tid": "1352"
+    },
+    {
+      "id": "233",
+      "itemNum": "110",
+      "level": "33",
+      "propNum1": "1701",
+      "propNum2": "64",
+      "rate": "50",
+      "spiritNum": "3300000",
+      "tid": "1352"
+    },
+    {
+      "id": "234",
+      "itemNum": "110",
+      "level": "34",
+      "propNum1": "1736",
+      "propNum2": "66",
+      "rate": "45",
+      "spiritNum": "3400000",
+      "tid": "1352"
+    },
+    {
+      "id": "235",
+      "itemNum": "110",
+      "level": "35",
+      "propNum1": "1771",
+      "propNum2": "67",
+      "rate": "40",
+      "spiritNum": "3500000",
+      "tid": "1352"
+    },
+    {
+      "id": "236",
+      "itemNum": "130",
+      "level": "36",
+      "propNum1": "1810",
+      "propNum2": "68",
+      "rate": "35",
+      "spiritNum": "3600000",
+      "tid": "1352"
+    },
+    {
+      "id": "237",
+      "itemNum": "130",
+      "level": "37",
+      "propNum1": "1850",
+      "propNum2": "70",
+      "rate": "30",
+      "spiritNum": "3700000",
+      "tid": "1352"
+    },
+    {
+      "id": "238",
+      "itemNum": "130",
+      "level": "38",
+      "propNum1": "1889",
+      "propNum2": "71",
+      "rate": "30",
+      "spiritNum": "3800000",
+      "tid": "1352"
+    },
+    {
+      "id": "239",
+      "itemNum": "130",
+      "level": "39",
+      "propNum1": "1929",
+      "propNum2": "73",
+      "rate": "30",
+      "spiritNum": "3900000",
+      "tid": "1352"
+    },
+    {
+      "id": "240",
+      "itemNum": "130",
+      "level": "40",
+      "propNum1": "1968",
+      "propNum2": "74",
+      "rate": "30",
+      "spiritNum": "4000000",
+      "tid": "1352"
+    },
+    {
+      "id": "241",
+      "itemNum": "150",
+      "level": "41",
+      "propNum1": "2012",
+      "propNum2": "76",
+      "rate": "55",
+      "spiritNum": "4100000",
+      "tid": "1352"
+    },
+    {
+      "id": "242",
+      "itemNum": "150",
+      "level": "42",
+      "propNum1": "2056",
+      "propNum2": "78",
+      "rate": "50",
+      "spiritNum": "4200000",
+      "tid": "1352"
+    },
+    {
+      "id": "243",
+      "itemNum": "150",
+      "level": "43",
+      "propNum1": "2099",
+      "propNum2": "79",
+      "rate": "45",
+      "spiritNum": "4300000",
+      "tid": "1352"
+    },
+    {
+      "id": "244",
+      "itemNum": "150",
+      "level": "44",
+      "propNum1": "2143",
+      "propNum2": "81",
+      "rate": "40",
+      "spiritNum": "4400000",
+      "tid": "1352"
+    },
+    {
+      "id": "245",
+      "itemNum": "150",
+      "level": "45",
+      "propNum1": "2187",
+      "propNum2": "83",
+      "rate": "35",
+      "spiritNum": "4500000",
+      "tid": "1352"
+    },
+    {
+      "id": "246",
+      "itemNum": "170",
+      "level": "46",
+      "propNum1": "2235",
+      "propNum2": "85",
+      "rate": "30",
+      "spiritNum": "4600000",
+      "tid": "1352"
+    },
+    {
+      "id": "247",
+      "itemNum": "170",
+      "level": "47",
+      "propNum1": "2283",
+      "propNum2": "86",
+      "rate": "30",
+      "spiritNum": "4700000",
+      "tid": "1352"
+    },
+    {
+      "id": "248",
+      "itemNum": "170",
+      "level": "48",
+      "propNum1": "2332",
+      "propNum2": "88",
+      "rate": "30",
+      "spiritNum": "4800000",
+      "tid": "1352"
+    },
+    {
+      "id": "249",
+      "itemNum": "170",
+      "level": "49",
+      "propNum1": "2380",
+      "propNum2": "90",
+      "rate": "30",
+      "spiritNum": "4900000",
+      "tid": "1352"
+    },
+    {
+      "id": "250",
+      "itemNum": "170",
+      "level": "50",
+      "propNum1": "2428",
+      "propNum2": "92",
+      "rate": "30",
+      "spiritNum": "5000000",
+      "tid": "1352"
+    },
+    {
+      "id": "251",
+      "itemNum": "10",
+      "level": "1",
+      "propNum1": "1006",
+      "propNum2": "41",
+      "rate": "100",
+      "spiritNum": "100000",
+      "tid": "1353"
+    },
+    {
+      "id": "252",
+      "itemNum": "10",
+      "level": "2",
+      "propNum1": "1010",
+      "propNum2": "41",
+      "rate": "90",
+      "spiritNum": "200000",
+      "tid": "1353"
+    },
+    {
+      "id": "253",
+      "itemNum": "10",
+      "level": "3",
+      "propNum1": "1014",
+      "propNum2": "42",
+      "rate": "80",
+      "spiritNum": "300000",
+      "tid": "1353"
+    },
+    {
+      "id": "254",
+      "itemNum": "10",
+      "level": "4",
+      "propNum1": "1018",
+      "propNum2": "42",
+      "rate": "70",
+      "spiritNum": "400000",
+      "tid": "1353"
+    },
+    {
+      "id": "255",
+      "itemNum": "10",
+      "level": "5",
+      "propNum1": "1022",
+      "propNum2": "42",
+      "rate": "60",
+      "spiritNum": "500000",
+      "tid": "1353"
+    },
+    {
+      "id": "256",
+      "itemNum": "20",
+      "level": "6",
+      "propNum1": "1030",
+      "propNum2": "42",
+      "rate": "50",
+      "spiritNum": "600000",
+      "tid": "1353"
+    },
+    {
+      "id": "257",
+      "itemNum": "20",
+      "level": "7",
+      "propNum1": "1038",
+      "propNum2": "43",
+      "rate": "45",
+      "spiritNum": "700000",
+      "tid": "1353"
+    },
+    {
+      "id": "258",
+      "itemNum": "20",
+      "level": "8",
+      "propNum1": "1046",
+      "propNum2": "43",
+      "rate": "40",
+      "spiritNum": "800000",
+      "tid": "1353"
+    },
+    {
+      "id": "259",
+      "itemNum": "20",
+      "level": "9",
+      "propNum1": "1054",
+      "propNum2": "43",
+      "rate": "35",
+      "spiritNum": "900000",
+      "tid": "1353"
+    },
+    {
+      "id": "260",
+      "itemNum": "20",
+      "level": "10",
+      "propNum1": "1062",
+      "propNum2": "44",
+      "rate": "30",
+      "spiritNum": "1000000",
+      "tid": "1353"
+    },
+    {
+      "id": "261",
+      "itemNum": "30",
+      "level": "11",
+      "propNum1": "1074",
+      "propNum2": "44",
+      "rate": "70",
+      "spiritNum": "1100000",
+      "tid": "1353"
+    },
+    {
+      "id": "262",
+      "itemNum": "30",
+      "level": "12",
+      "propNum1": "1086",
+      "propNum2": "45",
+      "rate": "65",
+      "spiritNum": "1200000",
+      "tid": "1353"
+    },
+    {
+      "id": "263",
+      "itemNum": "30",
+      "level": "13",
+      "propNum1": "1098",
+      "propNum2": "45",
+      "rate": "60",
+      "spiritNum": "1300000",
+      "tid": "1353"
+    },
+    {
+      "id": "264",
+      "itemNum": "30",
+      "level": "14",
+      "propNum1": "1111",
+      "propNum2": "46",
+      "rate": "55",
+      "spiritNum": "1400000",
+      "tid": "1353"
+    },
+    {
+      "id": "265",
+      "itemNum": "30",
+      "level": "15",
+      "propNum1": "1123",
+      "propNum2": "46",
+      "rate": "50",
+      "spiritNum": "1500000",
+      "tid": "1353"
+    },
+    {
+      "id": "266",
+      "itemNum": "50",
+      "level": "16",
+      "propNum1": "1139",
+      "propNum2": "47",
+      "rate": "45",
+      "spiritNum": "1600000",
+      "tid": "1353"
+    },
+    {
+      "id": "267",
+      "itemNum": "50",
+      "level": "17",
+      "propNum1": "1155",
+      "propNum2": "47",
+      "rate": "40",
+      "spiritNum": "1700000",
+      "tid": "1353"
+    },
+    {
+      "id": "268",
+      "itemNum": "50",
+      "level": "18",
+      "propNum1": "1171",
+      "propNum2": "48",
+      "rate": "35",
+      "spiritNum": "1800000",
+      "tid": "1353"
+    },
+    {
+      "id": "269",
+      "itemNum": "50",
+      "level": "19",
+      "propNum1": "1187",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "1900000",
+      "tid": "1353"
+    },
+    {
+      "id": "270",
+      "itemNum": "50",
+      "level": "20",
+      "propNum1": "1203",
+      "propNum2": "49",
+      "rate": "30",
+      "spiritNum": "2000000",
+      "tid": "1353"
+    },
+    {
+      "id": "271",
+      "itemNum": "70",
+      "level": "21",
+      "propNum1": "1227",
+      "propNum2": "50",
+      "rate": "65",
+      "spiritNum": "2100000",
+      "tid": "1353"
+    },
+    {
+      "id": "272",
+      "itemNum": "70",
+      "level": "22",
+      "propNum1": "1251",
+      "propNum2": "51",
+      "rate": "60",
+      "spiritNum": "2200000",
+      "tid": "1353"
+    },
+    {
+      "id": "273",
+      "itemNum": "70",
+      "level": "23",
+      "propNum1": "1275",
+      "propNum2": "52",
+      "rate": "55",
+      "spiritNum": "2300000",
+      "tid": "1353"
+    },
+    {
+      "id": "274",
+      "itemNum": "70",
+      "level": "24",
+      "propNum1": "1299",
+      "propNum2": "53",
+      "rate": "50",
+      "spiritNum": "2400000",
+      "tid": "1353"
+    },
+    {
+      "id": "275",
+      "itemNum": "70",
+      "level": "25",
+      "propNum1": "1324",
+      "propNum2": "54",
+      "rate": "45",
+      "spiritNum": "2500000",
+      "tid": "1353"
+    },
+    {
+      "id": "276",
+      "itemNum": "90",
+      "level": "26",
+      "propNum1": "1352",
+      "propNum2": "56",
+      "rate": "40",
+      "spiritNum": "2600000",
+      "tid": "1353"
+    },
+    {
+      "id": "277",
+      "itemNum": "90",
+      "level": "27",
+      "propNum1": "1380",
+      "propNum2": "57",
+      "rate": "35",
+      "spiritNum": "2700000",
+      "tid": "1353"
+    },
+    {
+      "id": "278",
+      "itemNum": "90",
+      "level": "28",
+      "propNum1": "1408",
+      "propNum2": "58",
+      "rate": "30",
+      "spiritNum": "2800000",
+      "tid": "1353"
+    },
+    {
+      "id": "279",
+      "itemNum": "90",
+      "level": "29",
+      "propNum1": "1436",
+      "propNum2": "59",
+      "rate": "30",
+      "spiritNum": "2900000",
+      "tid": "1353"
+    },
+    {
+      "id": "280",
+      "itemNum": "90",
+      "level": "30",
+      "propNum1": "1464",
+      "propNum2": "60",
+      "rate": "30",
+      "spiritNum": "3000000",
+      "tid": "1353"
+    },
+    {
+      "id": "281",
+      "itemNum": "110",
+      "level": "31",
+      "propNum1": "1496",
+      "propNum2": "62",
+      "rate": "60",
+      "spiritNum": "3100000",
+      "tid": "1353"
+    },
+    {
+      "id": "282",
+      "itemNum": "110",
+      "level": "32",
+      "propNum1": "1529",
+      "propNum2": "63",
+      "rate": "55",
+      "spiritNum": "3200000",
+      "tid": "1353"
+    },
+    {
+      "id": "283",
+      "itemNum": "110",
+      "level": "33",
+      "propNum1": "1561",
+      "propNum2": "64",
+      "rate": "50",
+      "spiritNum": "3300000",
+      "tid": "1353"
+    },
+    {
+      "id": "284",
+      "itemNum": "110",
+      "level": "34",
+      "propNum1": "1593",
+      "propNum2": "66",
+      "rate": "45",
+      "spiritNum": "3400000",
+      "tid": "1353"
+    },
+    {
+      "id": "285",
+      "itemNum": "110",
+      "level": "35",
+      "propNum1": "1625",
+      "propNum2": "67",
+      "rate": "40",
+      "spiritNum": "3500000",
+      "tid": "1353"
+    },
+    {
+      "id": "286",
+      "itemNum": "130",
+      "level": "36",
+      "propNum1": "1661",
+      "propNum2": "68",
+      "rate": "35",
+      "spiritNum": "3600000",
+      "tid": "1353"
+    },
+    {
+      "id": "287",
+      "itemNum": "130",
+      "level": "37",
+      "propNum1": "1697",
+      "propNum2": "70",
+      "rate": "30",
+      "spiritNum": "3700000",
+      "tid": "1353"
+    },
+    {
+      "id": "288",
+      "itemNum": "130",
+      "level": "38",
+      "propNum1": "1734",
+      "propNum2": "71",
+      "rate": "30",
+      "spiritNum": "3800000",
+      "tid": "1353"
+    },
+    {
+      "id": "289",
+      "itemNum": "130",
+      "level": "39",
+      "propNum1": "1770",
+      "propNum2": "73",
+      "rate": "30",
+      "spiritNum": "3900000",
+      "tid": "1353"
+    },
+    {
+      "id": "290",
+      "itemNum": "130",
+      "level": "40",
+      "propNum1": "1806",
+      "propNum2": "74",
+      "rate": "30",
+      "spiritNum": "4000000",
+      "tid": "1353"
+    },
+    {
+      "id": "291",
+      "itemNum": "150",
+      "level": "41",
+      "propNum1": "1846",
+      "propNum2": "76",
+      "rate": "55",
+      "spiritNum": "4100000",
+      "tid": "1353"
+    },
+    {
+      "id": "292",
+      "itemNum": "150",
+      "level": "42",
+      "propNum1": "1886",
+      "propNum2": "78",
+      "rate": "50",
+      "spiritNum": "4200000",
+      "tid": "1353"
+    },
+    {
+      "id": "293",
+      "itemNum": "150",
+      "level": "43",
+      "propNum1": "1927",
+      "propNum2": "79",
+      "rate": "45",
+      "spiritNum": "4300000",
+      "tid": "1353"
+    },
+    {
+      "id": "294",
+      "itemNum": "150",
+      "level": "44",
+      "propNum1": "1967",
+      "propNum2": "81",
+      "rate": "40",
+      "spiritNum": "4400000",
+      "tid": "1353"
+    },
+    {
+      "id": "295",
+      "itemNum": "150",
+      "level": "45",
+      "propNum1": "2007",
+      "propNum2": "83",
+      "rate": "35",
+      "spiritNum": "4500000",
+      "tid": "1353"
+    },
+    {
+      "id": "296",
+      "itemNum": "170",
+      "level": "46",
+      "propNum1": "2051",
+      "propNum2": "85",
+      "rate": "30",
+      "spiritNum": "4600000",
+      "tid": "1353"
+    },
+    {
+      "id": "297",
+      "itemNum": "170",
+      "level": "47",
+      "propNum1": "2095",
+      "propNum2": "86",
+      "rate": "30",
+      "spiritNum": "4700000",
+      "tid": "1353"
+    },
+    {
+      "id": "298",
+      "itemNum": "170",
+      "level": "48",
+      "propNum1": "2140",
+      "propNum2": "88",
+      "rate": "30",
+      "spiritNum": "4800000",
+      "tid": "1353"
+    },
+    {
+      "id": "299",
+      "itemNum": "170",
+      "level": "49",
+      "propNum1": "2184",
+      "propNum2": "90",
+      "rate": "30",
+      "spiritNum": "4900000",
+      "tid": "1353"
+    },
+    {
+      "id": "300",
+      "itemNum": "170",
+      "level": "50",
+      "propNum1": "2228",
+      "propNum2": "92",
+      "rate": "30",
+      "spiritNum": "5000000",
+      "tid": "1353"
+    }
+  ]
+}

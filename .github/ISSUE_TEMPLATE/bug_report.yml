@@ -1,0 +1,58 @@
+name: Bug report
+description: Something on the server, dashboard or data behaves incorrectly
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Gameplay / RPC handler
+        - Auth / login / line selection
+        - Database / migrations / seeds
+        - Admin dashboard
+        - Docker / deployment
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Log in with account ...
+        2. Open ...
+        3. Click ...
+    validations:
+      required: true
+  - type: input
+    id: rpc
+    attributes:
+      label: RPC method (if known)
+      placeholder: chooseCharactor
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Server logs (e.g. from the game container) or Flash debug projector errors.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment mode
+      options:
+        - Monolith
+        - Split (main + line)
+        - Not sure

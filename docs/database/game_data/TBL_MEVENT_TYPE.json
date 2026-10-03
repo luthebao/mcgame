@@ -1,0 +1,141 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_MEVENT_TYPE",
+  "recordCount": 19,
+  "records": [
+    {
+      "id": "1",
+      "name": "Điểm đầu",
+      "npcId": "0",
+      "tip": "0",
+      "type": "1"
+    },
+    {
+      "id": "2",
+      "name": "Điểm cuối",
+      "npcId": "0",
+      "tip": "0",
+      "type": "2"
+    },
+    {
+      "id": "3",
+      "name": "Điểm giữa",
+      "npcId": "0",
+      "tip": "0",
+      "type": "3"
+    },
+    {
+      "id": "4",
+      "name": "Bảo rương nhỏ",
+      "npcId": "2343",
+      "tip": "Bảo vật ẩn chứa trong Bí Cảnh, người may mắn mới mở được.\\nNgẫu nhiên mở được: 100 Kết Tinh Thần Dụ, nguyên liệu cấp 4.",
+      "type": "4"
+    },
+    {
+      "id": "5",
+      "name": "Bảo rương trung",
+      "npcId": "2344",
+      "tip": "Bảo vật ẩn chứa trong Bí Cảnh, người may mắn mới mở được.\\nNgẫu nhiên mở được: 100 Kết Tinh Thần Dụ, nguyên liệu cấp 5, Tinh Hồn Linh Giáp.",
+      "type": "5"
+    },
+    {
+      "id": "6",
+      "name": "Bảo rương lớn",
+      "npcId": "2345",
+      "tip": "Bảo vật lớn ẩn chứa trong Bí Cảnh, phải người kiên trì mới mở được.\\nNgẫu nhiên mở được: lượng lớn Kết Tinh Thần Dụ, bảo thạch thượng hạng, Tẩy Tủy Đan cao cấp",
+      "type": "6"
+    },
+    {
+      "id": "7",
+      "name": "Ô đấu",
+      "npcId": "2347",
+      "tip": "Đây là vùng đất trong Bí Cảnh bị những kẻ lang thang chiếm đóng, ai bước vào không có mạng trở ra.",
+      "type": "7"
+    },
+    {
+      "id": "8",
+      "name": "Ô Đại Thánh",
+      "npcId": "2348",
+      "tip": "Đây vật độc thường thấy trong Bí Cảnh, đối với những kẻ ngoại lai nó đều tỏ vẻ không lương thiện.",
+      "type": "8"
+    },
+    {
+      "id": "9",
+      "name": "Ô Đại Thánh",
+      "npcId": "2349",
+      "tip": "Sở hữu sức mạnh thần kỳ, làm mê hoặc lòng người",
+      "type": "8"
+    },
+    {
+      "id": "10",
+      "name": "Ô Đại Thánh",
+      "npcId": "2350",
+      "tip": "Sự tồn tại thần bí trong Bí Cảnh, tốt nhất là tìm đường khác mà đi.",
+      "type": "8"
+    },
+    {
+      "id": "11",
+      "name": "Chuyển trận",
+      "npcId": "2346",
+      "tip": "Lực không gian không ổn định, bất cứ vật nào tiếp cận đều sẽ bị đẩy đi 1 nơi khác.",
+      "type": "9"
+    },
+    {
+      "id": "12",
+      "name": "Ô bạc",
+      "npcId": "2335",
+      "tip": "Ngẫu nhiên nhận 1 lượng ngân phiếu",
+      "type": "10"
+    },
+    {
+      "id": "13",
+      "name": "Minigame",
+      "npcId": "2336",
+      "tip": "Chức năng chưa mở!",
+      "type": "11"
+    },
+    {
+      "id": "14",
+      "name": "Ô Exp",
+      "npcId": "2337",
+      "tip": "Ngẫu nhiên nhận 1 lượng exp",
+      "type": "12"
+    },
+    {
+      "id": "15",
+      "name": "Ô lò xo",
+      "npcId": "2338",
+      "tip": "Đưa về điểm xuất phát",
+      "type": "13"
+    },
+    {
+      "id": "16",
+      "name": "Bẫy 1 - Kẹp",
+      "npcId": "2339",
+      "tip": "Kẹp bắt heo, đạp trúng bất động 1 khoảng thời gian",
+      "type": "14"
+    },
+    {
+      "id": "17",
+      "name": "Bẫy 1 - Bẫy",
+      "npcId": "2340",
+      "tip": "Giếng sâu, rớt vào sẽ không thể di chuyển",
+      "type": "15"
+    },
+    {
+      "id": "18",
+      "name": "Bẫy 3 - Trói Cương Thi",
+      "npcId": "2341",
+      "tip": "Khi bước chân vào 1 nơi xa lạ, không biết chân người sẽ ra sao",
+      "type": "16"
+    },
+    {
+      "id": "19",
+      "name": "Bẫy 4 - Bắt Alien",
+      "npcId": "2342",
+      "tip": "Với kinh nghiệm nghiên cứu sinh vật ngàn năm qua, loại ngươi vừa bắt rất thích hợp làm đối tượng nghiên cứu",
+      "type": "17"
+    }
+  ]
+}

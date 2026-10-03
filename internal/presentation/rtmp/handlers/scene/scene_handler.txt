@@ -1,0 +1,1318 @@
+// Scene handler for map/scene RPC calls including login, teleport, and position updates.
+// Room transition flow: notify old room -> update scene info -> move rooms -> update DB -> send callback -> notify new room.
+// Connection's scene info (GetSceneInfo) is the authoritative source for player's current room.
+package handlers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	appchar "mcgame-server/internal/application/character"
+	appgroup "mcgame-server/internal/application/group"
+	appquest "mcgame-server/internal/application/quest"
+	appscene "mcgame-server/internal/application/scene"
+	"mcgame-server/internal/domain/character"
+	"mcgame-server/internal/gamedata"
+	"mcgame-server/internal/gamedata/models"
+	"mcgame-server/internal/infrastructure/rtmp"
+	questhandler "mcgame-server/internal/presentation/rtmp/handlers/quest"
+	rtmputils "mcgame-server/internal/presentation/rtmp/utils"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+type SceneHandler struct {
+	charService     *appchar.Service
+	sceneService    *appscene.Service
+	questService    *appquest.Service
+	groupService    *appgroup.Service
+	activityHandler onlineRewardSender
+	gameData        *gamedata.Manager
+	sceneManager    *rtmp.SceneManager
+	rtmpServer      *rtmp.Server
+	questNotify     *questhandler.QuestNotifyHelper
+	logger          *zap.Logger
+	sendCallbackFn  func(conn *rtmp.Connection, method string, args ...interface{}) error
+}
+
+type onlineRewardSender interface {
+	SendNextOnlineReward(conn *rtmp.Connection, charID int64)
+}
+
+func NewSceneHandler(charService *appchar.Service, sceneService *appscene.Service, sceneManager *rtmp.SceneManager, logger *zap.Logger) *SceneHandler {
+	h := &SceneHandler{
+		charService:  charService,
+		sceneService: sceneService,
+		sceneManager: sceneManager,
+		logger:       logger,
+	}
+	h.sendCallbackFn = func(conn *rtmp.Connection, method string, args ...interface{}) error {
+		return conn.SendCallback(method, args...)
+	}
+	return h
+}
+
+func (h *SceneHandler) SetQuestService(questService *appquest.Service) {
+	h.questService = questService
+}
+
+func (h *SceneHandler) SetQuestNotifyHelper(qnh *questhandler.QuestNotifyHelper) {
+	h.questNotify = qnh
+}
+
+func (h *SceneHandler) SetGroupService(groupService *appgroup.Service) {
+	h.groupService = groupService
+}
+
+func (h *SceneHandler) SetActivityHandler(activityHandler onlineRewardSender) {
+	h.activityHandler = activityHandler
+}
+
+func (h *SceneHandler) SetGameDataManager(gameData *gamedata.Manager) {
+	h.gameData = gameData
+}
+
+func (h *SceneHandler) SetRTMPServer(rtmpServer *rtmp.Server) {
+	h.rtmpServer = rtmpServer
+}
+
+func (h *SceneHandler) sendSceneResetCallbacks(conn *rtmp.Connection) error {
+	if err := h.sendCallbackFn(conn, "onCreateNpcs", map[string]interface{}{}); err != nil {
+		return err
+	}
+	return h.sendCallbackFn(conn, "onCreateBoss", map[string]interface{}{})
+}
+
+func (h *SceneHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("sceneLogin", h.SceneLogin)
+	dispatcher.Register("sceneChange", h.SceneChange)
+	dispatcher.Register("udcp", h.UpdatePosition)
+	dispatcher.Register("udcr", h.UpdatePositionRun)
+	dispatcher.Register("createChars", h.CreateChars)
+	dispatcher.Register("createNpcs", h.CreateNpcs)
+	dispatcher.Register("createBoss", h.CreateBoss)
+	dispatcher.Register("clickBoss", h.ClickBoss)
+	dispatcher.Register("canEnterWbMap", h.CanEnterWbMap)
+	dispatcher.Register("createSceneItems", h.CreateSceneItems)
+	dispatcher.Register("toMovable", h.ToMovable)
+	dispatcher.Register("toSafe", h.ToSafe)
+	dispatcher.Register("checkNetDelay", h.CheckNetDelay)
+	dispatcher.Register("beginFlying", h.BeginFlying)
+	dispatcher.Register("stopFlying", h.StopFlying)
+	dispatcher.Register("getCharStateClient", h.GetCharStateClient)
+	dispatcher.Register("getCharAttributes", h.GetCharAttributes)
+	dispatcher.Register("setNpcState", h.SetNpcState)
+}
+
+func (h *SceneHandler) SceneLogin(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Scene login - joining room",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character", char.Name),
+		zap.Int64("char_id", characterID),
+		zap.Int("room_id", char.MapID),
+		zap.Int("pos_x", char.PosX),
+		zap.Int("pos_y", char.PosY))
+
+	channelID := ctx.Connection.GetChannelID()
+	ctx.Connection.SetSceneInfo(char.MapID, characterID)
+	h.sceneManager.AddToScene(channelID, char.MapID, ctx.Connection)
+
+	if err := ctx.Connection.SendCallback("onSceneEnter", char.MapID, char.PosX, char.PosY, -1); err != nil {
+		h.logger.Error("Failed to send onSceneEnter callback", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+	}
+
+	playerData := h.sceneService.GetCharacterForClient(char)
+	h.sceneManager.BroadcastToScene(channelID, char.MapID, ctx.ConnID, "onScenePlayerEntered", playerData)
+	// if err := h.sendInitialCharacterAttributes(ctx, characterID); err != nil {
+	// 	h.logger.Warn("Failed to send initial character attributes",
+	// 		zap.Int64("character_id", characterID),
+	// 		zap.Uint32("conn_id", ctx.ConnID),
+	// 		zap.Error(err))
+	// 	// Don't return error - allow player to continue even if attributes fail
+	// }
+
+	h.logger.Info("Player joined room successfully",
+		zap.Int("room_id", char.MapID),
+		zap.Int("room_players", h.sceneManager.GetScenePlayerCount(channelID, char.MapID)))
+
+	// Trigger Online Time Reward
+	if h.activityHandler != nil {
+		h.activityHandler.SendNextOnlineReward(ctx.Connection, characterID)
+	} else {
+		h.logger.Warn("ActivityHandler not set in SceneHandler, online reward skipped")
+	}
+
+	return nil, nil
+}
+
+func (h *SceneHandler) SceneChange(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var gateID int
+	switch v := args[0].(type) {
+	case float64:
+		gateID = int(v)
+	case int:
+		gateID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	oldRoomID, _ := ctx.Connection.GetSceneInfo()
+	if oldRoomID == 0 {
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err != nil {
+			return rtmp.ErrorToResponse(err), nil
+		}
+		oldRoomID = char.MapID
+	}
+
+	dest, err := h.sceneService.GetTeleportDestination(gateID)
+	if err != nil || dest == nil {
+		h.logger.Warn("Failed to get teleport destination", zap.Int("gate_id", gateID), zap.Error(err))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	newRoomID := dest.MapID
+
+	// Check if player is group leader and notify members before changing map
+	if h.groupService != nil && oldRoomID != newRoomID {
+		isLeader, err := h.groupService.IsGroupLeader(ctx.Context, characterID)
+		if err == nil && isLeader {
+			// Get group info
+			g, err := h.groupService.GetGroupByMember(ctx.Context, characterID)
+			if err == nil && g != nil {
+				// Get leader character info
+				leaderChar, err := h.charService.GetByID(ctx.Context, characterID)
+				if err == nil && leaderChar != nil {
+					// Send callback to all members (except leader) about leader changing map
+					// This will show tooltip with 3 options: Cá nhân, Nhóm, Cancel
+					callbackData := map[string]interface{}{
+						"leaderId":   characterID,
+						"leaderName": leaderChar.Name,
+						"oldMapId":   oldRoomID,
+						"newMapId":   newRoomID,
+						"newX":       dest.X,
+						"newY":       dest.Y,
+					}
+
+					if h.rtmpServer != nil {
+						for _, member := range g.Members {
+							if member.CharID != characterID { // Don't send to leader
+								memberIDStr := strconv.FormatInt(member.CharID, 10)
+								if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+									_ = conn.SendCallback("onGroupLeaderChangeMap", callbackData)
+									h.logger.Info("Sent onGroupLeaderChangeMap to member",
+										zap.Int64("member_id", member.CharID),
+										zap.Int("new_map_id", newRoomID))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	h.logger.Info("Scene change - room transition starting",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("char_id", characterID),
+		zap.Int("gate_id", gateID),
+		zap.Int("old_room_id", oldRoomID),
+		zap.Int("new_room_id", newRoomID),
+		zap.Int("dest_x", dest.X),
+		zap.Int("dest_y", dest.Y),
+		zap.Int("old_room_players", h.sceneManager.GetScenePlayerCount(ctx.Connection.GetChannelID(), oldRoomID)))
+
+	channelID := ctx.Connection.GetChannelID()
+	h.sceneManager.BroadcastToScene(channelID, oldRoomID, ctx.ConnID, "onCharLeaveScene", characterID)
+	ctx.Connection.SetSceneInfo(newRoomID, characterID)
+	h.sceneManager.MoveToScene(channelID, oldRoomID, newRoomID, ctx.Connection)
+
+	pos := character.Position{MapID: newRoomID, X: dest.X, Y: dest.Y, Direction: 0}
+	if err := h.charService.UpdatePosition(ctx.Context, characterID, pos); err != nil {
+		h.logger.Error("Failed to update position in database", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+	}
+
+	if err := h.sendSceneResetCallbacks(ctx.Connection); err != nil {
+		h.logger.Error("Failed to send scene reset callbacks", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+	}
+
+	if err := ctx.Connection.SendCallback("onSceneEnter", newRoomID, dest.X, dest.Y, -1); err != nil {
+		h.logger.Error("Failed to send onSceneEnter callback", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("Failed to get character for broadcast", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+	} else {
+		char.MapID = newRoomID
+		char.PosX = dest.X
+		char.PosY = dest.Y
+		playerData := h.sceneService.GetCharacterForClient(char)
+		h.sceneManager.BroadcastToScene(channelID, newRoomID, ctx.ConnID, "onScenePlayerEntered", playerData)
+	}
+
+	h.logger.Info("Scene change - room transition completed",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("char_id", characterID),
+		zap.Int("new_room_id", newRoomID),
+		zap.Int("new_room_players", h.sceneManager.GetScenePlayerCount(channelID, newRoomID)))
+
+	return nil, nil
+}
+
+func (h *SceneHandler) UpdatePosition(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var x, y int
+	switch v := args[0].(type) {
+	case float64:
+		x = rtmputils.SafeFloat64ToInt(v)
+	case int:
+		x = v
+	}
+	switch v := args[1].(type) {
+	case float64:
+		y = rtmputils.SafeFloat64ToInt(v)
+	case int:
+		y = v
+	}
+
+	var dir int
+	if len(args) >= 5 {
+		switch v := args[4].(type) {
+		case float64:
+			dir = rtmputils.SafeFloat64ToInt(v)
+		case int:
+			dir = v
+		}
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Check if player is in a group and not the leader - block movement
+	if h.groupService != nil {
+		if err := h.checkGroupMovementRestriction(ctx.Context, characterID); err != nil {
+			// Send notification to client
+			_ = ctx.Connection.SendCallback("onMidNote", "Đã ở trong nhóm phải nghe lời nhóm trưởng")
+			return map[string]interface{}{
+				"success": false,
+				"error":   "Cannot move while in group (must follow leader)",
+			}, nil
+		}
+	}
+
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID == 0 {
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err != nil {
+			return nil, err
+		}
+		currentMapID = char.MapID
+	}
+
+	pos := character.Position{MapID: currentMapID, X: x, Y: y, Direction: dir}
+	if err := h.charService.UpdatePosition(ctx.Context, characterID, pos); err != nil {
+		return nil, err
+	}
+
+	posUpdate := map[string]interface{}{
+		"id":    characterID,
+		"x":     x,
+		"y":     y,
+		"route": [][]int{{x, y}},
+	}
+	h.sceneManager.BroadcastToScene(ctx.Connection.GetChannelID(), currentMapID, ctx.ConnID, "onCR", posUpdate)
+
+	return nil, nil
+}
+
+func (h *SceneHandler) UpdatePositionRun(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	data, ok := args[0].(map[string]interface{})
+	if !ok {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var x, y int
+	var route interface{}
+	if xVal, exists := data["x"]; exists {
+		switch v := xVal.(type) {
+		case float64:
+			x = rtmputils.SafeFloat64ToInt(v)
+		case int:
+			x = v
+		}
+	}
+	if yVal, exists := data["y"]; exists {
+		switch v := yVal.(type) {
+		case float64:
+			y = rtmputils.SafeFloat64ToInt(v)
+		case int:
+			y = v
+		}
+	}
+	if routeVal, exists := data["route"]; exists {
+		route = routeVal
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Check if player is in battle - block movement
+	if ctx.Connection.IsInBattle() {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "Cannot move while in battle",
+		}, nil
+	}
+
+	// Check if player is in a group and not the leader - block movement
+	if h.groupService != nil {
+		if err := h.checkGroupMovementRestriction(ctx.Context, characterID); err != nil {
+			// Send notification to client
+			_ = ctx.Connection.SendCallback("onMidNote", "Đã ở trong nhóm phải nghe lời nhóm trưởng")
+			return map[string]interface{}{
+				"success": false,
+				"error":   "Cannot move while in group (must follow leader)",
+			}, nil
+		}
+	}
+
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID == 0 {
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err != nil {
+			return nil, err
+		}
+		currentMapID = char.MapID
+	}
+
+	pos := character.Position{MapID: currentMapID, X: x, Y: y, Direction: 0}
+	if err := h.charService.UpdatePosition(ctx.Context, characterID, pos); err != nil {
+		return nil, err
+	}
+
+	posUpdate := map[string]interface{}{"id": characterID, "x": x, "y": y}
+	if route != nil {
+		posUpdate["route"] = route
+	} else {
+		posUpdate["route"] = [][]int{{x, y}}
+	}
+	h.sceneManager.BroadcastToScene(ctx.Connection.GetChannelID(), currentMapID, ctx.ConnID, "onCR", posUpdate)
+
+	return nil, nil
+}
+
+func (h *SceneHandler) CreateChars(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	currentRoomID, _ := ctx.Connection.GetSceneInfo()
+	newMapID := char.MapID
+
+	if currentRoomID != 0 && currentRoomID != newMapID {
+		h.logger.Info("CreateChars detected room change",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int64("char_id", characterID),
+			zap.Int("old_room_id", currentRoomID),
+			zap.Int("new_room_id", newMapID))
+
+		channelID := ctx.Connection.GetChannelID()
+		h.sceneManager.BroadcastToScene(channelID, currentRoomID, ctx.ConnID, "onCharLeaveScene", characterID)
+		ctx.Connection.SetSceneInfo(newMapID, characterID)
+		h.sceneManager.MoveToScene(channelID, currentRoomID, newMapID, ctx.Connection)
+
+		playerData := h.sceneService.GetCharacterForClient(char)
+		h.sceneManager.BroadcastToScene(channelID, newMapID, ctx.ConnID, "onScenePlayerEntered", playerData)
+	} else if currentRoomID == 0 {
+		ctx.Connection.SetSceneInfo(newMapID, characterID)
+		h.sceneManager.AddToScene(ctx.Connection.GetChannelID(), newMapID, ctx.Connection)
+		h.logger.Info("CreateChars initial room setup",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int64("char_id", characterID),
+			zap.Int("room_id", newMapID))
+	}
+
+	nearbyChars, err := h.sceneService.GetNearbyCharacters(ctx.Context, newMapID, characterID)
+	if err != nil {
+		h.logger.Error("Failed to get nearby characters", zap.Error(err))
+		if sendErr := ctx.Connection.SendCallback("onCreateChars", []interface{}{}); sendErr != nil {
+			h.logger.Error("Failed to send onCreateChars callback", zap.Error(sendErr))
+		}
+		return nil, nil
+	}
+
+	// Filter nearby characters to only include those in the same channel
+	// (channelID isolation: players on different lines/channels can't see each other)
+	channelCharIDs := h.sceneManager.GetSceneCharacterIDs(ctx.Connection.GetChannelID(), newMapID)
+	result := make([]map[string]interface{}, 0, len(nearbyChars))
+	for _, c := range nearbyChars {
+		if _, inChannel := channelCharIDs[c.ID]; inChannel {
+			result = append(result, h.sceneService.GetCharacterForClient(c))
+		}
+	}
+
+	h.logger.Debug("CreateChars", zap.Int("map_id", char.MapID), zap.Int("count", len(result)), zap.Int("channel_id", ctx.Connection.GetChannelID()))
+
+	if err := ctx.Connection.SendCallback("onCreateChars", result); err != nil {
+		h.logger.Error("Failed to send onCreateChars callback", zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *SceneHandler) CreateNpcs(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	mapID, _ := ctx.Connection.GetSceneInfo()
+	if mapID == 0 {
+		mapID = char.MapID
+	}
+
+	npcs, err := h.sceneService.GetMapNPCsForClient(ctx.Context, mapID)
+	if err != nil {
+		h.logger.Error("Failed to get map NPCs", zap.Error(err))
+		if sendErr := ctx.Connection.SendCallback("onCreateNpcs", map[string]interface{}{}); sendErr != nil {
+			h.logger.Error("Failed to send onCreateNpcs callback", zap.Error(sendErr))
+		}
+		return nil, nil
+	}
+
+	npcList := make(map[string]interface{})
+	for _, n := range npcs {
+		npcList[strconv.Itoa(n.InstanceID)] = map[string]interface{}{
+			"nid":     n.NID,
+			"x":       n.X,
+			"y":       n.Y,
+			"name":    n.Name,
+			"resCode": n.ResCode,
+		}
+	}
+
+	h.logger.Debug("CreateNpcs", zap.Int("map_id", mapID), zap.Int("count", len(npcList)))
+
+	if err := ctx.Connection.SendCallback("onCreateNpcs", npcList); err != nil {
+		h.logger.Error("Failed to send onCreateNpcs callback", zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *SceneHandler) CreateSceneItems(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := h.sceneService.GetMapItems(ctx.Context, char.MapID)
+	if err != nil {
+		h.logger.Error("Failed to get map items", zap.Error(err))
+		return []interface{}{}, nil
+	}
+
+	result := make([]map[string]interface{}, len(items))
+	for i, item := range items {
+		result[i] = item.ToDTO()
+	}
+
+	h.logger.Debug("CreateSceneItems", zap.Int("map_id", char.MapID), zap.Int("count", len(result)))
+
+	return result, nil
+}
+
+func (h *SceneHandler) ToMovable(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 3 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var targetMapID, targetX, targetY int
+	switch v := args[0].(type) {
+	case float64:
+		targetMapID = int(v)
+	case int:
+		targetMapID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	switch v := args[1].(type) {
+	case float64:
+		targetX = int(v)
+	case int:
+		targetX = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	switch v := args[2].(type) {
+	case float64:
+		targetY = int(v)
+	case int:
+		targetY = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	oldRoomID, _ := ctx.Connection.GetSceneInfo()
+	if oldRoomID == 0 {
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err != nil {
+			return rtmp.ErrorToResponse(err), nil
+		}
+		oldRoomID = char.MapID
+	}
+
+	if !h.sceneService.ValidateTeleport(targetMapID, targetX, targetY) {
+		return nil, pkgerrors.ErrInvalidTeleport
+	}
+
+	isRoomChange := oldRoomID != targetMapID
+
+	h.logger.Info("ToMovable teleport",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("char_id", characterID),
+		zap.Int("old_room_id", oldRoomID),
+		zap.Int("target_room_id", targetMapID),
+		zap.Int("target_x", targetX),
+		zap.Int("target_y", targetY),
+		zap.Bool("room_change", isRoomChange))
+
+	if isRoomChange {
+		channelID := ctx.Connection.GetChannelID()
+		h.sceneManager.BroadcastToScene(channelID, oldRoomID, ctx.ConnID, "onCharLeaveScene", characterID)
+		ctx.Connection.SetSceneInfo(targetMapID, characterID)
+		h.sceneManager.MoveToScene(channelID, oldRoomID, targetMapID, ctx.Connection)
+
+		pos := character.Position{MapID: targetMapID, X: targetX, Y: targetY, Direction: 0}
+		if err := h.charService.UpdatePosition(ctx.Context, characterID, pos); err != nil {
+			h.logger.Error("Failed to update position in database", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+		}
+
+		if err := ctx.Connection.SendCallback("onSceneEnter", targetMapID, targetX, targetY, -1); err != nil {
+			h.logger.Error("Failed to send onSceneEnter callback", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+		}
+
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err == nil {
+			char.MapID = targetMapID
+			char.PosX = targetX
+			char.PosY = targetY
+			playerData := h.sceneService.GetCharacterForClient(char)
+			h.sceneManager.BroadcastToScene(channelID, targetMapID, ctx.ConnID, "onScenePlayerEntered", playerData)
+		}
+	} else {
+		pos := character.Position{MapID: targetMapID, X: targetX, Y: targetY, Direction: 0}
+		if err := h.charService.UpdatePosition(ctx.Context, characterID, pos); err != nil {
+			return rtmp.ErrorToResponse(err), nil
+		}
+
+		posUpdate := map[string]interface{}{"cid": characterID, "posX": targetX, "posY": targetY}
+		h.sceneManager.BroadcastToScene(ctx.Connection.GetChannelID(), targetMapID, ctx.ConnID, "onCharTeleport", posUpdate)
+	}
+
+	return map[string]interface{}{
+		"success":    true,
+		"mapId":      targetMapID,
+		"posX":       targetX,
+		"posY":       targetY,
+		"sceneReady": true,
+	}, nil
+}
+
+func (h *SceneHandler) ToSafe(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	currentRoomID, _ := ctx.Connection.GetSceneInfo()
+	if currentRoomID == 0 {
+		char, err := h.charService.GetByID(ctx.Context, characterID)
+		if err != nil {
+			return rtmp.ErrorToResponse(err), nil
+		}
+		currentRoomID = char.MapID
+	}
+
+	safeX, safeY := h.sceneService.GetSafePoint(currentRoomID)
+
+	pos := character.Position{MapID: currentRoomID, X: safeX, Y: safeY, Direction: 0}
+	if err := h.charService.UpdatePosition(ctx.Context, characterID, pos); err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	char, charErr := h.charService.GetByID(ctx.Context, characterID)
+	if charErr == nil && char.CurrentHP <= 0 {
+		char.CurrentHP = char.MaxHP / 2
+		char.CurrentMP = char.MaxMP / 2
+		if char.CurrentHP < 1 {
+			char.CurrentHP = 1
+		}
+		if err := h.charService.Save(ctx.Context, char); err != nil {
+			h.logger.Warn("Failed to save character after toSafe revive", zap.Error(err))
+		}
+		ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+			"currentHp": char.CurrentHP,
+			"currentMp": char.CurrentMP,
+		})
+	}
+
+	posUpdate := map[string]interface{}{"cid": characterID, "posX": safeX, "posY": safeY}
+	h.sceneManager.BroadcastToScene(ctx.Connection.GetChannelID(), currentRoomID, ctx.ConnID, "onCharTeleport", posUpdate)
+
+	h.logger.Info("Teleport to safe zone",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("room_id", currentRoomID),
+		zap.Int("x", safeX),
+		zap.Int("y", safeY))
+
+	return map[string]interface{}{
+		"success":    true,
+		"mapId":      currentRoomID,
+		"posX":       safeX,
+		"posY":       safeY,
+		"sceneReady": true,
+	}, nil
+}
+
+func (h *SceneHandler) CheckNetDelay(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return 1, nil
+}
+
+func (h *SceneHandler) BeginFlying(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("BeginFlying called", zap.Uint32("conn_id", ctx.ConnID))
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	res, err := h.sceneService.BeginFlying(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("Failed to begin flying",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback to client to notify that flying has begun
+	// The callback contains the character ID so client can update the character and pet
+	callbackData := map[string]interface{}{
+		"id": res.CharacterID,
+	}
+
+	// Broadcast to scene so other players can see the character start flying
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID > 0 {
+		h.sceneManager.BroadcastToScene(ctx.Connection.GetChannelID(), currentMapID, ctx.ConnID, "onBeginFlying", callbackData)
+	}
+
+	// Also send callback to the requesting player
+	if err := ctx.Connection.SendCallback("onBeginFlying", callbackData); err != nil {
+		h.logger.Error("Failed to send onBeginFlying callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *SceneHandler) StopFlying(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("StopFlying called", zap.Uint32("conn_id", ctx.ConnID))
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	res, err := h.sceneService.StopFlying(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("Failed to stop flying",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback to client to notify that flying has stopped
+	// The callback contains the character ID so client can update the character and pet
+	callbackData := map[string]interface{}{
+		"id": res.CharacterID,
+	}
+
+	// Broadcast to scene so other players can see the character stop flying
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID > 0 {
+		h.sceneManager.BroadcastToScene(ctx.Connection.GetChannelID(), currentMapID, ctx.ConnID, "onStopFlying", callbackData)
+	}
+
+	// Also send callback to the requesting player
+	if err := ctx.Connection.SendCallback("onStopFlying", callbackData); err != nil {
+		h.logger.Error("Failed to send onStopFlying callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *SceneHandler) GetCharStateClient(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetCharStateClient called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+
+	var charID int64
+	var err error
+
+	if len(args) > 0 {
+		// Get character ID from args (for viewing other players)
+		charID = int64(args[0].(float64))
+	} else {
+		// Get current player's character ID
+		charID, err = strconv.ParseInt(ctx.CharacterID, 10, 64)
+		if err != nil {
+			return nil, pkgerrors.ErrUnauthorized
+		}
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, charID)
+	if err != nil {
+		h.logger.Warn("Character not found for GetCharStateClient",
+			zap.Int64("character_id", charID),
+			zap.Error(err))
+		return 0, nil // Return 0 if character not found (default state)
+	}
+
+	// Calculate character state (e.g., PK mode, online status, etc.)
+	// For now, return a simple state value (0 = normal, 1 = PK mode, etc.)
+	state := 0 // Default state
+
+	// TODO: Calculate actual state based on character properties
+	// This could include PK mode, guild status, etc.
+	// For now, we have char loaded but use default state
+	_ = char // Acknowledge we loaded the character
+
+	return state, nil
+}
+
+// GetCharAttributes returns character attributes (HP, MP, EXP, level, stats, etc.)
+func (h *SceneHandler) GetCharAttributes(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetCharAttributes called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+
+	charID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	attrs, err := h.charService.GetCharacterAttributes(ctx.Context, charID)
+	if err != nil {
+		h.logger.Warn("Failed to get character attributes",
+			zap.Int64("character_id", charID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback to update client with attributes
+	if err := ctx.Connection.SendCallback("onUPP", attrs); err != nil {
+		h.logger.Error("Failed to send onUPP callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return attrs, nil
+}
+
+// SetNpcState calculates and returns the quest state for an NPC.
+// Client call: remote.setNpcState(npcId)
+// Parameters: npcId (Number) - NPC instance ID
+// Response: Sends callback onSetNpcState(npcId, state)
+// State values:
+//
+//	-1 = No quest available
+//	102 = Quest available to accept
+//	103 = Quest in progress (can complete)
+//	104 = Quest completed (can turn in)
+func (h *SceneHandler) SetNpcState(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("SetNpcState called with no arguments",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var npcID int
+	switch v := args[0].(type) {
+	case float64:
+		npcID = int(v)
+	case int:
+		npcID = v
+	case int64:
+		npcID = int(v)
+	case string:
+		// Try to parse string as integer
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			h.logger.Warn("SetNpcState received invalid string argument",
+				zap.Uint32("conn_id", ctx.ConnID),
+				zap.String("npc_id_str", v),
+				zap.Error(err))
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+		npcID = parsed
+	case nil:
+		h.logger.Warn("SetNpcState received nil argument",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	default:
+		h.logger.Warn("SetNpcState received unsupported argument type",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.String("type", fmt.Sprintf("%T", args[0])),
+			zap.Any("value", args[0]))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Debug("SetNpcState called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("npc_id", npcID))
+
+	// Calculate NPC quest state
+	state := h.calculateNpcQuestState(ctx, characterID, npcID)
+
+	// Send callback to client
+	if err := ctx.Connection.SendCallback("onSetNpcState", npcID, state); err != nil {
+		h.logger.Warn("Failed to send onSetNpcState callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int("npc_id", npcID),
+			zap.Int("state", state),
+			zap.Error(err))
+	}
+
+	h.logger.Debug("NPC state calculated",
+		zap.Int("npc_id", npcID),
+		zap.Int("state", state))
+
+	return nil, nil
+}
+
+// calculateNpcQuestState calculates the quest state for an NPC based on player's quest status.
+// Returns:
+//
+//	-1 = No quest available
+//	102 = Quest available to accept (has quest with this NPC as startNpc, not yet accepted)
+//	103 = Quest in progress (has active quest with this NPC as finishNpc, objectives complete)
+//	104 = Quest completed (has active quest with this NPC as finishNpc, can turn in)
+func (h *SceneHandler) calculateNpcQuestState(ctx *rtmp.RPCContext, characterID int64, npcID int) int {
+	if h.questNotify != nil {
+		return h.questNotify.CalculateNpcQuestState(ctx, characterID, npcID)
+	}
+	return -1
+}
+
+// SendPlayerAttributesUpdate sends onUPP callback to update player attributes on client
+func (h *SceneHandler) SendPlayerAttributesUpdate(ctx *rtmp.RPCContext, charID int64) error {
+	attrs, err := h.charService.GetCharacterAttributes(ctx.Context, charID)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Connection.SendCallback("onUPP", attrs)
+}
+
+// CreateBoss creates boss NPCs for the current map.
+// Client call: remote.createBoss()
+// Response: Sends callback onCreateBoss({bossId: {nid, x, y, name, resCode, ...}})
+func (h *SceneHandler) CreateBoss(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	if h.gameData == nil {
+		h.logger.Warn("Game data manager not set, cannot load bosses")
+		if sendErr := ctx.Connection.SendCallback("onCreateBoss", map[string]interface{}{}); sendErr != nil {
+			h.logger.Error("Failed to send onCreateBoss callback", zap.Error(sendErr))
+		}
+		return nil, nil
+	}
+
+	mapID, _ := ctx.Connection.GetSceneInfo()
+	if mapID == 0 {
+		mapID = char.MapID
+	}
+
+	// Get all NPCs for the map
+	npcTemplates := h.gameData.GetNPCsByMapID(mapID)
+
+	// Filter for boss NPCs (Type = 4 or SubType contains "boss")
+	// Boss NPCs typically have Type = 4 or specific SubType values
+	bossList := make(map[string]interface{})
+	now := time.Now()
+	for _, npc := range npcTemplates {
+		// Filter by time range - skip NPCs outside their display window
+		if !npc.IsActiveAt(now) {
+			continue
+		}
+
+		// Check if NPC is a boss (Type = 4 is NPCTypeBoss)
+		// Also check SubType for boss-related keywords
+		isBoss := false
+		if npc.Type == 4 {
+			isBoss = true
+		} else if npc.SubType != "" {
+			// Check if SubType indicates boss (e.g., contains "boss", "Boss", etc.)
+			subTypeLower := strings.ToLower(npc.SubType)
+			if strings.Contains(subTypeLower, "boss") || strings.Contains(subTypeLower, "wb") {
+				isBoss = true
+			}
+		}
+
+		if isBoss {
+			npcID := npc.GetID()
+			bossList[strconv.Itoa(npcID)] = map[string]interface{}{
+				"nid":     npcID,
+				"x":       int(npc.PosX),
+				"y":       int(npc.PosY),
+				"name":    npc.Name,
+				"resCode": int64(npc.ResCode),
+				"type":    npc.Type,
+				"lv":      npc.Lv,
+				"classId": npc.ClassID,
+			}
+		}
+	}
+
+	h.logger.Debug("CreateBoss", zap.Int("map_id", mapID), zap.Int("count", len(bossList)))
+
+	if err := ctx.Connection.SendCallback("onCreateBoss", bossList); err != nil {
+		h.logger.Error("Failed to send onCreateBoss callback", zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+// ClickBoss handles boss interaction (clicking on a boss NPC).
+// Client call: remote.clickBoss(bossId)
+// Parameters: bossId (Number) - Boss NPC instance ID
+// Response: May trigger battle or show boss information
+func (h *SceneHandler) ClickBoss(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var bossID int
+	switch v := args[0].(type) {
+	case float64:
+		bossID = int(v)
+	case int:
+		bossID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	h.logger.Info("ClickBoss",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("boss_id", bossID),
+		zap.Int("map_id", char.MapID))
+
+	// Get boss NPC information from game data
+	if h.gameData == nil {
+		h.logger.Warn("Game data manager not set, cannot get boss info")
+		return nil, pkgerrors.ErrSystemError
+	}
+
+	// Find boss NPC template
+	var bossTemplate *models.NpcTemplate
+	npcTemplates := h.gameData.GetNPCsByMapID(char.MapID)
+	for _, npc := range npcTemplates {
+		if npc.GetID() == bossID {
+			bossTemplate = npc
+			break
+		}
+	}
+
+	if bossTemplate == nil {
+		h.logger.Warn("Boss not found",
+			zap.Int("boss_id", bossID),
+			zap.Int("map_id", char.MapID))
+		return nil, pkgerrors.ErrNotFound
+	}
+
+	// Check if boss is in range (optional validation)
+	// For now, we'll allow interaction and let combat handler deal with range checks
+
+	// Send callback to client with boss information
+	// This may trigger battle or show boss dialog
+	bossData := map[string]interface{}{
+		"nid":     bossID,
+		"name":    bossTemplate.Name,
+		"resCode": int64(bossTemplate.ResCode),
+		"lv":      bossTemplate.Lv,
+		"classId": bossTemplate.ClassID,
+		"x":       int(bossTemplate.PosX),
+		"y":       int(bossTemplate.PosY),
+	}
+
+	if err := ctx.Connection.SendCallback("onClickBoss", bossData); err != nil {
+		h.logger.Warn("Failed to send onClickBoss callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	// In a full implementation, this might:
+	// 1. Check if player is in range
+	// 2. Check if boss is already in battle
+	// 3. Trigger battle system
+	// 4. Show boss information panel
+
+	return map[string]interface{}{
+		"success": true,
+		"bossId":  bossID,
+	}, nil
+}
+
+// CanEnterWbMap checks if player can enter World Boss map.
+// Client call: remote.canEnterWbMap(characterId?)
+// Parameters: characterId (Number, optional) - Character ID (defaults to current player)
+// Response: Returns boolean or object with {canEnter: bool, reason?: string}
+func (h *SceneHandler) CanEnterWbMap(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	var characterID int64
+	var err error
+
+	if len(args) > 0 {
+		// Get character ID from args
+		switch v := args[0].(type) {
+		case float64:
+			characterID = int64(v)
+		case int:
+			characterID = int64(v)
+		case int64:
+			characterID = v
+		default:
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+	} else {
+		// Get current player's character ID
+		characterID, err = strconv.ParseInt(ctx.CharacterID, 10, 64)
+		if err != nil {
+			return nil, pkgerrors.ErrUnauthorized
+		}
+	}
+
+	char, err := h.charService.GetByID(ctx.Context, characterID)
+	if err != nil {
+		return nil, err
+	}
+
+	h.logger.Debug("CanEnterWbMap",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("level", char.Level))
+
+	// Check conditions for entering World Boss map
+	// Common conditions:
+	// 1. Minimum level requirement (e.g., level 30+)
+	// 2. Not in battle
+	// 3. Not in another instance
+	// 4. World Boss event is active (optional)
+
+	canEnter := true
+	reason := ""
+
+	// Check level requirement (example: level 30+)
+	if char.Level < 30 {
+		canEnter = false
+		reason = "Level requirement not met (minimum level 30)"
+	}
+
+	// In a full implementation, you might also check:
+	// - If player is in battle (cannot enter while in battle)
+	// - If player is in another instance
+	// - If World Boss event is currently active
+	// - If player has required items or quests completed
+
+	result := map[string]interface{}{
+		"canEnter": canEnter,
+	}
+	if !canEnter && reason != "" {
+		result["reason"] = reason
+	}
+
+	h.logger.Info("CanEnterWbMap result",
+		zap.Int64("character_id", characterID),
+		zap.Bool("can_enter", canEnter),
+		zap.String("reason", reason))
+
+	return result, nil
+}
+
+// checkGroupMovementRestriction checks if a player is in a group and not the leader.
+// Returns an error if movement should be blocked (player is a member, not leader).
+// Returns nil if player can move (not in group or is leader).
+func (h *SceneHandler) checkGroupMovementRestriction(ctx context.Context, characterID int64) error {
+	if h.groupService == nil {
+		return nil // No group service, allow movement
+	}
+
+	// First check if player is in a group
+	inGroup, err := h.groupService.IsInGroup(ctx, characterID)
+	if err != nil {
+		h.logger.Warn("Failed to check group membership",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil // On error, allow movement to avoid blocking players
+	}
+
+	// If not in group, allow movement
+	if !inGroup {
+		return nil
+	}
+
+	// Player is in group, check if they are leader
+	isLeader, err := h.groupService.IsGroupLeader(ctx, characterID)
+	if err != nil {
+		h.logger.Warn("Failed to check group leader status",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil // On error, allow movement to avoid blocking players
+	}
+
+	// If player is leader, allow movement
+	if isLeader {
+		return nil
+	}
+
+	// Player is in group but not leader, check if they are AFK (tạm rời)
+	// AFK members can move freely (they temporarily left the group)
+	isAFK, err := h.groupService.IsMemberAFK(ctx, characterID)
+	if err != nil {
+		h.logger.Warn("Failed to check member AFK status",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil // On error, allow movement to avoid blocking players
+	}
+
+	// If member is AFK (tạm rời), allow movement
+	if isAFK {
+		return nil
+	}
+
+	// Member is in group, not leader, and not AFK - block movement
+	return errors.New("player is in group and must follow leader")
+}
+
+// sendInitialCharacterAttributes sends character attributes to client on scene login
+// Best Practice: Centralized method for sending onInitViewProp callback
+// Handles error logging and graceful degradation
+func (h *SceneHandler) sendInitialCharacterAttributes(ctx *rtmp.RPCContext, characterID int64) error {
+	// Get character attributes from service
+	attrs, err := h.charService.GetCharacterAttributes(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Warn("Failed to get character attributes",
+			zap.Int64("character_id", characterID),
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+		return err
+	}
+
+	// Validate attributes are not empty
+	if len(attrs) == 0 {
+		h.logger.Warn("Character attributes are empty",
+			zap.Int64("character_id", characterID),
+			zap.Uint32("conn_id", ctx.ConnID))
+		return errors.New("empty character attributes")
+	}
+
+	// Send onInitViewProp callback to client
+	// This callback initializes the Character Panel UI with all player stats
+	if err := ctx.Connection.SendCallback("onInitViewProp", attrs); err != nil {
+		h.logger.Error("Failed to send onInitViewProp callback",
+			zap.Int64("character_id", characterID),
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+		return err
+	}
+
+	h.logger.Debug("Initial character attributes sent successfully",
+		zap.Int64("character_id", characterID),
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("attribute_count", len(attrs)))
+
+	return nil
+}

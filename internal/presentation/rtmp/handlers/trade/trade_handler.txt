@@ -1,0 +1,278 @@
+// Trade handler for player-to-player trading system.
+// Handles trade initiation, confirmation, and item/money exchange.
+package handlers
+
+import (
+	"strconv"
+
+	"mcgame-server/internal/infrastructure/rtmp"
+
+	"go.uber.org/zap"
+)
+
+type TradeHandler struct {
+	rtmpServer *rtmp.Server
+	logger     *zap.Logger
+}
+
+func NewTradeHandler(rtmpServer *rtmp.Server, logger *zap.Logger) *TradeHandler {
+	return &TradeHandler{
+		rtmpServer: rtmpServer,
+		logger:     logger,
+	}
+}
+
+func (h *TradeHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("newTrade", h.NewTrade)
+	dispatcher.Register("stopTrade", h.StopTrade)
+	dispatcher.Register("tradeLock", h.TradeLock)
+	dispatcher.Register("tradeConfirm", h.TradeConfirm)
+	dispatcher.Register("tradeAddItem", h.TradeAddItem)
+	dispatcher.Register("tradeRemoveItem", h.TradeRemoveItem)
+	dispatcher.Register("tradeSetMoney", h.TradeSetMoney)
+}
+
+// NewTrade initiates a new trade request with another player.
+// Client call: _core.remote.call("newTrade", responder, targetId)
+// Parameters: targetId (Number) - target player's character ID
+// Response: {flag: true/false, info: string} or {tradeId: number}
+func (h *TradeHandler) NewTrade(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("NewTrade called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID),
+		zap.Any("args", args))
+
+	if len(args) < 1 {
+		return map[string]interface{}{
+			"flag": false,
+			"info": "Missing target player ID",
+		}, nil
+	}
+
+	targetIDFloat, ok := args[0].(float64)
+	if !ok {
+		return map[string]interface{}{
+			"flag": false,
+			"info": "Invalid target player ID",
+		}, nil
+	}
+
+	targetID := int64(targetIDFloat)
+	initiatorID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		h.logger.Warn("NewTrade: invalid character ID",
+			zap.String("character_id", ctx.CharacterID),
+			zap.Error(err))
+		return map[string]interface{}{
+			"flag": false,
+			"info": "Invalid character ID",
+		}, nil
+	}
+
+	// Check if trying to trade with self
+	if targetID == initiatorID {
+		return map[string]interface{}{
+			"flag": false,
+			"info": "Cannot trade with yourself",
+		}, nil
+	}
+
+	// Check if target player is online
+	targetIDStr := strconv.FormatInt(targetID, 10)
+	targetConn := h.rtmpServer.GetConnectionByCharacterID(targetIDStr)
+	if targetConn == nil {
+		return map[string]interface{}{
+			"flag": false,
+			"info": "Target player is not online",
+		}, nil
+	}
+
+	// TODO: Check if target player is already in a trade
+	// TODO: Check distance between players
+	// TODO: Create trade session and store in memory/database
+	// TODO: Send trade request notification to target player
+	// TODO: Generate trade ID
+
+	// For now, return success to allow client to proceed
+	// In real implementation, we would:
+	// 1. Create a trade session
+	// 2. Send notification to target player
+	// 3. Wait for target player to accept
+	// 4. Return trade ID when both players are ready
+
+	h.logger.Debug("Trade request initiated",
+		zap.Int64("initiator_id", initiatorID),
+		zap.Int64("target_id", targetID))
+
+	// Mock: Return success with a mock trade ID
+	// Client expects either {flag: true} or {flag: false, info: string}
+	return map[string]interface{}{
+		"flag":    true,
+		"tradeId": initiatorID*10000 + targetID, // Mock trade ID
+	}, nil
+}
+
+// StopTrade cancels the current trade.
+// Client call: _core.remote.call("stopTrade", responder)
+func (h *TradeHandler) StopTrade(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("StopTrade called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID))
+
+	// TODO: Find active trade session
+	// TODO: Notify other player
+	// TODO: Clean up trade session
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+// TradeLock locks the player's side of the trade (ready to confirm).
+// Client call: _core.remote.call("tradeLock", responder)
+func (h *TradeHandler) TradeLock(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("TradeLock called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID))
+
+	// TODO: Find active trade session
+	// TODO: Lock player's side
+	// TODO: Notify other player that this side is locked
+	// TODO: If both sides locked, allow confirmation
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+// TradeConfirm confirms and completes the trade.
+// Client call: _core.remote.call("tradeConfirm", responder, passwordHash?)
+// Parameters: passwordHash (String, optional) - MD5 hash of password for security
+func (h *TradeHandler) TradeConfirm(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("TradeConfirm called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID),
+		zap.Any("args", args))
+
+	// TODO: Find active trade session
+	// TODO: Validate both sides are locked
+	// TODO: Validate password if provided
+	// TODO: Validate items and money are still available
+	// TODO: Execute trade (transfer items and money)
+	// TODO: Notify both players of success
+	// TODO: Clean up trade session
+
+	return map[string]interface{}{
+		"success":  true,
+		"received": []interface{}{}, // Array of received items
+	}, nil
+}
+
+// TradeAddItem adds an item to the trade.
+// Client call: _core.remote.call("tradeAddItem", responder, slotId, amount?)
+func (h *TradeHandler) TradeAddItem(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("TradeAddItem called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID),
+		zap.Any("args", args))
+
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false, "error": "missing slot ID"}, nil
+	}
+
+	slotID, ok := args[0].(float64)
+	if !ok {
+		return map[string]interface{}{"success": false, "error": "invalid slot ID"}, nil
+	}
+
+	amount := 1
+	if len(args) >= 2 {
+		if amt, ok := args[1].(float64); ok {
+			amount = int(amt)
+		}
+	}
+
+	// TODO: Find active trade session
+	// TODO: Validate item exists in player inventory
+	// TODO: Validate item is tradeable
+	// TODO: Add item to trade
+	// TODO: Notify other player
+
+	h.logger.Debug("Item added to trade",
+		zap.Int64("slot_id", int64(slotID)),
+		zap.Int("amount", amount))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+// TradeRemoveItem removes an item from the trade.
+// Client call: _core.remote.call("tradeRemoveItem", responder, slotId)
+func (h *TradeHandler) TradeRemoveItem(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("TradeRemoveItem called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID),
+		zap.Any("args", args))
+
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false, "error": "missing slot ID"}, nil
+	}
+
+	slotID, ok := args[0].(float64)
+	if !ok {
+		return map[string]interface{}{"success": false, "error": "invalid slot ID"}, nil
+	}
+
+	// TODO: Find active trade session
+	// TODO: Remove item from trade
+	// TODO: Notify other player
+
+	h.logger.Debug("Item removed from trade",
+		zap.Int64("slot_id", int64(slotID)))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+// TradeSetMoney sets the amount of money to trade.
+// Client call: _core.remote.call("tradeSetMoney", responder, amount, moneyType?)
+// Parameters:
+//   - amount (Number) - amount of money
+//   - moneyType (Number, optional) - type of money (1=MoneyBind, 2=Money, 3=GoldBind, 4=Gold)
+func (h *TradeHandler) TradeSetMoney(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("TradeSetMoney called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID),
+		zap.Any("args", args))
+
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false, "error": "missing amount"}, nil
+	}
+
+	amount, ok := args[0].(float64)
+	if !ok {
+		return map[string]interface{}{"success": false, "error": "invalid amount"}, nil
+	}
+
+	moneyType := 2 // Default to Money (Silver)
+	if len(args) >= 2 {
+		if mt, ok := args[1].(float64); ok {
+			moneyType = int(mt)
+		}
+	}
+
+	// TODO: Find active trade session
+	// TODO: Validate player has enough money
+	// TODO: Set money in trade
+	// TODO: Notify other player
+
+	h.logger.Debug("Money set in trade",
+		zap.Int64("amount", int64(amount)),
+		zap.Int("money_type", moneyType))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}

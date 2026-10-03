@@ -1,0 +1,578 @@
+// Game data handler for game data configuration RPC calls.
+// Handles gdc (Get Data Configuration) - retrieves game data by table type and ID.
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math"
+	"strconv"
+
+	"mcgame-server/internal/gamedata"
+	"mcgame-server/internal/gamedata/models"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"strings"
+
+	"go.uber.org/zap"
+)
+
+type GameDataHandler struct {
+	gameData *gamedata.Manager
+	logger   *zap.Logger
+}
+
+func NewGameDataHandler(gameData *gamedata.Manager, logger *zap.Logger) *GameDataHandler {
+	return &GameDataHandler{
+		gameData: gameData,
+		logger:   logger,
+	}
+}
+
+func (h *GameDataHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("gdc", h.GetDataConfig)
+	dispatcher.Register("getDataPackageClient", h.GetDataPackageClient)
+	dispatcher.Register("getItemInst_f", h.GetItemInstF)
+}
+
+// GetDataConfig retrieves game data configuration by table type and ID.
+// Client call: _core.remote.call("gdc", responder, tableType, id)
+// Parameters:
+//   - tableType (Number): Table type ID (e.g., TBL_ITEM_INSTANCE, TBL_CREATURE, etc.)
+//   - id (Number): Record ID, or -1 to get all records from the table
+//
+// Response: Returns {type: tableType, data: recordOrArray}
+//   - If id > 0: Returns single record
+//   - If id == -1: Returns array of all records
+func (h *GameDataHandler) GetDataConfig(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		h.logger.Warn("GetDataConfig: missing parameters",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int("arg_count", len(args)))
+		return nil, pkgerrors.Wrap(pkgerrors.ErrInvalidArgs, "expected 2 arguments: tableType, recordID")
+	}
+
+	// Parse table type
+	var tableType int
+	switch v := args[0].(type) {
+	case float64:
+		tableType = safeFloat64ToInt(v)
+	case int:
+		tableType = v
+	case int64:
+		tableType = int(v)
+	default:
+		h.logger.Warn("GetDataConfig: invalid table type",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Any("table_type", args[0]),
+			zap.String("type", fmt.Sprintf("%T", args[0])))
+		return nil, pkgerrors.Wrap(pkgerrors.ErrInvalidInput, fmt.Sprintf("invalid table type: %v (type: %T)", args[0], args[0]))
+	}
+
+	// Parse record ID
+	var recordID int
+	switch v := args[1].(type) {
+	case float64:
+		recordID = safeFloat64ToInt(v)
+	case int:
+		recordID = v
+	case int64:
+		recordID = int(v)
+	default:
+		h.logger.Warn("GetDataConfig: invalid record ID",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Any("record_id", args[1]),
+			zap.String("type", fmt.Sprintf("%T", args[1])))
+		return nil, pkgerrors.Wrap(pkgerrors.ErrInvalidInput, fmt.Sprintf("invalid record ID: %v (type: %T)", args[1], args[1]))
+	}
+
+	// Map table type to table name
+	tableName, ok := models.TableIDToName[tableType]
+	if !ok {
+		// Special case for TBL_PET (39) which might be requested but not yet in the map
+		if tableType == 39 {
+			h.logger.Info("GetDataConfig: providing empty response for TBL_PET (39)", zap.Uint32("conn_id", ctx.ConnID))
+			return map[string]interface{}{
+				"type": tableType,
+				"data": []interface{}{},
+			}, nil
+		}
+
+		h.logger.Warn("GetDataConfig: unknown table type",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int("table_type", tableType),
+			zap.Any("available_types", getAvailableTableTypes()))
+		return nil, pkgerrors.Wrap(pkgerrors.ErrInvalidInput, fmt.Sprintf("unknown table type: %d", tableType))
+	}
+
+	h.logger.Debug("GetDataConfig: fetching game data",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("table_type", tableType),
+		zap.String("table_name", tableName),
+		zap.Int("record_id", recordID))
+
+	// Get repository
+	repo := h.gameData.GetRepository()
+	if repo == nil {
+		h.logger.Error("GetDataConfig: game data repository not available")
+		return nil, pkgerrors.ErrSystemError
+	}
+
+	// Create context
+	rpcCtx := context.Background()
+
+	var response map[string]interface{}
+
+	if recordID <= 0 {
+		// Get all records from table
+		records, err := repo.GetAllByTable(rpcCtx, tableName)
+		if err != nil {
+			h.logger.Error("GetDataConfig: failed to get all records",
+				zap.String("table_name", tableName),
+				zap.Error(err))
+			return nil, pkgerrors.Wrap(err, "failed to get all records")
+		}
+
+		// Parse JSON records into a map with ID as key, converting keys to camelCase
+		dataMap := make(map[string]interface{})
+		for _, recordJSON := range records {
+			var rawData map[string]interface{}
+			if err := json.Unmarshal(recordJSON, &rawData); err != nil {
+				h.logger.Warn("GetDataConfig: failed to parse record", zap.Error(err))
+				continue
+			}
+
+			// Convert keys to camelCase (e.g., icon_code -> iconCode)
+			recordData := make(map[string]interface{})
+			for k, v := range rawData {
+				newKey := snakeToCamel(k)
+				recordData[newKey] = v
+			}
+
+			// Ensure "id" is present and used as key (Flash client uses lowercase "id")
+			if id, ok := recordData["id"]; ok {
+				idStr := fmt.Sprintf("%v", id)
+				dataMap[idStr] = recordData
+			}
+		}
+
+		response = map[string]interface{}{
+			"type": tableType,
+			"data": dataMap,
+		}
+
+		h.logger.Info("GetDataConfig: returning all records",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.String("table_name", tableName),
+			zap.Int("count", len(records)))
+		if len(dataMap) > 0 {
+			// Log just one record as example
+			for id, rec := range dataMap {
+				h.logger.Debug("GetDataConfig: example record", zap.String("id", id), zap.Any("record", rec))
+				break
+			}
+		}
+	} else {
+		// Get single record by ID
+		recordJSON, err := repo.GetByTableAndID(rpcCtx, tableName, recordID)
+		if err != nil {
+			h.logger.Error("GetDataConfig: failed to get record",
+				zap.String("table_name", tableName),
+				zap.Int("record_id", recordID),
+				zap.Error(err))
+			return nil, pkgerrors.Wrap(err, "failed to get record")
+		}
+
+		// Parse JSON record
+		var rawData map[string]interface{}
+		if recordJSON == nil {
+			h.logger.Warn("GetDataConfig: record not found",
+				zap.String("table_name", tableName),
+				zap.Int("record_id", recordID))
+			// Return a wrapper with null data if not found, to avoid client errors
+			return map[string]interface{}{
+				"type": tableType,
+				"data": nil,
+			}, nil
+		}
+		if err := json.Unmarshal(recordJSON, &rawData); err != nil {
+			h.logger.Error("GetDataConfig: failed to parse record", zap.Error(err))
+			return nil, pkgerrors.Wrap(err, "failed to parse record")
+		}
+
+		// Convert keys to camelCase
+		recordData := make(map[string]interface{})
+		for k, v := range rawData {
+			newKey := snakeToCamel(k)
+			recordData[newKey] = v
+		}
+
+		// Special handling for Item/Equip Instances (18, 28) to fix field names
+		if tableType == 18 || tableType == 28 {
+			// Flatten "properties" jsonb into top-level fields
+			// The client expects stats (mainProp1, mainPropNum1, etc.) at the top level
+			if props, ok := recordData["properties"]; ok {
+				if propsMap, ok := props.(map[string]interface{}); ok {
+					for k, v := range propsMap {
+						if k == "id" {
+							continue
+						}
+						recordData[k] = v
+					}
+				}
+				delete(recordData, "properties")
+			}
+
+			// Map is_bound -> binded for Flash client compatibility
+			if isBound, ok := recordData["isBound"]; ok {
+				recordData["binded"] = isBound
+				delete(recordData, "isBound")
+			}
+			// Map color_code -> color for Flash client
+			if colorCode, ok := recordData["colorCode"]; ok {
+				recordData["color"] = colorCode
+			}
+			// Map enchant_level -> upgradeNum for Flash client (creature)
+			if enchantLv, ok := recordData["enchantLv"]; ok {
+				recordData["upgradeNum"] = enchantLv
+			}
+
+			// Add "f" field - serialized properties/features JSON string
+			// Flash client expects "f" as a JSON string, defaults to "{}" when empty
+			if _, ok := recordData["f"]; !ok {
+				recordData["f"] = "{}"
+			}
+
+			// Add "t" field from template - Flash client needs this from template data
+			if templateID, ok := recordData["templateId"]; ok {
+				templateTableID := 29
+				if tableType == 18 {
+					templateTableID = 19
+				}
+				templateTableName := models.TableIDToName[templateTableID]
+				tidInt := safeInterfaceToInt(templateID)
+				if tidInt > 0 {
+					if tempJSON, err := repo.GetByTableAndID(rpcCtx, templateTableName, tidInt); err == nil && tempJSON != nil {
+						var tempData map[string]interface{}
+						if json.Unmarshal(tempJSON, &tempData) == nil {
+							if tVal, ok := tempData["t"]; ok {
+								recordData["t"] = tVal
+							}
+						}
+					}
+				}
+			}
+			// If t not set from template, default to -1
+			if _, ok := recordData["t"]; !ok {
+				recordData["t"] = -1
+			}
+		}
+
+		// Special handling for Item/Equip Instances (18, 28) to recalculate SID
+		if tableType == 18 || tableType == 28 {
+			// Recalculate SID based on slotType and slotIndex
+			if slotType, ok := recordData["slotType"].(float64); ok {
+				if slotIndex, ok := recordData["slotIndex"].(float64); ok {
+					sid := calculateSID(int(slotType), int(slotIndex))
+					recordData["sid"] = sid
+					h.logger.Debug("GetDataConfig: recalculated SID for item instance",
+						zap.Int("slot_type", int(slotType)),
+						zap.Int("slot_index", int(slotIndex)),
+						zap.Int("sid", sid))
+				}
+			}
+		}
+
+		response = map[string]interface{}{
+			"type":  tableType,
+			"data":  recordData,
+			"index": recordID,
+			// "inst": recordData,
+			// "temp": recordData,
+		}
+
+		//Display tooltip class Tip...
+		h.logger.Info("GetDataConfig: returning single record",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.String("table_name", tableName),
+			zap.Int("record_id", recordID),
+			zap.Any("record", recordData))
+	}
+
+	return response, nil
+}
+
+// GetDataPackageClient handles getDataPackageClient RPC call.
+// Client call: _core.remote.nc.call("getDataPackageClient", responder, tableType, id)
+// Returns {type: tableType, inst: instanceData, temp: templateData}
+func (h *GameDataHandler) GetDataPackageClient(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.Wrap(pkgerrors.ErrInvalidArgs, "expected 2 arguments: tableType, recordID")
+	}
+
+	tableType := safeInterfaceToInt(args[0])
+	recordID := safeInterfaceToInt(args[1])
+
+	h.logger.Info("GetDataPackageClient: request",
+		zap.Int("table_type", tableType),
+		zap.Int("record_id", recordID))
+
+	// Map table type to table name
+	tableName, ok := models.TableIDToName[tableType]
+	if !ok {
+		return nil, fmt.Errorf("unknown table type: %d", tableType)
+	}
+
+	repo := h.gameData.GetRepository()
+	rpcCtx := context.Background()
+
+	// Get the main record
+	recordJSON, err := repo.GetByTableAndID(rpcCtx, tableName, recordID)
+	if err != nil || recordJSON == nil {
+		h.logger.Warn("GetDataPackageClient: record not found", zap.String("table", tableName), zap.Int("id", recordID))
+		return nil, pkgerrors.ErrNotFound
+	}
+
+	var rawData map[string]interface{}
+	json.Unmarshal(recordJSON, &rawData)
+	recordData := make(map[string]interface{})
+	for k, v := range rawData {
+		recordData[snakeToCamel(k)] = v
+	}
+
+	response := map[string]interface{}{
+		"type": tableType,
+		"inst": recordData,
+		"temp": recordData, // Default: template is the same as instance if not handled specifically
+	}
+
+	// Flatten "properties" for item/equip instances
+	if tableType == 28 || tableType == 18 {
+		if props, ok := recordData["properties"]; ok {
+			if propsMap, ok := props.(map[string]interface{}); ok {
+				for k, v := range propsMap {
+					if k == "id" {
+						continue
+					}
+					recordData[k] = v
+				}
+			}
+			delete(recordData, "properties")
+		}
+	}
+
+	// Special handling for Item Instance (28) -> Template (29)
+	if tableType == 28 {
+		// Template ID is usually in TemplateID or itemId field
+		templateID := 0
+		if tid, ok := recordData["templateId"]; ok {
+			templateID = int(tid.(float64))
+		} else if tid, ok := recordData["itemId"]; ok {
+			templateID = int(tid.(float64))
+		}
+
+		if templateID > 0 {
+			templateTable := models.TableIDToName[29]
+			tempJSON, _ := repo.GetByTableAndID(rpcCtx, templateTable, templateID)
+			if tempJSON != nil {
+				var rawTemp map[string]interface{}
+				json.Unmarshal(tempJSON, &rawTemp)
+				tempData := make(map[string]interface{})
+				for k, v := range rawTemp {
+					tempData[snakeToCamel(k)] = v
+				}
+				response["temp"] = tempData
+
+				// Add "t" field from template to instance data
+				if tVal, ok := rawTemp["t"]; ok {
+					recordData["t"] = tVal
+				}
+			}
+		}
+
+		// Add "f" field to instance data if not present
+		if _, ok := recordData["f"]; !ok {
+			recordData["f"] = "{}"
+		}
+
+		// If t not set from template, default to -1
+		if _, ok := recordData["t"]; !ok {
+			recordData["t"] = -1
+		}
+
+		// Map is_bound -> binded for Flash client compatibility
+		if isBound, ok := recordData["isBound"]; ok {
+			recordData["binded"] = isBound
+			delete(recordData, "isBound")
+		}
+		// Map color_code -> color for Flash client
+		if colorCode, ok := recordData["colorCode"]; ok {
+			recordData["color"] = colorCode
+		}
+
+		response["inst"] = recordData
+	}
+
+	// Special handling for Equip Instance (18) -> Template (19)
+	if tableType == 18 {
+		templateID := 0
+		if tid, ok := recordData["templateId"]; ok {
+			templateID = int(tid.(float64))
+		} else if tid, ok := recordData["itemId"]; ok {
+			templateID = int(tid.(float64))
+		}
+
+		if templateID > 0 {
+			templateTable := models.TableIDToName[19]
+			tempJSON, _ := repo.GetByTableAndID(rpcCtx, templateTable, templateID)
+			if tempJSON != nil {
+				var rawTemp map[string]interface{}
+				json.Unmarshal(tempJSON, &rawTemp)
+				tempData := make(map[string]interface{})
+				for k, v := range rawTemp {
+					tempData[snakeToCamel(k)] = v
+				}
+				response["temp"] = tempData
+
+				if tVal, ok := rawTemp["t"]; ok {
+					recordData["t"] = tVal
+				}
+			}
+		}
+
+		if _, ok := recordData["f"]; !ok {
+			recordData["f"] = "{}"
+		}
+
+		if _, ok := recordData["t"]; !ok {
+			recordData["t"] = -1
+		}
+
+		if isBound, ok := recordData["isBound"]; ok {
+			recordData["binded"] = isBound
+			delete(recordData, "isBound")
+		}
+		if colorCode, ok := recordData["colorCode"]; ok {
+			recordData["color"] = colorCode
+		}
+
+		response["inst"] = recordData
+	}
+
+	return response, nil
+}
+
+// GetItemInstF returns the "f" field (custom tooltip data) for an item instance.
+// Client call: _core.remote.call("getItemInst_f", responder, itemInstanceID)
+// Used by TipItem.as to get custom tooltip formatting data.
+func (h *GameDataHandler) GetItemInstF(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("GetItemInstF: missing itemID parameter")
+		return nil, pkgerrors.Wrap(pkgerrors.ErrInvalidArgs, "expected 1 argument: itemInstanceID")
+	}
+
+	itemID := safeInterfaceToInt(args[0])
+	h.logger.Debug("GetItemInstF: request", zap.Int("item_id", itemID))
+
+	repo := h.gameData.GetRepository()
+	rpcCtx := context.Background()
+
+	// Determine table type based on item ID range
+	// Item instances (28) and Equipment instances (18)
+	tableType := 28 // Default to TBL_ITEM_INSTANCE
+	tableName := models.TableIDToName[tableType]
+
+	recordJSON, err := repo.GetByTableAndID(rpcCtx, tableName, itemID)
+	if err != nil || recordJSON == nil {
+		// Try TBL_EQUIPT_INSTANCE (18)
+		tableType = 18
+		tableName = models.TableIDToName[tableType]
+		recordJSON, err = repo.GetByTableAndID(rpcCtx, tableName, itemID)
+		if err != nil || recordJSON == nil {
+			h.logger.Warn("GetItemInstF: item instance not found", zap.Int("item_id", itemID))
+			return "{}", nil // Return empty object if not found
+		}
+	}
+
+	var rawData map[string]interface{}
+	json.Unmarshal(recordJSON, &rawData)
+
+	// Get "f" field or default to empty object
+	if f, ok := rawData["f"]; ok {
+		h.logger.Debug("GetItemInstF: returning f field", zap.Any("f", f))
+		return f, nil
+	}
+
+	// Default: return empty object
+	return "{}", nil
+}
+
+func safeInterfaceToInt(v interface{}) int {
+	switch val := v.(type) {
+	case float64:
+		return safeFloat64ToInt(val)
+	case int:
+		return val
+	case int32:
+		return int(val)
+	case int64:
+		return int(val)
+	case string:
+		i, _ := strconv.Atoi(val)
+		return i
+	default:
+		return 0
+	}
+}
+
+func safeFloat64ToInt(v float64) int {
+	if math.IsNaN(v) || math.IsInf(v, 0) {
+		return 0
+	}
+	return int(v)
+}
+
+// getAvailableTableTypes returns a list of available table type IDs for debugging
+func getAvailableTableTypes() []int {
+	types := make([]int, 0, len(models.TableIDToName))
+	for typeID := range models.TableIDToName {
+		types = append(types, typeID)
+	}
+	return types
+}
+
+func snakeToCamel(s string) string {
+	if s == "id" {
+		return "id"
+	}
+	parts := strings.Split(s, "_")
+	for i := 1; i < len(parts); i++ {
+		if len(parts[i]) > 0 {
+			parts[i] = strings.ToUpper(parts[i][0:1]) + parts[i][1:]
+		}
+	}
+	return strings.Join(parts, "")
+}
+
+// calculateSID calculates the global slot ID from slotType and slotIndex
+// This matches the logic in internal/domain/item/item.go Item.CalculateSID()
+func calculateSID(slotType int, slotIndex int) int {
+	switch slotType {
+	case 1: // SlotTypeEquipped
+		return 1 + slotIndex
+	case 0: // SlotTypeBag
+		return 2100 + slotIndex + 1
+	case 4: // SlotTypeQuestBag
+		return 2300 + slotIndex + 1
+	case 5: // SlotTypePetItemBag
+		return 2340 + slotIndex + 1
+	case 2: // SlotTypeBank
+		return 300 + slotIndex + 1
+	case 3: // SlotTypeTempBag
+		return 80 + slotIndex
+	default:
+		return slotIndex
+	}
+}

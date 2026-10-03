@@ -1,0 +1,873 @@
+package handlers
+
+import (
+	"context"
+	"strconv"
+
+	appchar "mcgame-server/internal/application/character"
+	appgroup "mcgame-server/internal/application/group"
+	domaingroup "mcgame-server/internal/domain/group"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+type GroupHandler struct {
+	logger       *zap.Logger
+	groupService *appgroup.Service
+	charService  *appchar.Service
+	rtmpServer   *rtmp.Server
+}
+
+func NewGroupHandler(logger *zap.Logger, groupService *appgroup.Service) *GroupHandler {
+	return &GroupHandler{logger: logger, groupService: groupService}
+}
+
+func (h *GroupHandler) SetCharService(charService *appchar.Service) {
+	h.charService = charService
+}
+
+func (h *GroupHandler) SetRTMPServer(rtmpServer *rtmp.Server) {
+	h.rtmpServer = rtmpServer
+}
+
+func (h *GroupHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("groupInvite", h.GroupInvite)
+	dispatcher.Register("groupJoin", h.GroupJoin)
+	dispatcher.Register("groupReqDeny", h.GroupReqDeny)
+	dispatcher.Register("groupAdd", h.GroupAdd)
+	dispatcher.Register("groupRequest", h.GroupRequest)
+	dispatcher.Register("groupLeave", h.GroupLeave)
+	dispatcher.Register("groupKick", h.GroupKick)
+	dispatcher.Register("groupGiveLeader", h.GroupGiveLeader)
+	dispatcher.Register("groupAFK", h.GroupAFK)
+	dispatcher.Register("unGroupAFK", h.UnGroupAFK)
+	dispatcher.Register("groupListOfMap", h.GroupListOfMap)
+	dispatcher.Register("reqAddGroup", h.ReqAddGroup)
+	dispatcher.Register("groupReqSuccNotice", h.GroupReqSuccNotice)
+	dispatcher.Register("getGroupMemberPosistion", h.GetGroupMemberPosition)
+}
+
+func (h *GroupHandler) GroupInvite(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var targetID int64
+	switch v := args[0].(type) {
+	case float64:
+		targetID = int64(v)
+	case int:
+		targetID = int64(v)
+	case int64:
+		targetID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	leaderID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Check if trying to invite self
+	if targetID == leaderID {
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	// Get leader character information
+	leaderChar, err := h.charService.GetByID(ctx.Context, leaderID)
+	if err != nil {
+		h.logger.Warn("GroupInvite: leader character not found",
+			zap.Int64("leader_id", leaderID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Get target character information
+	targetChar, err := h.charService.GetByID(ctx.Context, targetID)
+	if err != nil {
+		h.logger.Warn("GroupInvite: target character not found",
+			zap.Int64("target_id", targetID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Invite to group
+	g, err := h.groupService.Invite(ctx.Context, leaderID, targetID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Group invite sent",
+		zap.Int64("leader_id", leaderID),
+		zap.String("leader_name", leaderChar.Name),
+		zap.Int64("target_id", targetID),
+		zap.String("target_name", targetChar.Name))
+
+	// Send notification to inviter (leader) - confirms invitation was sent
+	inviteSentData := map[string]interface{}{
+		"pid":  targetID,
+		"name": targetChar.Name,
+	}
+	if err := ctx.Connection.SendCallback("onGroupInviteSent", inviteSentData); err != nil {
+		h.logger.Warn("Failed to send onGroupInviteSent callback to inviter",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	// Send callback to target (receiver) - shows group invite popup
+	// Format: onGroupInvited(obj) where obj.pid = inviter ID, obj.name = inviter name, obj.dis = "far" if too far
+	if h.rtmpServer != nil {
+		targetIDStr := strconv.FormatInt(targetID, 10)
+		if targetConn := h.rtmpServer.GetConnectionByCharacterID(targetIDStr); targetConn != nil {
+			// Check if players are in same map for distance check
+			// For now, assume same map = close enough (dis = ""), different map = far (dis = "far")
+			dis := ""
+			if leaderChar.MapID != targetChar.MapID {
+				dis = "far"
+			}
+
+			invitedData := map[string]interface{}{
+				"pid":  leaderID,
+				"name": leaderChar.Name,
+			}
+			if dis != "" {
+				invitedData["dis"] = dis
+			}
+
+			if err := targetConn.SendCallback("onGroupInvited", invitedData); err != nil {
+				h.logger.Warn("Failed to send onGroupInvited callback to target",
+					zap.Int64("target_id", targetID),
+					zap.Error(err))
+			} else {
+				h.logger.Info("Group invite notification sent to target",
+					zap.Int64("target_id", targetID),
+					zap.Int64("leader_id", leaderID))
+			}
+		} else {
+			h.logger.Debug("GroupInvite: target player is offline",
+				zap.Int64("target_id", targetID))
+		}
+	}
+
+	return map[string]interface{}{
+		"success": true,
+		"group":   g.ToDTO(),
+	}, nil
+}
+
+func (h *GroupHandler) GroupJoin(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupJoin called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false}, nil
+	}
+	leaderID := int64(args[0].(float64))
+	joinerID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	h.logger.Info("GroupJoin: attempting to join group",
+		zap.Int64("joiner_id", joinerID),
+		zap.Int64("leader_id", leaderID))
+
+	g, err := h.groupService.Join(ctx.Context, leaderID, joinerID)
+	if err != nil {
+		h.logger.Warn("GroupJoin: failed to join group",
+			zap.Int64("joiner_id", joinerID),
+			zap.Int64("leader_id", leaderID),
+			zap.Error(err))
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+
+	h.logger.Info("GroupJoin: successfully joined group",
+		zap.Int64("joiner_id", joinerID),
+		zap.Int64("leader_id", leaderID),
+		zap.Int64("group_id", g.ID),
+		zap.Int("member_count", len(g.Members)))
+
+	// Broadcast group update to all members so UI updates
+	h.broadcastGroupJoined(ctx.Context, g)
+
+	return map[string]interface{}{"success": true, "group": g.ToDTO()}, nil
+}
+
+func (h *GroupHandler) GroupReqDeny(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupReqDeny called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	return map[string]interface{}{"success": true}, nil
+}
+
+func (h *GroupHandler) GroupAdd(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupAdd called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false}, nil
+	}
+	targetID := int64(args[0].(float64))
+	leaderID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	// Leader accepts a group request and adds the target to the group
+	// Use Join to add target to leader's group
+	g, err := h.groupService.Join(ctx.Context, leaderID, targetID)
+	if err != nil {
+		h.logger.Warn("GroupAdd: failed to add member to group",
+			zap.Int64("leader_id", leaderID),
+			zap.Int64("target_id", targetID),
+			zap.Error(err))
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+
+	h.logger.Info("GroupAdd: successfully added member to group",
+		zap.Int64("leader_id", leaderID),
+		zap.Int64("target_id", targetID),
+		zap.Int64("group_id", g.ID))
+
+	// Broadcast group update to all members
+	h.broadcastGroupJoined(ctx.Context, g)
+
+	return map[string]interface{}{"success": true, "group": g.ToDTO()}, nil
+}
+
+func (h *GroupHandler) GroupRequest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupRequest called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false}, nil
+	}
+	leaderID := int64(args[0].(float64))
+	joinerID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	// Check if trying to request to self
+	if leaderID == joinerID {
+		return map[string]interface{}{"success": false, "error": "cannot request to join own group"}, nil
+	}
+
+	// Check if leader has a group
+	g, err := h.groupService.GetGroupByMember(ctx.Context, leaderID)
+	if err != nil || g == nil {
+		h.logger.Warn("GroupRequest: leader has no group",
+			zap.Int64("leader_id", leaderID),
+			zap.Error(err))
+		return map[string]interface{}{"success": false, "error": "leader has no group"}, nil
+	}
+
+	// Check if joiner is already in a group
+	existingGroup, _ := h.groupService.GetGroupByMember(ctx.Context, joinerID)
+	if existingGroup != nil {
+		h.logger.Warn("GroupRequest: joiner already in a group",
+			zap.Int64("joiner_id", joinerID))
+		return map[string]interface{}{"success": false, "error": "already in a group"}, nil
+	}
+
+	// Get joiner character information
+	joinerChar, err := h.charService.GetByID(ctx.Context, joinerID)
+	if err != nil {
+		h.logger.Warn("GroupRequest: joiner character not found",
+			zap.Int64("joiner_id", joinerID),
+			zap.Error(err))
+		return map[string]interface{}{"success": false, "error": "character not found"}, nil
+	}
+
+	// Send onGroupRequest callback to leader with joiner information
+	if h.rtmpServer != nil {
+		leaderIDStr := strconv.FormatInt(leaderID, 10)
+		if leaderConn := h.rtmpServer.GetConnectionByCharacterID(leaderIDStr); leaderConn != nil {
+			// Format request data as expected by client
+			// Client expects: id, name, exp, classId (and will calculate level, className)
+			requestData := map[string]interface{}{
+				"id":      joinerID,
+				"name":    joinerChar.Name,
+				"exp":     joinerChar.Experience,
+				"classId": joinerChar.ClassID,
+			}
+
+			if err := leaderConn.SendCallback("onGroupRequest", requestData); err != nil {
+				h.logger.Warn("Failed to send onGroupRequest callback to leader",
+					zap.Int64("leader_id", leaderID),
+					zap.Int64("joiner_id", joinerID),
+					zap.Error(err))
+			} else {
+				h.logger.Info("Sent onGroupRequest to leader",
+					zap.Int64("leader_id", leaderID),
+					zap.Int64("joiner_id", joinerID),
+					zap.String("joiner_name", joinerChar.Name))
+			}
+		} else {
+			h.logger.Debug("Leader is offline, cannot send onGroupRequest",
+				zap.Int64("leader_id", leaderID))
+		}
+	}
+
+	return map[string]interface{}{"success": true}, nil
+}
+
+func (h *GroupHandler) GroupLeave(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupLeave called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	memberID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	g, oldGroup, err := h.groupService.Leave(ctx.Context, memberID)
+	if err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+
+	// If group was disbanded (g == nil, oldGroup != nil), notify all old members
+	if g == nil && oldGroup != nil {
+		h.broadcastGroupDismiss(ctx.Context, oldGroup)
+	} else if g != nil {
+		// Group still exists, update all remaining members
+		h.broadcastGroupJoined(ctx.Context, g)
+	}
+
+	resp := map[string]interface{}{"success": true}
+	if g != nil {
+		resp["group"] = g.ToDTO()
+	}
+	return resp, nil
+}
+
+func (h *GroupHandler) GroupKick(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupKick called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var targetID int64
+	switch v := args[0].(type) {
+	case float64:
+		targetID = int64(v)
+	case int:
+		targetID = int64(v)
+	case int64:
+		targetID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	leaderID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Perform kick operation
+	g, oldGroup, err := h.groupService.Kick(ctx.Context, leaderID, targetID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// If group was disbanded (only 1 member left after kick)
+	if g == nil && oldGroup != nil {
+		// Use broadcastGroupDismiss to notify all members (including kicked member and leader)
+		h.broadcastGroupDismiss(ctx.Context, oldGroup)
+
+		h.logger.Info("GroupKick: group disbanded after kick (only 1 member left)",
+			zap.Int64("leader_id", leaderID),
+			zap.Int64("target_id", targetID))
+
+		return map[string]interface{}{
+			"success": true,
+			"group":   nil, // Group was disbanded
+		}, nil
+	}
+
+	// Notify kicked member that they were removed from group
+	// Client expects onGroupDismiss with head structure directly (not wrapped in mList)
+	// Client accesses _arg_1.head, not _arg_1.mList.head
+	if h.rtmpServer != nil && oldGroup != nil {
+		targetIDStr := strconv.FormatInt(targetID, 10)
+		if targetConn := h.rtmpServer.GetConnectionByCharacterID(targetIDStr); targetConn != nil {
+			// Format old group data for dismiss callback
+			_, _, mList := h.formatGroupForClient(ctx.Context, oldGroup)
+
+			// Client expects object with 'head' property directly, not wrapped in 'mList'
+			var callbackData map[string]interface{}
+			if mList != nil {
+				// mList is already the correct structure with 'head' property
+				if mListMap, ok := mList.(map[string]interface{}); ok {
+					callbackData = mListMap
+				} else {
+					callbackData = map[string]interface{}{}
+				}
+			} else {
+				callbackData = map[string]interface{}{}
+			}
+
+			if err := targetConn.SendCallback("onGroupDismiss", callbackData); err != nil {
+				h.logger.Warn("Failed to send onGroupDismiss callback to kicked member",
+					zap.Int64("target_id", targetID),
+					zap.Error(err))
+			} else {
+				h.logger.Info("Sent onGroupDismiss to kicked member",
+					zap.Int64("target_id", targetID),
+					zap.Int64("leader_id", leaderID))
+			}
+		}
+	}
+
+	// Broadcast group update to all remaining members
+	if g != nil {
+		h.broadcastGroupJoined(ctx.Context, g)
+	}
+
+	h.logger.Info("GroupKick: successfully kicked member",
+		zap.Int64("leader_id", leaderID),
+		zap.Int64("target_id", targetID),
+		zap.Int("remaining_members", len(g.Members)))
+
+	return map[string]interface{}{
+		"success": true,
+		"group":   g.ToDTO(),
+	}, nil
+}
+
+func (h *GroupHandler) GroupGiveLeader(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupGiveLeader called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var newLeaderID int64
+	switch v := args[0].(type) {
+	case float64:
+		newLeaderID = int64(v)
+	case int:
+		newLeaderID = int64(v)
+	case int64:
+		newLeaderID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	leaderID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Check if trying to transfer to self
+	if newLeaderID == leaderID {
+		h.logger.Warn("GroupGiveLeader: cannot transfer leadership to self",
+			zap.Int64("leader_id", leaderID))
+		return map[string]interface{}{
+			"success": false,
+			"error":   "cannot transfer leadership to yourself",
+		}, nil
+	}
+
+	// Get current leader character info
+	oldLeaderChar, err := h.charService.GetByID(ctx.Context, leaderID)
+	if err != nil {
+		h.logger.Warn("GroupGiveLeader: current leader character not found",
+			zap.Int64("leader_id", leaderID),
+			zap.Error(err))
+		return map[string]interface{}{
+			"success": false,
+			"error":   "current leader not found",
+		}, nil
+	}
+
+	// Get new leader character info
+	newLeaderChar, err := h.charService.GetByID(ctx.Context, newLeaderID)
+	if err != nil {
+		h.logger.Warn("GroupGiveLeader: new leader character not found",
+			zap.Int64("new_leader_id", newLeaderID),
+			zap.Error(err))
+		return map[string]interface{}{
+			"success": false,
+			"error":   "new leader not found",
+		}, nil
+	}
+
+	// Get group before transfer to check if new leader was AFK
+	oldGroup, _ := h.groupService.GetGroupByMember(ctx.Context, leaderID)
+	var wasAFK bool = false
+	if oldGroup != nil {
+		for _, member := range oldGroup.Members {
+			if member.CharID == newLeaderID {
+				wasAFK = member.AFK
+				break
+			}
+		}
+	}
+
+	// Perform leadership transfer
+	g, err := h.groupService.GiveLeader(ctx.Context, leaderID, newLeaderID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// Broadcast group update to all members (including old and new leader)
+	h.broadcastGroupJoined(ctx.Context, g)
+
+	// Send onGroupGiveLeader callback to all members (client expects this)
+	if h.rtmpServer != nil && g != nil {
+		_, _, mList := h.formatGroupForClient(ctx.Context, g)
+		giveLeaderData := map[string]interface{}{
+			"sid":     leaderID,           // Old leader ID
+			"oName":   oldLeaderChar.Name, // Old leader name
+			"tid":     newLeaderID,        // New leader ID
+			"nName":   newLeaderChar.Name, // New leader name
+			"afkflag": wasAFK,             // Whether new leader was AFK before
+		}
+		if mList != nil {
+			giveLeaderData["mList"] = mList
+		}
+
+		// Send to all group members
+		for _, member := range g.Members {
+			memberIDStr := strconv.FormatInt(member.CharID, 10)
+			if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+				if err := conn.SendCallback("onGroupGiveLeader", giveLeaderData); err != nil {
+					h.logger.Warn("Failed to send onGroupGiveLeader callback",
+						zap.Int64("member_id", member.CharID),
+						zap.Error(err))
+				}
+			}
+		}
+	}
+
+	h.logger.Info("GroupGiveLeader: successfully transferred leadership",
+		zap.Int64("old_leader_id", leaderID),
+		zap.String("old_leader_name", oldLeaderChar.Name),
+		zap.Int64("new_leader_id", newLeaderID),
+		zap.String("new_leader_name", newLeaderChar.Name),
+		zap.Bool("was_afk", wasAFK),
+		zap.Int64("group_id", g.ID))
+
+	return map[string]interface{}{
+		"success": true,
+		"group":   g.ToDTO(),
+	}, nil
+}
+
+func (h *GroupHandler) GroupAFK(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupAFK called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return map[string]interface{}{"success": false}, nil
+	}
+	flag := args[0].(float64) != 0
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	g, err := h.groupService.SetAFK(ctx.Context, charID, flag)
+	if err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+	// Send onGroupAfk callback to all members
+	if g != nil && h.rtmpServer != nil {
+		_, _, mList := h.formatGroupForClient(ctx.Context, g)
+		afkData := map[string]interface{}{
+			"cid":   charID,
+			"mList": mList,
+		}
+		for _, member := range g.Members {
+			memberIDStr := strconv.FormatInt(member.CharID, 10)
+			if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+				_ = conn.SendCallback("onGroupAfk", afkData)
+			}
+		}
+	}
+	return map[string]interface{}{"success": true, "group": g.ToDTO()}, nil
+}
+
+func (h *GroupHandler) GroupListOfMap(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupListOfMap called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	mapID := 0
+	if len(args) > 0 {
+		mapID = int(args[0].(float64))
+	}
+	groups, err := h.groupService.ListByMap(ctx.Context, mapID)
+	if err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+	groupDTOs := make([]interface{}, 0, len(groups))
+	for _, g := range groups {
+		groupDTOs = append(groupDTOs, g.ToDTO())
+	}
+	return map[string]interface{}{
+		"success": true,
+		"groups":  groupDTOs,
+	}, nil
+}
+
+func (h *GroupHandler) UnGroupAFK(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("UnGroupAFK called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	// Cancel AFK status (tạm rời) - set AFK to false
+	// Args: optional flag (true/false), but usually called to cancel AFK (set to false)
+	flag := false
+	if len(args) > 0 {
+		// If first arg is boolean true, might want to set AFK, but usually this is to cancel
+		if val, ok := args[0].(bool); ok {
+			flag = val
+		} else if val, ok := args[0].(float64); ok {
+			flag = val != 0
+		}
+		// If flag is true, it means set AFK (same as groupAFK)
+		// If flag is false or not provided, cancel AFK
+		if !flag {
+			// Cancel AFK - set to false
+			charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+			g, err := h.groupService.SetAFK(ctx.Context, charID, false)
+			if err != nil {
+				return map[string]interface{}{"success": false, "error": err.Error()}, nil
+			}
+			// Send onGroupAfk callback to all members
+			if g != nil && h.rtmpServer != nil {
+				_, _, mList := h.formatGroupForClient(ctx.Context, g)
+				afkData := map[string]interface{}{
+					"cid":   charID,
+					"mList": mList,
+				}
+				for _, member := range g.Members {
+					memberIDStr := strconv.FormatInt(member.CharID, 10)
+					if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+						_ = conn.SendCallback("onGroupAfk", afkData)
+					}
+				}
+			}
+			return map[string]interface{}{"success": true, "group": g.ToDTO()}, nil
+		}
+		// If flag is true, treat as groupAFK call
+		return h.GroupAFK(ctx, args)
+	}
+	// No args - cancel AFK
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	g, err := h.groupService.SetAFK(ctx.Context, charID, false)
+	if err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+	// Send onGroupAfk callback to all members
+	if g != nil && h.rtmpServer != nil {
+		_, _, mList := h.formatGroupForClient(ctx.Context, g)
+		afkData := map[string]interface{}{
+			"cid":   charID,
+			"mList": mList,
+		}
+		for _, member := range g.Members {
+			memberIDStr := strconv.FormatInt(member.CharID, 10)
+			if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+				_ = conn.SendCallback("onGroupAfk", afkData)
+			}
+		}
+	}
+	return map[string]interface{}{"success": true, "group": g.ToDTO()}, nil
+}
+
+func (h *GroupHandler) GetGroupMemberPosition(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetGroupMemberPosition called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+
+	// Get target member ID from args (character ID to get position for)
+	var targetID int64
+	if len(args) > 0 {
+		switch v := args[0].(type) {
+		case float64:
+			targetID = int64(v)
+		case int:
+			targetID = int64(v)
+		case int64:
+			targetID = v
+		default:
+			return map[string]interface{}{"success": false, "error": "invalid target ID"}, nil
+		}
+	} else {
+		// No args - get current player's position
+		var err error
+		targetID, err = strconv.ParseInt(ctx.CharacterID, 10, 64)
+		if err != nil {
+			return map[string]interface{}{"success": false, "error": "invalid character ID"}, nil
+		}
+	}
+
+	// Get character info
+	char, err := h.charService.GetByID(ctx.Context, targetID)
+	if err != nil {
+		h.logger.Warn("GetGroupMemberPosition: character not found",
+			zap.Int64("target_id", targetID),
+			zap.Error(err))
+		return map[string]interface{}{"success": false, "error": "character not found"}, nil
+	}
+
+	// Return position data
+	return map[string]interface{}{
+		"success": true,
+		"map":     char.MapID,
+		"x":       char.PosX,
+		"y":       char.PosY,
+	}, nil
+}
+
+func (h *GroupHandler) ReqAddGroup(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("ReqAddGroup called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	// Treat as a self-request to join a target leader if provided
+	if len(args) < 1 {
+		return map[string]interface{}{"success": true}, nil
+	}
+	leaderID := int64(args[0].(float64))
+	joinerID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	g, err := h.groupService.Join(ctx.Context, leaderID, joinerID)
+	if err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}, nil
+	}
+	// Broadcast group update to all members
+	h.broadcastGroupJoined(ctx.Context, g)
+	return map[string]interface{}{"success": true, "group": g.ToDTO()}, nil
+}
+
+func (h *GroupHandler) GroupReqSuccNotice(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GroupReqSuccNotice called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	// This is called by client after successfully joining a group
+	// Usually just an acknowledgment, but we can use it to ensure UI is updated
+	// If client needs group data, it should already have it from onGroupJoined callback
+	return map[string]interface{}{"success": true}, nil
+}
+
+// formatGroupForClient formats group data in the format expected by the client
+// Returns: groupCharactorList, groupAKFCidList, mList (as linked list)
+func (h *GroupHandler) formatGroupForClient(ctx context.Context, g *domaingroup.Group) ([]interface{}, []int64, interface{}) {
+	if g == nil || len(g.Members) == 0 {
+		return []interface{}{}, []int64{}, nil
+	}
+
+	groupCharactorList := make([]interface{}, 0, len(g.Members))
+	groupAKFCidList := make([]int64, 0)
+
+	// Build linked list structure for mList
+	// Client expects: mList.head.obj, mList.head.next.obj, etc.
+	var headNode interface{} = nil
+	var currentNode interface{} = nil
+
+	for i, member := range g.Members {
+		// Get character info for member
+		char, err := h.charService.GetByID(ctx, member.CharID)
+		if err != nil {
+			h.logger.Warn("Failed to get character info for group member",
+				zap.Int64("char_id", member.CharID),
+				zap.Error(err))
+			continue
+		}
+
+		// Format member data for groupCharactorList
+		// Client expects "id" field, not "cid"
+		memberData := map[string]interface{}{
+			"id":       member.CharID, // Client expects "id", not "cid"
+			"cid":      member.CharID, // Keep cid for compatibility
+			"name":     char.Name,
+			"isLeader": member.IsLeader,
+			"afk":      member.AFK,
+			"mapId":    char.MapID,
+			"posX":     char.PosX,
+			"posY":     char.PosY,
+		}
+		groupCharactorList = append(groupCharactorList, memberData)
+
+		// Create linked list node
+		node := map[string]interface{}{
+			"obj": member.CharID, // Character ID
+		}
+
+		if i == 0 {
+			// First node is head
+			headNode = node
+			currentNode = node
+		} else {
+			// Link previous node to current node
+			if prevNode, ok := currentNode.(map[string]interface{}); ok {
+				prevNode["next"] = node
+			}
+			currentNode = node
+		}
+
+		// Add to AFK list if AFK
+		if member.AFK {
+			groupAKFCidList = append(groupAKFCidList, member.CharID)
+		}
+	}
+
+	// Create mList structure with head pointing to first node
+	var mList interface{} = nil
+	if headNode != nil {
+		mList = map[string]interface{}{
+			"head": headNode,
+		}
+	}
+
+	return groupCharactorList, groupAKFCidList, mList
+}
+
+// broadcastGroupJoined sends onGroupJoined callback to all online group members
+func (h *GroupHandler) broadcastGroupJoined(ctx context.Context, g *domaingroup.Group) {
+	if g == nil || h.rtmpServer == nil {
+		return
+	}
+
+	// Format group data for client
+	groupCharactorList, groupAKFCidList, mList := h.formatGroupForClient(ctx, g)
+
+	// Create callback data
+	callbackData := map[string]interface{}{
+		"groupCharactorList": groupCharactorList,
+		"groupAKFCidList":    groupAKFCidList,
+	}
+	// Only add mList if it's not nil (has members)
+	if mList != nil {
+		callbackData["mList"] = mList
+	}
+
+	// Send to all online members
+	h.logger.Info("broadcastGroupJoined: sending to members",
+		zap.Int("total_members", len(g.Members)),
+		zap.Int("member_list_size", len(groupCharactorList)))
+
+	for _, member := range g.Members {
+		memberIDStr := strconv.FormatInt(member.CharID, 10)
+		if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+			if err := conn.SendCallback("onGroupJoined", callbackData); err != nil {
+				h.logger.Warn("Failed to send onGroupJoined callback",
+					zap.Int64("member_id", member.CharID),
+					zap.Error(err))
+			} else {
+				h.logger.Info("Sent onGroupJoined callback to member",
+					zap.Int64("member_id", member.CharID),
+					zap.Int("member_list_size", len(groupCharactorList)))
+			}
+		} else {
+			h.logger.Debug("Member is offline, skipping callback",
+				zap.Int64("member_id", member.CharID))
+		}
+	}
+}
+
+// broadcastGroupDismiss sends onGroupDismiss callback to all online group members
+// Client expects callback data with head structure directly (not wrapped in mList)
+// Client accesses _arg_1.head, not _arg_1.mList.head
+func (h *GroupHandler) broadcastGroupDismiss(ctx context.Context, g *domaingroup.Group) {
+	if g == nil || h.rtmpServer == nil {
+		return
+	}
+
+	// Format group data for dismiss callback - client needs head structure directly
+	_, _, mList := h.formatGroupForClient(ctx, g)
+
+	// Client expects object with 'head' property directly, not wrapped in 'mList'
+	// mList is already in format: {"head": {...}}
+	var callbackData map[string]interface{}
+	if mList != nil {
+		// mList is already the correct structure with 'head' property
+		if mListMap, ok := mList.(map[string]interface{}); ok {
+			callbackData = mListMap
+		} else {
+			callbackData = map[string]interface{}{}
+		}
+	} else {
+		// If no members, send empty object (shouldn't happen but handle gracefully)
+		callbackData = map[string]interface{}{}
+	}
+
+	// Send to all online members
+	for _, member := range g.Members {
+		memberIDStr := strconv.FormatInt(member.CharID, 10)
+		if conn := h.rtmpServer.GetConnectionByCharacterID(memberIDStr); conn != nil {
+			if err := conn.SendCallback("onGroupDismiss", callbackData); err != nil {
+				h.logger.Warn("Failed to send onGroupDismiss callback",
+					zap.Int64("member_id", member.CharID),
+					zap.Error(err))
+			} else {
+				h.logger.Info("Sent onGroupDismiss callback to member",
+					zap.Int64("member_id", member.CharID))
+			}
+		}
+	}
+}

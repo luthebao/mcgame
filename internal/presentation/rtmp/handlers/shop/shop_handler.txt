@@ -1,0 +1,584 @@
+package handlers
+
+import (
+	"fmt"
+	appquest "mcgame-server/internal/application/quest"
+	"mcgame-server/internal/application/shop"
+	"mcgame-server/internal/infrastructure/rtmp"
+	questhandler "mcgame-server/internal/presentation/rtmp/handlers/quest"
+	"strconv"
+
+	"go.uber.org/zap"
+)
+
+type ShopHandler struct {
+	logger       *zap.Logger
+	shopService  shop.ShopService
+	questService *appquest.Service
+	questNotify  *questhandler.QuestNotifyHelper
+}
+
+func NewShopHandler(logger *zap.Logger, shopService shop.ShopService) *ShopHandler {
+	return &ShopHandler{
+		logger:      logger,
+		shopService: shopService,
+	}
+}
+
+func (h *ShopHandler) SetQuestService(qs *appquest.Service) {
+	h.questService = qs
+}
+
+func (h *ShopHandler) SetQuestNotifyHelper(qnh *questhandler.QuestNotifyHelper) {
+	h.questNotify = qnh
+}
+
+func (h *ShopHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("getShopConfig", h.GetShopConfig)
+	dispatcher.Register("getLimitShopConfig", h.GetLimitShopConfig)
+	dispatcher.Register("getRemainShopConfig", h.GetRemainShopConfig)
+	dispatcher.Register("buyAmountItemClient", h.BuyAmountItemClient)
+	dispatcher.Register("buyItemClient", h.BuyItemClient)
+	dispatcher.Register("buySystemItemClient", h.BuySystemItemClient)
+	dispatcher.Register("sellItem", h.SellItem)
+	dispatcher.Register("exchangeItem", h.ExchangeItem)
+	dispatcher.Register("repairAll", h.RepairAll)
+	dispatcher.Register("shopClosePanel", h.ShopClosePanel)
+	dispatcher.Register("unlockMoney", h.UnlockMoney)
+	dispatcher.Register("updateLimit", h.UpdateLimit)
+	dispatcher.Register("getShopAwardStr", h.GetShopAwardStr)
+	dispatcher.Register("changeMoneyType", h.ChangeMoneyType)
+	dispatcher.Register("buySystemItemMulti", h.BuySystemItemMulti)
+}
+
+func (h *ShopHandler) checkQuestUpdates(ctx *rtmp.RPCContext, characterID int64) {
+	if h.questNotify != nil {
+		h.questNotify.PushQuestProgress(ctx, characterID)
+	}
+}
+
+func getCurrencyName(currencyType int) string {
+	switch currencyType {
+	// Standard Money (1-4)
+	case 1:
+		return "Bạc khóa"
+	case 2:
+		return "Bạc"
+	case 3:
+		return "Vàng khóa"
+	case 4:
+		return "Vàng"
+
+	// Medals
+	case 7:
+		return "Huy chương Liên Minh"
+
+	// Event Points
+	case 10:
+		return "Điểm Năm Mới"
+	case 11:
+		return "Điểm Tết"
+	case 12:
+		return "Điểm Valentine"
+	case 13:
+		return "Điểm Lồng Đèn"
+	case 14:
+		return "Điểm Quốc Tế Lao Động"
+	case 15:
+		return "Điểm Câu Cá"
+	case 16:
+		return "Điểm Thất Tịch"
+	case 17:
+		return "Điểm Mùa Hè"
+	case 18:
+		return "Điểm Kỷ Niệm"
+	case 19:
+		return "Điểm Đấu Trường Thú"
+	case 20:
+		return "Cống hiến Bang Hội (Thường)"
+	case 21:
+		return "Cống hiến Bang Hội (Quyên góp)"
+	case 22:
+		return "Điểm Giáng Sinh"
+	case 25:
+		return "Điểm Quốc Khánh"
+	case 26:
+		return "Mảnh Thú Cưỡi"
+	case 29:
+		return "Điểm World Cup"
+	case 30:
+		return "Vàng World Cup"
+	case 31:
+		return "Điểm Olympic"
+	case 49:
+		return "Điểm Chu Niên"
+	case 58:
+		return "Điểm Ngày Độc Thân"
+	case 60:
+		return "Điểm ShowTime"
+	case 61:
+		return "Vàng Shop"
+	case 62:
+		return "Điểm Tiêu Hao Chu Niên"
+	case 64:
+		return "MC Beans"
+	case 65:
+		return "Điểm Hoạt Động Đấu Trường Thú"
+	case 69:
+		return "Điểm ShowTime 2"
+
+	default:
+		return "Điểm"
+	}
+}
+
+func (h *ShopHandler) GetShopConfig(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetShopConfig called",
+		zap.Uint32("conn_id", ctx.ConnID))
+
+	result := []interface{}{0, "", []interface{}{}}
+	if err := ctx.Connection.SendCallback("onGetShopConfig", result); err != nil {
+		h.logger.Error("Failed to send onGetShopConfig callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *ShopHandler) GetLimitShopConfig(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetLimitShopConfig called",
+		zap.Uint32("conn_id", ctx.ConnID))
+
+	result := []interface{}{0, "", []interface{}{}}
+	if err := ctx.Connection.SendCallback("onGetLimitShopConfig", result); err != nil {
+		h.logger.Error("Failed to send onGetLimitShopConfig callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *ShopHandler) GetRemainShopConfig(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetRemainShopConfig called",
+		zap.Uint32("conn_id", ctx.ConnID))
+
+	result := []interface{}{0, "", []interface{}{}}
+	if err := ctx.Connection.SendCallback("onGetRemainShopConfig", result); err != nil {
+		h.logger.Error("Failed to send onGetRemainShopConfig callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *ShopHandler) BuyAmountItemClient(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("BuyAmountItemClient called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 2 {
+		return nil, nil
+	}
+
+	// Safe argument parsing
+	var shopSlotID int
+	if v, ok := args[0].(float64); ok {
+		shopSlotID = int(v)
+	} else if v, ok := args[0].(string); ok {
+		shopSlotID, _ = strconv.Atoi(v)
+	}
+
+	var amount int
+	if v, ok := args[1].(float64); ok {
+		amount = int(v)
+	} else if v, ok := args[1].(string); ok {
+		amount, _ = strconv.Atoi(v)
+	}
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	res, err := h.shopService.BuyItem(ctx.Context, charID, shopSlotID, amount)
+	if err != nil {
+		// Send error message as red message
+		errorMsg := fmt.Sprintf("Mua thất bại: %s", err.Error())
+		_ = ctx.Connection.SendCallback("onRedMsg", errorMsg)
+		return nil, nil
+	}
+
+	// Send callbacks for UI update
+
+	// Determine currency name for notification
+	currencyName := getCurrencyName(res.CurrencyType)
+
+	// Send success notification
+	msg := fmt.Sprintf("Mua thành công x%d! Mất %d %s.", amount, res.Cost, currencyName)
+	_ = ctx.Connection.SendCallback("onBlueMsg", msg)
+
+	// Send callbacks for UI update
+
+	// Dynamically update the correct currency field
+	currencyKey := getCurrencyKey(res.CurrencyType)
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{currencyKey: res.NewMoney})
+
+	// Use onAddTempDirect (effect) as requested
+	// Args: itemData, slotIndex (0), itemData (slotData), curNum (1)
+	// _ = ctx.Connection.SendCallback("onAddTempDirect", res.ItemData, 0, res.ItemData, 1)
+
+	_ = ctx.Connection.SendCallback("onAddItem", res.ItemData)
+	_ = ctx.Connection.SendCallback("onAddCharactorSlot", res.AddedItemDTO)
+
+	h.checkQuestUpdates(ctx, charID)
+
+	return true, nil
+}
+
+func (h *ShopHandler) BuyItemClient(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("BuyItemClient called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 2 {
+		return nil, nil
+	}
+
+	// Safe argument parsing
+	var shopSlotID int
+	if v, ok := args[0].(float64); ok {
+		shopSlotID = int(v)
+	} else if v, ok := args[0].(string); ok {
+		shopSlotID, _ = strconv.Atoi(v)
+	}
+
+	var amount int
+	if v, ok := args[1].(float64); ok {
+		amount = int(v)
+	} else if v, ok := args[1].(string); ok {
+		amount, _ = strconv.Atoi(v)
+	}
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	res, err := h.shopService.BuyItem(ctx.Context, charID, shopSlotID, amount)
+	if err != nil {
+		// Send error message as red message
+		errorMsg := fmt.Sprintf("Mua thất bại: %s", err.Error())
+		_ = ctx.Connection.SendCallback("onRedMsg", errorMsg)
+		return nil, nil
+	}
+
+	// Determine currency name for notification
+	currencyName := getCurrencyName(res.CurrencyType)
+
+	// Send success notification
+	msg := fmt.Sprintf("Mua thành công x%d! Mất %d %s.", amount, res.Cost, currencyName)
+	_ = ctx.Connection.SendCallback("onBlueMsg", msg)
+
+	_ = ctx.Connection.SendCallback("onAddItem", res.ItemData)
+	_ = ctx.Connection.SendCallback("onAddCharactorSlot", res.AddedItemDTO)
+
+	// Dynamically update the correct currency field
+	currencyKey := getCurrencyKey(res.CurrencyType)
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{currencyKey: res.NewMoney})
+
+	h.checkQuestUpdates(ctx, charID)
+
+	return nil, nil
+}
+
+// getCurrencyKey returns the client property key for updating currency balance
+func getCurrencyKey(currencyType int) string {
+	switch currencyType {
+	case 1:
+		return "moneyBind"
+	case 2:
+		return "money"
+	case 3:
+		return "goldBind"
+	case 4:
+		return "gold"
+
+	// Special currencies mapping
+	case 20:
+		return "guildContrib"
+	case 61: // Shop Gold
+		return "shopGold"
+	case 64: // MC Beans
+		return "mcBeans"
+
+	// Case 0 for System Shop Point purchase (usually Honor)
+	case 0:
+		return "honor"
+
+	default:
+		return "money"
+	}
+}
+
+func (h *ShopHandler) BuySystemItemClient(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("BuySystemItemClient called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 2 {
+		return nil, nil
+	}
+
+	// Safe argument parsing
+	var shopSlotID int
+	if v, ok := args[0].(float64); ok {
+		shopSlotID = int(v)
+	} else if v, ok := args[0].(string); ok {
+		shopSlotID, _ = strconv.Atoi(v)
+	}
+
+	var amount int
+	if v, ok := args[1].(float64); ok {
+		amount = int(v)
+	} else if v, ok := args[1].(string); ok {
+		amount, _ = strconv.Atoi(v)
+	}
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	res, err := h.shopService.BuySystemItem(ctx.Context, charID, shopSlotID, amount)
+	if err != nil {
+		// Send error message as red message
+		errorMsg := fmt.Sprintf("Mua thất bại: %s", err.Error())
+		_ = ctx.Connection.SendCallback("onRedMsg", errorMsg)
+		return nil, nil
+	}
+
+	// Determine currency name for notification
+	currencyName := getCurrencyName(res.CurrencyType)
+
+	// Send success notification
+	msg := fmt.Sprintf("Mua thành công x%d! Mất %d %s.", amount, res.Cost, currencyName)
+	_ = ctx.Connection.SendCallback("onBlueMsg", msg)
+
+	// Send callbacks for UI update
+	_ = ctx.Connection.SendCallback("onAddItem", res.ItemData)
+	_ = ctx.Connection.SendCallback("onAddCharactorSlot", res.AddedItemDTO)
+
+	// Dynamically update the correct currency field
+	currencyKey := getCurrencyKey(res.CurrencyType)
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{currencyKey: res.NewMoney})
+
+	h.checkQuestUpdates(ctx, charID)
+
+	return nil, nil
+}
+
+func (h *ShopHandler) SellItem(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("SellItem called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return nil, nil
+	}
+
+	inventoryItemID := int64(args[0].(float64))
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	res, err := h.shopService.SellItem(ctx.Context, charID, inventoryItemID)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{"money": res.NewMoney})
+
+	return true, nil
+}
+
+func (h *ShopHandler) ExchangeItem(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("ExchangeItem called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 2 {
+		return nil, nil
+	}
+
+	creditID := args[0].(string)
+	amount := int(args[1].(float64))
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	res, err := h.shopService.ExchangeItem(ctx.Context, charID, creditID, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = ctx.Connection.SendCallback("onAddItem", res.ItemData)
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{"cbM": res.NewPoints})
+
+	return 1, nil
+}
+
+func (h *ShopHandler) RepairAll(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("RepairAll called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	repairType := 2 // Default to repair all equipped
+	if len(args) > 0 {
+		repairType = int(args[0].(float64))
+	}
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	res, err := h.shopService.RepairItems(ctx.Context, charID, repairType)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{"money": res.NewMoney})
+	return nil, nil
+}
+
+func (h *ShopHandler) ShopClosePanel(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("ShopClosePanel called", zap.Uint32("conn_id", ctx.ConnID))
+	return nil, nil
+}
+
+func (h *ShopHandler) UnlockMoney(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("UnlockMoney called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	return true, nil
+}
+
+func (h *ShopHandler) UpdateLimit(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("UpdateLimit called", zap.Uint32("conn_id", ctx.ConnID))
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	res, err := h.shopService.GetUpdateLimit(ctx.Context, charID)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (h *ShopHandler) GetShopAwardStr(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("GetShopAwardStr called", zap.Uint32("conn_id", ctx.ConnID))
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	awardStr, err := h.shopService.GetShopAwardStr(ctx.Context, charID)
+	if err != nil {
+		return nil, err
+	}
+
+	return awardStr, nil
+}
+
+func (h *ShopHandler) ChangeMoneyType(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("ChangeMoneyType called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return nil, nil
+	}
+
+	moneyType := int(args[0].(float64))
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	res, err := h.shopService.ChangeMoneyType(ctx.Context, charID, moneyType)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"flag": res.Flag,
+		"num":  res.Num,
+	}, nil
+}
+
+func (h *ShopHandler) BuySystemItemMulti(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Info("BuySystemItemMulti called", zap.Uint32("conn_id", ctx.ConnID), zap.Any("args", args))
+	if len(args) < 1 {
+		return nil, nil
+	}
+
+	charID, _ := strconv.ParseInt(ctx.CharacterID, 10, 64)
+
+	var purchases []shop.PurchaseRequest
+
+	// Helper function to add a purchase to the list
+	addPurchaseFunc := func(list *[]shop.PurchaseRequest, shopSlotIDVal, amountVal interface{}) {
+		shopSlotID := parseIntVal(shopSlotIDVal)
+		amount := parseIntVal(amountVal)
+
+		if shopSlotID > 0 && amount > 0 {
+			*list = append(*list, shop.PurchaseRequest{
+				ShopSlotID: shopSlotID,
+				Amount:     amount,
+			})
+		}
+	}
+
+	// Safe parsing of buyList
+	// Case 1: Client sends a Map { "ShopSlotID": Amount, ... } directly
+	if m, ok := args[0].(map[string]interface{}); ok {
+		for k, v := range m {
+			addPurchaseFunc(&purchases, k, v)
+		}
+	} else if list, ok := args[0].([]interface{}); ok {
+		// Case 2: Client sends an Array (List)
+		// Can contain: [{"2116":1}, 0] OR [{id:1, count:1}] OR [["ID",1]]
+		for _, item := range list {
+			if m, ok := item.(map[string]interface{}); ok {
+				if val, ok := m["shopSlotId"]; ok {
+					if amt, ok := m["amount"]; ok {
+						addPurchaseFunc(&purchases, val, amt)
+						continue
+					}
+				}
+				if val, ok := m["id"]; ok {
+					if amt, ok := m["count"]; ok {
+						addPurchaseFunc(&purchases, val, amt)
+						continue
+					}
+				}
+				// If no standard keys, treat all keys as ID (Dynamic Map)
+				// Example: {"3279":1, "3874":1}
+				for k, v := range m {
+					addPurchaseFunc(&purchases, k, v)
+				}
+				continue
+			}
+			if arr, ok := item.([]interface{}); ok && len(arr) >= 2 {
+				addPurchaseFunc(&purchases, arr[0], arr[1])
+			}
+		}
+	}
+
+	if len(purchases) == 0 {
+		h.logger.Warn("BuySystemItemMulti: no valid purchases found", zap.Uint32("conn_id", ctx.ConnID))
+		return map[string]interface{}{
+			"success": false,
+			"items":   []interface{}{},
+		}, nil
+	}
+
+	res, err := h.shopService.BuySystemItemMulti(ctx.Context, charID, purchases)
+	if err != nil {
+		h.logger.Error("BuySystemItemMulti failed", zap.Uint32("conn_id", ctx.ConnID), zap.Error(err))
+		return map[string]interface{}{
+			"success": false,
+			"items":   []interface{}{},
+		}, nil
+	}
+
+	// Send callbacks for UI update
+	for _, itemData := range res.Items {
+		_ = ctx.Connection.SendCallback("onAddItem", itemData)
+	}
+	for _, itemDTO := range res.AddedItemDTOs {
+		_ = ctx.Connection.SendCallback("onAddCharactorSlot", itemDTO)
+	}
+
+	currencyKey := getCurrencyKey(res.CurrencyType)
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{currencyKey: res.NewMoney})
+
+	h.checkQuestUpdates(ctx, charID)
+
+	return map[string]interface{}{
+		"success": res.Success,
+		"items":   res.Items,
+	}, nil
+}
+
+// Helper func to parse int from unknown type (float64, string, int)
+func parseIntVal(v interface{}) int {
+	switch val := v.(type) {
+	case float64:
+		return int(val)
+	case string:
+		i, _ := strconv.Atoi(val)
+		return i
+	case int:
+		return val
+	default:
+		return 0
+	}
+}

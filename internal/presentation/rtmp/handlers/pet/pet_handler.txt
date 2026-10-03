@@ -1,0 +1,1235 @@
+// Pet handler for pet management RPC calls.
+// Handles pet following, naming, cultivation, evolution, fusion, and skills.
+// Supports Phase 4A-C pet systems: stars, feathers, evolution, fusion, cultivation.
+package handlers
+
+import (
+	"fmt"
+	"strconv"
+
+	apppet "mcgame-server/internal/application/pet"
+	"mcgame-server/internal/domain/pet"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"mcgame-server/internal/domain/auth"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+)
+
+type PetHandler struct {
+	petService  *apppet.Service
+	accountRepo auth.AccountRepository
+	logger      *zap.Logger
+}
+
+func NewPetHandler(petService *apppet.Service, accountRepo auth.AccountRepository, logger *zap.Logger) *PetHandler {
+	return &PetHandler{
+		petService:  petService,
+		accountRepo: accountRepo,
+		logger:      logger,
+	}
+}
+
+func (h *PetHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("initViewPetMngP", h.InitViewPetMngP)
+	dispatcher.Register("getPetDetailData", h.GetPetDetailData)
+	dispatcher.Register("startPetFollow", h.StartPetFollow)
+	dispatcher.Register("cancelPetFollow", h.CancelPetFollow)
+	dispatcher.Register("changePetName", h.ChangePetName)
+	dispatcher.Register("changePetProperty", h.ChangePetProperty)
+	dispatcher.Register("petEat", h.PetEat)
+	dispatcher.Register("ensurePetEat", h.EnsurePetEat)
+	dispatcher.Register("petStar", h.PetStar)
+	dispatcher.Register("contractPet", h.ContractPet)
+	dispatcher.Register("changePetState", h.ChangePetState)
+	dispatcher.Register("beginMounting", h.BeginMounting)
+
+	dispatcher.Register("petStarClear", h.PetStarClear)
+	dispatcher.Register("toPetFeather", h.ToPetFeather)
+	dispatcher.Register("toPetFeatherNextStep", h.ToPetFeatherNextStep)
+	dispatcher.Register("toPetEnvolution", h.ToPetEnvolution)
+
+	dispatcher.Register("petJoin", h.PetJoin)
+	dispatcher.Register("seniorPetJoin", h.SeniorPetJoin)
+
+	dispatcher.Register("petXd", h.PetXd)
+	dispatcher.Register("petPzXsd", h.PetPzXsd)
+	dispatcher.Register("petXsd", h.PetXsd)
+	dispatcher.Register("petBook", h.PetBook)
+	dispatcher.Register("petOpenSlot", h.PetOpenSlot)
+	dispatcher.Register("finalPraMagDefPet", h.FinalPraMagDefPet)
+	dispatcher.Register("getFinalPraDefPet", h.GetFinalPraDefPet)
+	dispatcher.Register("delPetByClient", h.DelPetByClient)
+}
+
+func (h *PetHandler) InitViewPetMngP(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	pets, err := h.petService.GetPetList(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	petDTOs := make([]map[string]interface{}, len(pets))
+	for i, p := range pets {
+		// ToDTO wraps the pet data in a "data" key, which is used for single pet updates.
+		// For the list view, the client expects the pet objects directly in the array.
+		if data, ok := p.ToDTO()["data"].(map[string]interface{}); ok {
+			petDTOs[i] = data
+		} else {
+			petDTOs[i] = p.ToDTO()
+		}
+	}
+
+	h.logger.Debug("Pet management panel initialized",
+		zap.Int64("character_id", characterID),
+		zap.Int("pet_count", len(pets)))
+
+	return petDTOs, nil
+}
+
+func (h *PetHandler) PetOpenSlot(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	newSlotCount, cost, currencyType, remaining, err := h.petService.OpenPetSlot(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("Failed to open pet slot", zap.Error(err))
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// Callback: onMinusMoney 11581 goldBind 20 4510
+	// 11581 is likely charID.
+	_ = ctx.Connection.SendCallback("onMinusMoney", float64(characterID), currencyType, float64(cost), float64(remaining))
+
+	// Callback: onUPP petMaxNum: 6
+	_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+		"petMaxNum": newSlotCount,
+	})
+
+	msg := fmt.Sprintf("Mất %d kim phiếu", cost)
+	_ = ctx.Connection.SendCallback("onSystemSay", msg)
+
+	h.logger.Info("Pet slot opened",
+		zap.Int64("character_id", characterID),
+		zap.Int("new_slots", newSlotCount))
+
+	return map[string]interface{}{
+		"success": true,
+		"ps":      newSlotCount,
+	}, nil
+}
+
+func (h *PetHandler) GetPetDetailData(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[1].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.GetPetDetail(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Debug("Pet detail retrieved",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return p.ToDetailDTO(), nil
+}
+
+func (h *PetHandler) StartPetFollow(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var currentFollowID int64
+	if len(args) >= 2 {
+		switch v := args[1].(type) {
+		case float64:
+			currentFollowID = int64(v)
+		case int64:
+			currentFollowID = v
+		case int:
+			currentFollowID = int64(v)
+		}
+	}
+
+	p, err := h.petService.StartFollow(ctx.Context, characterID, petID, currentFollowID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet follow started",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+func (h *PetHandler) CancelPetFollow(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	err = h.petService.CancelFollow(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet follow cancelled",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *PetHandler) ChangePetName(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var newName string
+	switch v := args[1].(type) {
+	case string:
+		newName = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.ChangeName(ctx.Context, characterID, petID, newName)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet name changed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.String("new_name", newName))
+
+	// Send client callback onUpdatePet(petID, "petName", newName)
+	if err := ctx.Connection.SendCallback("onUpdatePet", petID, "petName", newName); err != nil {
+		h.logger.Warn("Failed to send onUpdatePet callback", zap.Error(err))
+	}
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+func (h *PetHandler) ChangePetProperty(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *PetHandler) PetEat(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 5 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var mainPetID int64
+	switch v := args[0].(type) {
+	case float64:
+		mainPetID = int64(v)
+	case int64:
+		mainPetID = v
+	case int:
+		mainPetID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var costPetID int64
+	switch v := args[1].(type) {
+	case float64:
+		costPetID = int64(v)
+	case int64:
+		costPetID = v
+	case int:
+		costPetID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var useLuckItem bool
+	switch v := args[2].(type) {
+	case bool:
+		useLuckItem = v
+	case float64:
+		useLuckItem = v != 0
+	case int:
+		useLuckItem = v != 0
+	}
+
+	var luckNum int
+	switch v := args[3].(type) {
+	case float64:
+		luckNum = int(v)
+	case int:
+		luckNum = v
+	}
+
+	var aptType pet.AptitudeType
+	switch v := args[4].(type) {
+	case float64:
+		aptType = pet.AptitudeType(int(v))
+	case int:
+		aptType = pet.AptitudeType(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.PetEat(ctx.Context, characterID, mainPetID, costPetID, useLuckItem, luckNum, aptType)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet eat completed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("main_pet_id", mainPetID),
+		zap.Int64("cost_pet_id", costPetID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+func (h *PetHandler) EnsurePetEat(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	return map[string]interface{}{
+		"success": true,
+	}, nil
+}
+
+func (h *PetHandler) PetStar(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.UpgradeStar(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet star upgraded",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.Int("stars", p.UpgradeNum))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+func (h *PetHandler) ContractPet(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var templateID int
+	switch v := args[0].(type) {
+	case float64:
+		templateID = int(v)
+	case int:
+		templateID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.ContractPet(ctx.Context, characterID, templateID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet contracted",
+		zap.Int64("character_id", characterID),
+		zap.Int("template_id", templateID),
+		zap.Int64("pet_id", p.ID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+// ChangePetState handles client's changePetState(petID, state) call.
+// State 1 = following (ra trận), State 3 = rest (trong kho)
+func (h *PetHandler) ChangePetState(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var newState int
+	switch v := args[1].(type) {
+	case float64:
+		newState = int(v)
+	case int:
+		newState = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Info("ChangePetState called",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.Int("new_state", newState))
+
+	var p *pet.Pet
+
+	switch newState {
+	case 1: // Following (ra trận)
+		p, err = h.petService.StartFollow(ctx.Context, characterID, petID, 0)
+		if err != nil {
+			h.logger.Error("Failed to start pet follow", zap.Error(err))
+			return rtmp.ErrorToResponse(err), nil
+		}
+	case 3: // Rest (trong kho)
+		err = h.petService.CancelFollow(ctx.Context, characterID, petID)
+		if err != nil {
+			h.logger.Error("Failed to cancel pet follow", zap.Error(err))
+			return rtmp.ErrorToResponse(err), nil
+		}
+		// Get updated pet for DTO
+		p, err = h.petService.GetPetDetail(ctx.Context, characterID, petID)
+		if err != nil {
+			return rtmp.ErrorToResponse(err), nil
+		}
+	default:
+		h.logger.Warn("Unknown pet state", zap.Int("state", newState))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	if p != nil {
+		// Send onUpdatePet callback
+		_ = ctx.Connection.SendCallback("onUpdatePet", p.ID, "state", newState)
+
+		// Send onRefreshPetProp callback with computed stats
+		petDTO := p.ToDTO()
+		if data, ok := petDTO["data"].(map[string]interface{}); ok {
+			petDTO = data
+		}
+		if prop, ok := petDTO["property"]; ok {
+			_ = ctx.Connection.SendCallback("onRefreshPetProp", map[string]interface{}{
+				"id": p.ID,
+				"s":  prop,
+			})
+		}
+	}
+
+	return nil, nil
+}
+
+func (h *PetHandler) BeginMounting(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.BeginMounting(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet mounting started",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+func (h *PetHandler) PetStarClear(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.ClearStars(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet stars cleared",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDTO(),
+	}, nil
+}
+
+func (h *PetHandler) ToPetFeather(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var materialIDs []int64
+	if len(args) >= 2 {
+		if materials, ok := args[1].([]interface{}); ok {
+			for _, m := range materials {
+				switch v := m.(type) {
+				case float64:
+					materialIDs = append(materialIDs, int64(v))
+				case int64:
+					materialIDs = append(materialIDs, v)
+				case int:
+					materialIDs = append(materialIDs, int64(v))
+				}
+			}
+		}
+	}
+
+	p, err := h.petService.FeatherUpgrade(ctx.Context, characterID, petID, materialIDs)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet feather upgrade started",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) ToPetFeatherNextStep(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.FeatherNextStep(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet feather upgrade completed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) ToPetEnvolution(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.EvolvePet(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet evolved",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.Int("evolution_level", p.EvolutionLv))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) PetJoin(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var mainPetID int64
+	switch v := args[0].(type) {
+	case float64:
+		mainPetID = int64(v)
+	case int64:
+		mainPetID = v
+	case int:
+		mainPetID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var materialPetID int64
+	switch v := args[1].(type) {
+	case float64:
+		materialPetID = int64(v)
+	case int64:
+		materialPetID = v
+	case int:
+		materialPetID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.FusePets(ctx.Context, characterID, mainPetID, materialPetID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pets fused",
+		zap.Int64("character_id", characterID),
+		zap.Int64("main_pet_id", mainPetID),
+		zap.Int64("material_pet_id", materialPetID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) SeniorPetJoin(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var mainPetID int64
+	switch v := args[0].(type) {
+	case float64:
+		mainPetID = int64(v)
+	case int64:
+		mainPetID = v
+	case int:
+		mainPetID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var materialPetIDs []int64
+	if materials, ok := args[1].([]interface{}); ok {
+		for _, m := range materials {
+			switch v := m.(type) {
+			case float64:
+				materialPetIDs = append(materialPetIDs, int64(v))
+			case int64:
+				materialPetIDs = append(materialPetIDs, v)
+			case int:
+				materialPetIDs = append(materialPetIDs, int64(v))
+			}
+		}
+	}
+
+	p, err := h.petService.SeniorFusePets(ctx.Context, characterID, mainPetID, materialPetIDs)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Senior pet fusion completed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("main_pet_id", mainPetID),
+		zap.Int("material_count", len(materialPetIDs)))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) PetXd(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var cultivationType int
+	switch v := args[1].(type) {
+	case float64:
+		cultivationType = int(v)
+	case int:
+		cultivationType = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.Cultivate(ctx.Context, characterID, petID, cultivationType)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet cultivation performed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.Int("cultivation_type", cultivationType))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) PetPzXsd(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var itemID int
+	switch v := args[1].(type) {
+	case float64:
+		itemID = int(v)
+	case int:
+		itemID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.UseCultivationItem(ctx.Context, characterID, petID, itemID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet cultivation item used",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.Int("item_id", itemID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) PetXsd(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.PetXsd(ctx.Context, characterID, petID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet XSD performed",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+func (h *PetHandler) PetBook(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	switch v := args[0].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var skillBookID int
+	switch v := args[1].(type) {
+	case float64:
+		skillBookID = int(v)
+	case int:
+		skillBookID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	p, err := h.petService.LearnSkillFromBook(ctx.Context, characterID, petID, skillBookID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Pet learned skill from book",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID),
+		zap.Int("skill_book_id", skillBookID))
+
+	return map[string]interface{}{
+		"success": true,
+		"pet":     p.ToDetailDTO(),
+	}, nil
+}
+
+// mockPetList trả về danh sách pet mock để demo khi chưa có dữ liệu thật
+func (h *PetHandler) mockPetList(characterID int64) []map[string]interface{} {
+	return []map[string]interface{}{
+		{
+			"id":                9001,
+			"tid":               3001,
+			"name":              "Wolfy",
+			"level":             15,
+			"exp":               12345,
+			"aptStrength":       120,
+			"aptAgility":        110,
+			"aptStamina":        130,
+			"aptIntelligence":   80,
+			"aptEnergy":         90,
+			"aptStrengthEx":     0,
+			"aptAgilityEx":      0,
+			"aptStaminaEx":      0,
+			"aptIntelligenceEx": 0,
+			"aptEnergyEx":       0,
+			"upgradeNum":        2,
+			"element":           1, // Fire
+			"currentHp":         1500,
+			"currentMp":         500,
+			"hpMax":             1500,
+			"mpMax":             500,
+			"property": map[string]interface{}{
+				"growRate":    1.2,
+				"growRateAdd": 0.1,
+			},
+			"data": map[string]interface{}{
+				"tid": 3001,
+			},
+		},
+		{
+			"id":                9002,
+			"tid":               3002,
+			"name":              "Kitty",
+			"level":             12,
+			"exp":               9876,
+			"aptStrength":       90,
+			"aptAgility":        140,
+			"aptStamina":        100,
+			"aptIntelligence":   95,
+			"aptEnergy":         85,
+			"aptStrengthEx":     0,
+			"aptAgilityEx":      0,
+			"aptStaminaEx":      0,
+			"aptIntelligenceEx": 0,
+			"aptEnergyEx":       0,
+			"upgradeNum":        1,
+			"element":           2, // Water
+			"currentHp":         1200,
+			"currentMp":         650,
+			"hpMax":             1200,
+			"mpMax":             650,
+			"property": map[string]interface{}{
+				"growRate":    1.15,
+				"growRateAdd": 0.05,
+			},
+			"data": map[string]interface{}{
+				"tid": 3002,
+			},
+		},
+	}
+}
+
+// FinalPraMagDefPet handles client's request to recalculate/refresh pet stats.
+// Arguments from log: [{}, "finalPraMagDef", 0, charID]
+func (h *PetHandler) FinalPraMagDefPet(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Debug("FinalPraMagDefPet called", zap.Int64("character_id", characterID))
+
+	pets, err := h.petService.GetPetList(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	for _, p := range pets {
+		p.RecalculateStats()
+		petDTO := p.ToDTO()
+		if data, ok := petDTO["data"].(map[string]interface{}); ok {
+			petDTO = data
+		}
+		if prop, ok := petDTO["property"]; ok {
+			_ = ctx.Connection.SendCallback("onRefreshPetProp", map[string]interface{}{
+				"id": p.ID,
+				"s":  prop,
+			})
+		}
+	}
+
+	return nil, nil
+}
+
+// GetFinalPraDefPet handles client's request to recalculate/refresh pet physical defense stats.
+func (h *PetHandler) GetFinalPraDefPet(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Debug("GetFinalPraDefPet called", zap.Int64("character_id", characterID))
+
+	pets, err := h.petService.GetPetList(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	for _, p := range pets {
+		p.RecalculateStats()
+		petDTO := p.ToDTO()
+		if data, ok := petDTO["data"].(map[string]interface{}); ok {
+			petDTO = data
+		}
+		if prop, ok := petDTO["property"]; ok {
+			_ = ctx.Connection.SendCallback("onRefreshPetProp", map[string]interface{}{
+				"id": p.ID,
+				"s":  prop,
+			})
+		}
+	}
+
+	return nil, nil
+}
+
+// DelPetByClient handles client's request to delete a pet.
+// Arguments: [null, petID, password] or [petID, password]
+func (h *PetHandler) DelPetByClient(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var petID int64
+	var argIndex int
+
+	if args[0] == nil {
+		if len(args) < 2 {
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+		argIndex = 1
+	} else {
+		argIndex = 0
+	}
+
+	switch v := args[argIndex].(type) {
+	case float64:
+		petID = int64(v)
+	case int64:
+		petID = v
+	case int:
+		petID = int64(v)
+	default:
+		h.logger.Warn("DelPetByClient: invalid petID type", zap.Any("arg", args[argIndex]), zap.String("type", fmt.Sprintf("%T", args[argIndex])))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	// Password validation
+	if argIndex+1 < len(args) {
+		if password, ok := args[argIndex+1].(string); ok {
+			accountID, err := uuid.Parse(ctx.AccountID)
+			if err != nil {
+				h.logger.Error("DelPetByClient: invalid accountID", zap.String("accountID", ctx.AccountID), zap.Error(err))
+				return nil, pkgerrors.ErrUnauthorized
+			}
+
+			account, err := h.accountRepo.FindByID(ctx.Context, accountID)
+			if err != nil {
+				h.logger.Error("DelPetByClient: account not found", zap.String("accountID", ctx.AccountID), zap.Error(err))
+				return nil, pkgerrors.ErrAccountNotFound
+			}
+
+			if !account.CheckSecondaryPassword(password) {
+				h.logger.Warn("DelPetByClient: incorrect secondary password", zap.String("accountID", ctx.AccountID))
+				return nil, fmt.Errorf("Incorrect secondary password")
+			}
+		}
+	}
+
+	h.logger.Info("Deleting pet",
+		zap.Int64("character_id", characterID),
+		zap.Int64("pet_id", petID))
+
+	if err := h.petService.DeletePet(ctx.Context, characterID, petID); err != nil {
+		h.logger.Error("Failed to delete pet", zap.Error(err))
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// Send callback to client
+	if err := ctx.Connection.SendCallback("onDelPet", petID); err != nil {
+		h.logger.Warn("Failed to send onDelPet callback", zap.Error(err))
+	}
+
+	return map[string]interface{}{"success": true}, nil
+}

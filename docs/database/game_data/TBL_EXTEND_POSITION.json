@@ -1,0 +1,118 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_EXTEND_POSITION",
+  "recordCount": 11,
+  "records": [
+    {
+      "buildType": "1",
+      "id": "2",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "2317",
+      "posY": "1255",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "9",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "2821",
+      "posY": "1111",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "7",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "1560",
+      "posY": "1608",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "8",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "1935",
+      "posY": "1858",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "1",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "1315",
+      "posY": "246",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "3",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "1385",
+      "posY": "731",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "6",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "1113",
+      "posY": "1884",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "5",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "233",
+      "posY": "1466",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "4",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "376",
+      "posY": "1101",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "10",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "245",
+      "posY": "407",
+      "tid": "1"
+    },
+    {
+      "buildType": "1",
+      "id": "11",
+      "layer": "0",
+      "mid": "49",
+      "posDir": "0",
+      "posX": "1766",
+      "posY": "467",
+      "tid": "1"
+    }
+  ]
+}

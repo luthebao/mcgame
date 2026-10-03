@@ -1,0 +1,143 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_MAZE",
+  "recordCount": 15,
+  "records": [
+    {
+      "description": "Chuyển đến 1 vị trí ngẫu nhiêu trong phạm vi từ 1 - 2 ô",
+      "id": "1",
+      "max": "54",
+      "min": "0",
+      "name": "Tâm Khiêu Ma Phương",
+      "rate": "50",
+      "resultScript": ""
+    },
+    {
+      "description": "Chuyển đến Điểm Đầu hoặc Điểm Cuối",
+      "id": "2",
+      "max": "54",
+      "min": "0",
+      "name": "Không Gian Mộng Ảo",
+      "rate": "50",
+      "resultScript": ""
+    },
+    {
+      "description": "Giảm từ 1- 3 điểm hành động",
+      "id": "3",
+      "max": "54",
+      "min": "0",
+      "name": "Giảm Thiểu Hành Động",
+      "rate": "50",
+      "resultScript": ""
+    },
+    {
+      "description": "Tăng từ 1- 3 điểm hành động",
+      "id": "4",
+      "max": "54",
+      "min": "0",
+      "name": "Gia Tăng Hành Động",
+      "rate": "50",
+      "resultScript": ""
+    },
+    {
+      "description": "Hồi phục 1 lượng HP",
+      "id": "5",
+      "max": "54",
+      "min": "0",
+      "name": "Tuyền Thủy Sinh Mệnh",
+      "rate": "40",
+      "resultScript": ""
+    },
+    {
+      "description": "Giảm 1 lượng HP",
+      "id": "6",
+      "max": "54",
+      "min": "0",
+      "name": "Cạm Bẫy Chí Mạng",
+      "rate": "20",
+      "resultScript": ""
+    },
+    {
+      "description": "Tăng 1 lượng HP, tấn công, phòng ngự, tốc độ",
+      "id": "7",
+      "max": "54",
+      "min": "0",
+      "name": "Nữ Thần May Mắn",
+      "rate": "40",
+      "resultScript": ""
+    },
+    {
+      "description": "Có cơ hội mua được vật phẩm giảm giá",
+      "id": "8",
+      "max": "54",
+      "min": "0",
+      "name": "Giảm Giá Tinh Phẩm",
+      "rate": "75",
+      "resultScript": ""
+    },
+    {
+      "description": "Có cơ hội rút nhận bảo vật",
+      "id": "9",
+      "max": "54",
+      "min": "0",
+      "name": "Khai Mở Bảo Rương",
+      "rate": "75",
+      "resultScript": ""
+    },
+    {
+      "description": "Trả lời 1 lượng câu hỏi, lượng câu đáp đúng càng cao, phần thưởng càng nhiều",
+      "id": "10",
+      "max": "54",
+      "min": "0",
+      "name": "Đáp Án Trí Tuệ",
+      "rate": "50",
+      "resultScript": ""
+    },
+    {
+      "description": "Khi gặp Quái Vật Làm Loạn, nếu thất bại sẽ giảm 1 nửa HP",
+      "id": "11",
+      "max": "54",
+      "min": "0",
+      "name": "Quái Vật Làm Loạn",
+      "rate": "160",
+      "resultScript": ""
+    },
+    {
+      "description": "Khi gặp Tiểu Đội Tinh Anh, nếu thất bại sẽ giảm 1 nửa HP",
+      "id": "12",
+      "max": "54",
+      "min": "0",
+      "name": "Tiểu Đội Tinh Anh",
+      "rate": "200",
+      "resultScript": ""
+    },
+    {
+      "description": "Khi gặp Ngộ Lâm Ngộ Tập, nếu thất bại sẽ giảm 1 nửa HP",
+      "id": "13",
+      "max": "54",
+      "min": "0",
+      "name": "Mật Lâm Ngộ Tập",
+      "rate": "100",
+      "resultScript": ""
+    },
+    {
+      "description": "Khi khiêu chiến BOSS, nếu thất bại sẽ giảm 1 nửa HP",
+      "id": "14",
+      "max": "54",
+      "min": "0",
+      "name": "Khiêu Chiến BOSS",
+      "rate": "40",
+      "resultScript": ""
+    },
+    {
+      "description": "",
+      "id": "15",
+      "max": "0",
+      "min": "0",
+      "name": "Phần Thưởng Cuối",
+      "rate": "0",
+      "resultScript": "function getMazeFinalAward(cid){\\r\\tvar c = getCharactor(cid);\\r\\tvar nameStr = encode(TBL_CHARACTOR, cid, c.data.name);\\r\\tif(!c || !mazeData[cid]){\\r\\t\\treturn;\\r\\t}\\r\\tvar currentRate = mazeData[cid].currentRate;\\r\\tif(!c.isRebirthed()){\\r\\t\\t\\t//没有转生的获得经验\\r\\t\\taddChaExp(cid, Math.floor(BASIC_GET_EXP[c.level] * currentRate * 5));\\r\\t}\\r\\telse{\\r\\t\\t//转生的获得功勋\\r\\t\\tif(BASIC_GET_REEXP[c.levelRe]){\\r\\t\\t\\t//转生的获得功勋\\r\\t\\t\\ttrace(Math.floor(currentRate * BASIC_GET_REEXP[c.levelRe]));\\r\\t\\t\\ttrace(c.levelRe+\" c.levelRe\");\\r\\t\\t\\taddCharExpRe(c,  Math.floor(currentRate * BASIC_GET_REEXP[c.levelRe]));\\r\\t\\t}else{\\r\\t\\t\\tsystemSay(cid, Lang.NPC_Script2159);\\r\\t\\t}\\r\\t}\\r\\ttakePackageBySTWithBindedInit(cid, MAZE_FINAL_AWARD[mazeData[cid].level] );\\r\\t/*检测活跃度*/\\r\\tcheckDailyActProgress(c,36);\\r\\tsystemMidMsgBroadcast(Lang.NPC_Script1632.replace(\"{name}\", nameStr));\\t\\r}\\rgetMazeFinalAward(cid);"
+    }
+  ]
+}

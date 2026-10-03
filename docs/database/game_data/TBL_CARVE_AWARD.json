@@ -1,0 +1,1208 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_CARVE_AWARD",
+  "recordCount": 150,
+  "records": [
+    {
+      "award": "10",
+      "freeExchagne": "5",
+      "id": "1",
+      "itemId": "4724",
+      "lev": "1",
+      "payExchangeTime": "0"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "10",
+      "id": "2",
+      "itemId": "6516",
+      "lev": "2",
+      "payExchangeTime": "0"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "15",
+      "id": "3",
+      "itemId": "4724",
+      "lev": "3",
+      "payExchangeTime": "0"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "20",
+      "id": "4",
+      "itemId": "6516",
+      "lev": "4",
+      "payExchangeTime": "0"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "25",
+      "id": "5",
+      "itemId": "4181",
+      "lev": "5",
+      "payExchangeTime": "1"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "30",
+      "id": "6",
+      "itemId": "6516",
+      "lev": "6",
+      "payExchangeTime": "1"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "35",
+      "id": "7",
+      "itemId": "4724",
+      "lev": "7",
+      "payExchangeTime": "1"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "40",
+      "id": "8",
+      "itemId": "6516",
+      "lev": "8",
+      "payExchangeTime": "1"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "45",
+      "id": "9",
+      "itemId": "4724",
+      "lev": "9",
+      "payExchangeTime": "1"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "50",
+      "id": "10",
+      "itemId": "6516",
+      "lev": "10",
+      "payExchangeTime": "2"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "55",
+      "id": "11",
+      "itemId": "4724",
+      "lev": "11",
+      "payExchangeTime": "2"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "60",
+      "id": "12",
+      "itemId": "6516",
+      "lev": "12",
+      "payExchangeTime": "2"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "65",
+      "id": "13",
+      "itemId": "4724",
+      "lev": "13",
+      "payExchangeTime": "2"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "70",
+      "id": "14",
+      "itemId": "6516",
+      "lev": "14",
+      "payExchangeTime": "2"
+    },
+    {
+      "award": "10",
+      "freeExchagne": "75",
+      "id": "15",
+      "itemId": "4181",
+      "lev": "15",
+      "payExchangeTime": "3"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "85",
+      "id": "16",
+      "itemId": "6516",
+      "lev": "16",
+      "payExchangeTime": "3"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "95",
+      "id": "17",
+      "itemId": "4724",
+      "lev": "17",
+      "payExchangeTime": "3"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "105",
+      "id": "18",
+      "itemId": "6516",
+      "lev": "18",
+      "payExchangeTime": "3"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "115",
+      "id": "19",
+      "itemId": "4724",
+      "lev": "19",
+      "payExchangeTime": "3"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "125",
+      "id": "20",
+      "itemId": "6516",
+      "lev": "20",
+      "payExchangeTime": "4"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "135",
+      "id": "21",
+      "itemId": "4724",
+      "lev": "21",
+      "payExchangeTime": "4"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "145",
+      "id": "22",
+      "itemId": "6516",
+      "lev": "22",
+      "payExchangeTime": "4"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "155",
+      "id": "23",
+      "itemId": "4724",
+      "lev": "23",
+      "payExchangeTime": "4"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "165",
+      "id": "24",
+      "itemId": "6516",
+      "lev": "24",
+      "payExchangeTime": "4"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "175",
+      "id": "25",
+      "itemId": "4181",
+      "lev": "25",
+      "payExchangeTime": "5"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "185",
+      "id": "26",
+      "itemId": "6516",
+      "lev": "26",
+      "payExchangeTime": "5"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "195",
+      "id": "27",
+      "itemId": "4724",
+      "lev": "27",
+      "payExchangeTime": "5"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "205",
+      "id": "28",
+      "itemId": "6516",
+      "lev": "28",
+      "payExchangeTime": "5"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "215",
+      "id": "29",
+      "itemId": "4724",
+      "lev": "29",
+      "payExchangeTime": "5"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "225",
+      "id": "30",
+      "itemId": "6516",
+      "lev": "30",
+      "payExchangeTime": "6"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "235",
+      "id": "31",
+      "itemId": "4724",
+      "lev": "31",
+      "payExchangeTime": "6"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "245",
+      "id": "32",
+      "itemId": "6516",
+      "lev": "32",
+      "payExchangeTime": "6"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "255",
+      "id": "33",
+      "itemId": "4724",
+      "lev": "33",
+      "payExchangeTime": "6"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "265",
+      "id": "34",
+      "itemId": "6516",
+      "lev": "34",
+      "payExchangeTime": "6"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "275",
+      "id": "35",
+      "itemId": "4181",
+      "lev": "35",
+      "payExchangeTime": "7"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "285",
+      "id": "36",
+      "itemId": "6516",
+      "lev": "36",
+      "payExchangeTime": "7"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "295",
+      "id": "37",
+      "itemId": "4724",
+      "lev": "37",
+      "payExchangeTime": "7"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "305",
+      "id": "38",
+      "itemId": "6516",
+      "lev": "38",
+      "payExchangeTime": "7"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "315",
+      "id": "39",
+      "itemId": "4724",
+      "lev": "39",
+      "payExchangeTime": "7"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "325",
+      "id": "40",
+      "itemId": "6516",
+      "lev": "40",
+      "payExchangeTime": "8"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "335",
+      "id": "41",
+      "itemId": "4724",
+      "lev": "41",
+      "payExchangeTime": "8"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "345",
+      "id": "42",
+      "itemId": "6516",
+      "lev": "42",
+      "payExchangeTime": "8"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "355",
+      "id": "43",
+      "itemId": "4724",
+      "lev": "43",
+      "payExchangeTime": "8"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "365",
+      "id": "44",
+      "itemId": "6516",
+      "lev": "44",
+      "payExchangeTime": "8"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "375",
+      "id": "45",
+      "itemId": "4181",
+      "lev": "45",
+      "payExchangeTime": "9"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "385",
+      "id": "46",
+      "itemId": "6516",
+      "lev": "46",
+      "payExchangeTime": "9"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "395",
+      "id": "47",
+      "itemId": "4724",
+      "lev": "47",
+      "payExchangeTime": "9"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "405",
+      "id": "48",
+      "itemId": "6516",
+      "lev": "48",
+      "payExchangeTime": "9"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "415",
+      "id": "49",
+      "itemId": "4724",
+      "lev": "49",
+      "payExchangeTime": "9"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "425",
+      "id": "50",
+      "itemId": "6516",
+      "lev": "50",
+      "payExchangeTime": "10"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "435",
+      "id": "51",
+      "itemId": "4724",
+      "lev": "51",
+      "payExchangeTime": "10"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "445",
+      "id": "52",
+      "itemId": "6516",
+      "lev": "52",
+      "payExchangeTime": "10"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "455",
+      "id": "53",
+      "itemId": "4724",
+      "lev": "53",
+      "payExchangeTime": "10"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "465",
+      "id": "54",
+      "itemId": "6516",
+      "lev": "54",
+      "payExchangeTime": "10"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "475",
+      "id": "55",
+      "itemId": "4181",
+      "lev": "55",
+      "payExchangeTime": "11"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "485",
+      "id": "56",
+      "itemId": "6516",
+      "lev": "56",
+      "payExchangeTime": "11"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "495",
+      "id": "57",
+      "itemId": "4724",
+      "lev": "57",
+      "payExchangeTime": "11"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "505",
+      "id": "58",
+      "itemId": "6516",
+      "lev": "58",
+      "payExchangeTime": "11"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "515",
+      "id": "59",
+      "itemId": "4724",
+      "lev": "59",
+      "payExchangeTime": "11"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "525",
+      "id": "60",
+      "itemId": "6516",
+      "lev": "60",
+      "payExchangeTime": "12"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "535",
+      "id": "61",
+      "itemId": "4724",
+      "lev": "61",
+      "payExchangeTime": "12"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "545",
+      "id": "62",
+      "itemId": "6516",
+      "lev": "62",
+      "payExchangeTime": "12"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "555",
+      "id": "63",
+      "itemId": "4724",
+      "lev": "63",
+      "payExchangeTime": "12"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "565",
+      "id": "64",
+      "itemId": "6516",
+      "lev": "64",
+      "payExchangeTime": "12"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "575",
+      "id": "65",
+      "itemId": "4181",
+      "lev": "65",
+      "payExchangeTime": "13"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "585",
+      "id": "66",
+      "itemId": "6516",
+      "lev": "66",
+      "payExchangeTime": "13"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "595",
+      "id": "67",
+      "itemId": "4724",
+      "lev": "67",
+      "payExchangeTime": "13"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "605",
+      "id": "68",
+      "itemId": "6516",
+      "lev": "68",
+      "payExchangeTime": "13"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "615",
+      "id": "69",
+      "itemId": "4724",
+      "lev": "69",
+      "payExchangeTime": "13"
+    },
+    {
+      "award": "20",
+      "freeExchagne": "625",
+      "id": "70",
+      "itemId": "6516",
+      "lev": "70",
+      "payExchangeTime": "14"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "640",
+      "id": "71",
+      "itemId": "4591",
+      "lev": "71",
+      "payExchangeTime": "14"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "655",
+      "id": "72",
+      "itemId": "4595",
+      "lev": "72",
+      "payExchangeTime": "14"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "670",
+      "id": "73",
+      "itemId": "4591",
+      "lev": "73",
+      "payExchangeTime": "14"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "685",
+      "id": "74",
+      "itemId": "4595",
+      "lev": "74",
+      "payExchangeTime": "14"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "700",
+      "id": "75",
+      "itemId": "4181",
+      "lev": "75",
+      "payExchangeTime": "15"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "715",
+      "id": "76",
+      "itemId": "4595",
+      "lev": "76",
+      "payExchangeTime": "15"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "730",
+      "id": "77",
+      "itemId": "4591",
+      "lev": "77",
+      "payExchangeTime": "15"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "745",
+      "id": "78",
+      "itemId": "4595",
+      "lev": "78",
+      "payExchangeTime": "15"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "760",
+      "id": "79",
+      "itemId": "4591",
+      "lev": "79",
+      "payExchangeTime": "15"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "775",
+      "id": "80",
+      "itemId": "4595",
+      "lev": "80",
+      "payExchangeTime": "16"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "790",
+      "id": "81",
+      "itemId": "4591",
+      "lev": "81",
+      "payExchangeTime": "16"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "805",
+      "id": "82",
+      "itemId": "4595",
+      "lev": "82",
+      "payExchangeTime": "16"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "820",
+      "id": "83",
+      "itemId": "4591",
+      "lev": "83",
+      "payExchangeTime": "16"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "835",
+      "id": "84",
+      "itemId": "4595",
+      "lev": "84",
+      "payExchangeTime": "16"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "850",
+      "id": "85",
+      "itemId": "4181",
+      "lev": "85",
+      "payExchangeTime": "17"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "865",
+      "id": "86",
+      "itemId": "4595",
+      "lev": "86",
+      "payExchangeTime": "17"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "880",
+      "id": "87",
+      "itemId": "4591",
+      "lev": "87",
+      "payExchangeTime": "17"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "895",
+      "id": "88",
+      "itemId": "4595",
+      "lev": "88",
+      "payExchangeTime": "17"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "910",
+      "id": "89",
+      "itemId": "4591",
+      "lev": "89",
+      "payExchangeTime": "17"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "925",
+      "id": "90",
+      "itemId": "4595",
+      "lev": "90",
+      "payExchangeTime": "18"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "940",
+      "id": "91",
+      "itemId": "4591",
+      "lev": "91",
+      "payExchangeTime": "18"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "955",
+      "id": "92",
+      "itemId": "4595",
+      "lev": "92",
+      "payExchangeTime": "18"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "970",
+      "id": "93",
+      "itemId": "4591",
+      "lev": "93",
+      "payExchangeTime": "18"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "985",
+      "id": "94",
+      "itemId": "4595",
+      "lev": "94",
+      "payExchangeTime": "18"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1000",
+      "id": "95",
+      "itemId": "4181",
+      "lev": "95",
+      "payExchangeTime": "19"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1015",
+      "id": "96",
+      "itemId": "4595",
+      "lev": "96",
+      "payExchangeTime": "19"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1030",
+      "id": "97",
+      "itemId": "4591",
+      "lev": "97",
+      "payExchangeTime": "19"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1045",
+      "id": "98",
+      "itemId": "4595",
+      "lev": "98",
+      "payExchangeTime": "19"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1060",
+      "id": "99",
+      "itemId": "4591",
+      "lev": "99",
+      "payExchangeTime": "19"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1075",
+      "id": "100",
+      "itemId": "4595",
+      "lev": "100",
+      "payExchangeTime": "20"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1090",
+      "id": "101",
+      "itemId": "4591",
+      "lev": "101",
+      "payExchangeTime": "20"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1105",
+      "id": "102",
+      "itemId": "4595",
+      "lev": "102",
+      "payExchangeTime": "20"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1120",
+      "id": "103",
+      "itemId": "4591",
+      "lev": "103",
+      "payExchangeTime": "20"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1135",
+      "id": "104",
+      "itemId": "4595",
+      "lev": "104",
+      "payExchangeTime": "20"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1150",
+      "id": "105",
+      "itemId": "4181",
+      "lev": "105",
+      "payExchangeTime": "21"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1165",
+      "id": "106",
+      "itemId": "4595",
+      "lev": "106",
+      "payExchangeTime": "21"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1180",
+      "id": "107",
+      "itemId": "4591",
+      "lev": "107",
+      "payExchangeTime": "21"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1195",
+      "id": "108",
+      "itemId": "4595",
+      "lev": "108",
+      "payExchangeTime": "21"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1210",
+      "id": "109",
+      "itemId": "4591",
+      "lev": "109",
+      "payExchangeTime": "21"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1225",
+      "id": "110",
+      "itemId": "4595",
+      "lev": "110",
+      "payExchangeTime": "22"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1240",
+      "id": "111",
+      "itemId": "4591",
+      "lev": "111",
+      "payExchangeTime": "22"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1255",
+      "id": "112",
+      "itemId": "4595",
+      "lev": "112",
+      "payExchangeTime": "22"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1270",
+      "id": "113",
+      "itemId": "4591",
+      "lev": "113",
+      "payExchangeTime": "22"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1285",
+      "id": "114",
+      "itemId": "4595",
+      "lev": "114",
+      "payExchangeTime": "22"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1300",
+      "id": "115",
+      "itemId": "4181",
+      "lev": "115",
+      "payExchangeTime": "23"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1315",
+      "id": "116",
+      "itemId": "4595",
+      "lev": "116",
+      "payExchangeTime": "23"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1330",
+      "id": "117",
+      "itemId": "4591",
+      "lev": "117",
+      "payExchangeTime": "23"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1345",
+      "id": "118",
+      "itemId": "4595",
+      "lev": "118",
+      "payExchangeTime": "23"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1360",
+      "id": "119",
+      "itemId": "4591",
+      "lev": "119",
+      "payExchangeTime": "23"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1375",
+      "id": "120",
+      "itemId": "4595",
+      "lev": "120",
+      "payExchangeTime": "24"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1390",
+      "id": "121",
+      "itemId": "4592",
+      "lev": "121",
+      "payExchangeTime": "24"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1405",
+      "id": "122",
+      "itemId": "4596",
+      "lev": "122",
+      "payExchangeTime": "24"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1420",
+      "id": "123",
+      "itemId": "4592",
+      "lev": "123",
+      "payExchangeTime": "24"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1435",
+      "id": "124",
+      "itemId": "4596",
+      "lev": "124",
+      "payExchangeTime": "24"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1450",
+      "id": "125",
+      "itemId": "4181",
+      "lev": "125",
+      "payExchangeTime": "25"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1465",
+      "id": "126",
+      "itemId": "4596",
+      "lev": "126",
+      "payExchangeTime": "25"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1480",
+      "id": "127",
+      "itemId": "4592",
+      "lev": "127",
+      "payExchangeTime": "25"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1495",
+      "id": "128",
+      "itemId": "4596",
+      "lev": "128",
+      "payExchangeTime": "25"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1510",
+      "id": "129",
+      "itemId": "4592",
+      "lev": "129",
+      "payExchangeTime": "25"
+    },
+    {
+      "award": "30",
+      "freeExchagne": "1525",
+      "id": "130",
+      "itemId": "4596",
+      "lev": "130",
+      "payExchangeTime": "26"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1550",
+      "id": "131",
+      "itemId": "4592",
+      "lev": "131",
+      "payExchangeTime": "26"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1575",
+      "id": "132",
+      "itemId": "4596",
+      "lev": "132",
+      "payExchangeTime": "26"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1600",
+      "id": "133",
+      "itemId": "4592",
+      "lev": "133",
+      "payExchangeTime": "26"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1625",
+      "id": "134",
+      "itemId": "4596",
+      "lev": "134",
+      "payExchangeTime": "26"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1650",
+      "id": "135",
+      "itemId": "4181",
+      "lev": "135",
+      "payExchangeTime": "27"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1675",
+      "id": "136",
+      "itemId": "4596",
+      "lev": "136",
+      "payExchangeTime": "27"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1700",
+      "id": "137",
+      "itemId": "4592",
+      "lev": "137",
+      "payExchangeTime": "27"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1725",
+      "id": "138",
+      "itemId": "4596",
+      "lev": "138",
+      "payExchangeTime": "27"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1750",
+      "id": "139",
+      "itemId": "4592",
+      "lev": "139",
+      "payExchangeTime": "27"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1775",
+      "id": "140",
+      "itemId": "4596",
+      "lev": "140",
+      "payExchangeTime": "28"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1800",
+      "id": "141",
+      "itemId": "4592",
+      "lev": "141",
+      "payExchangeTime": "28"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1825",
+      "id": "142",
+      "itemId": "4596",
+      "lev": "142",
+      "payExchangeTime": "28"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1850",
+      "id": "143",
+      "itemId": "4592",
+      "lev": "143",
+      "payExchangeTime": "28"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1875",
+      "id": "144",
+      "itemId": "4596",
+      "lev": "144",
+      "payExchangeTime": "28"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1900",
+      "id": "145",
+      "itemId": "4181",
+      "lev": "145",
+      "payExchangeTime": "29"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1925",
+      "id": "146",
+      "itemId": "4596",
+      "lev": "146",
+      "payExchangeTime": "29"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1950",
+      "id": "147",
+      "itemId": "4592",
+      "lev": "147",
+      "payExchangeTime": "29"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "1975",
+      "id": "148",
+      "itemId": "4596",
+      "lev": "148",
+      "payExchangeTime": "29"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "2000",
+      "id": "149",
+      "itemId": "4592",
+      "lev": "149",
+      "payExchangeTime": "29"
+    },
+    {
+      "award": "50",
+      "freeExchagne": "2025",
+      "id": "150",
+      "itemId": "4596",
+      "lev": "150",
+      "payExchangeTime": "30"
+    }
+  ]
+}

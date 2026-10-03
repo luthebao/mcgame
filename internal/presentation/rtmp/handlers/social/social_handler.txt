@@ -1,0 +1,574 @@
+// Social handler for friend and relationship RPC calls.
+// Handles friend list, blacklist, and IM panel initialization.
+// Returns relationship data with online status for client UI.
+package handlers
+
+import (
+	"strconv"
+
+	appsocial "mcgame-server/internal/application/social"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+type SocialHandler struct {
+	socialService *appsocial.Service
+	logger        *zap.Logger
+}
+
+func NewSocialHandler(socialService *appsocial.Service, logger *zap.Logger) *SocialHandler {
+	return &SocialHandler{
+		socialService: socialService,
+		logger:        logger,
+	}
+}
+
+func (h *SocialHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("initViewImC", h.InitViewImC)
+	dispatcher.Register("getFriendList", h.GetFriendList)
+	dispatcher.Register("getBlackList", h.GetBlackList)
+	dispatcher.Register("addRelationByName", h.AddRelationByName)
+	dispatcher.Register("delRelationship", h.DelRelationship)
+	dispatcher.Register("initTS", h.InitTS)
+	dispatcher.Register("findTeacher", h.FindTeacher)
+	dispatcher.Register("findStudent", h.FindStudent)
+	dispatcher.Register("reportTS", h.ReportTS)
+	dispatcher.Register("delST", h.DelST)
+}
+
+func (h *SocialHandler) InitViewImC(ctx *rtmp.RPCContext, args []any) (any, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("InitViewImC: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("InitViewImC: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("InitViewImC: fetching relationship list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	relationships, err := h.socialService.GetRelationshipList(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("InitViewImC: failed to get relationship list",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	result := make(map[string]any)
+	for _, rel := range relationships {
+		relID := rel["id"]
+		result[strconv.FormatInt(relID.(int64), 10)] = rel
+	}
+
+	h.logger.Info("InitViewImC: returning relationship list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("count", len(result)))
+
+	if err := ctx.Connection.SendCallback("onInitViewImC", result); err != nil {
+		h.logger.Error("InitViewImC: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+func (h *SocialHandler) GetFriendList(ctx *rtmp.RPCContext, args []any) (any, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("GetFriendList: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("GetFriendList: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("GetFriendList: fetching friend list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	friends, err := h.socialService.GetFriendList(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("GetFriendList: failed to get friend list",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	h.logger.Info("GetFriendList: returning friend list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("count", len(friends)))
+
+	return friends, nil
+}
+
+func (h *SocialHandler) GetBlackList(ctx *rtmp.RPCContext, args []any) (any, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("GetBlackList: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("GetBlackList: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("GetBlackList: fetching blacklist",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	blacklist, err := h.socialService.GetBlacklist(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("GetBlackList: failed to get blacklist",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	h.logger.Info("GetBlackList: returning blacklist",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("count", len(blacklist)))
+
+	return blacklist, nil
+}
+
+// AddRelationByName adds a relationship (friend, blacklist, enemy, etc.) by character name.
+// Client call: _core.remote.addRelationByName(name, type)
+// Parameters:
+//   - name (String): Target character's name
+//   - type (Number): Relationship type (0=friend, 1=blacklist, 2=enemy, 3=couple, 4=tutor, 5=brother)
+//
+// Response: Sends callback onAddRelationByName(characterId, type)
+//   - If characterId = -1, player not found
+//   - Otherwise, relationship was added successfully
+func (h *SocialHandler) AddRelationByName(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Parse name
+	name, ok := args[0].(string)
+	if !ok {
+		h.logger.Warn("AddRelationByName: invalid name type",
+			zap.Any("name", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	// Parse relationship type
+	var relType int
+	switch v := args[1].(type) {
+	case float64:
+		relType = int(v)
+	case int:
+		relType = v
+	default:
+		h.logger.Warn("AddRelationByName: invalid type",
+			zap.Any("type", args[1]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("AddRelationByName called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.String("target_name", name),
+		zap.Int("relationship_type", relType))
+
+	// Add relationship using service
+	relDTO, err := h.socialService.AddRelationshipByName(ctx.Context, characterID, name, relType)
+	if err != nil {
+		h.logger.Warn("AddRelationByName: failed to add relationship",
+			zap.String("target_name", name),
+			zap.Int("relationship_type", relType),
+			zap.Error(err))
+
+		// Send callback with -1 to indicate failure (player not found or error)
+		if err := ctx.Connection.SendCallback("onAddRelationByName", -1, relType); err != nil {
+			h.logger.Error("Failed to send onAddRelationByName error callback",
+				zap.Uint32("conn_id", ctx.ConnID),
+				zap.Error(err))
+		}
+
+		// Return error response
+		return map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		}, nil
+	}
+
+	// Get target character ID from relationship DTO
+	targetID, ok := relDTO["otherId"].(int64)
+	if !ok {
+		targetID = -1
+	}
+
+	// Send success callback
+	if err := ctx.Connection.SendCallback("onAddRelationByName", targetID, relType); err != nil {
+		h.logger.Error("Failed to send onAddRelationByName callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	h.logger.Info("Relationship added",
+		zap.Int64("character_id", characterID),
+		zap.Int64("target_id", targetID),
+		zap.String("target_name", name),
+		zap.Int("relationship_type", relType))
+
+	return map[string]interface{}{
+		"success":      true,
+		"relationship": relDTO,
+	}, nil
+}
+
+// DelRelationship deletes a relationship by its ID.
+// Client call: _core.remote.delRelationship(relId)
+// Parameters:
+//   - relId (Number): Relationship ID to delete
+//
+// Response: Sends callback onDelRelationship(relId)
+func (h *SocialHandler) DelRelationship(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Parse relationship ID
+	var relID int64
+	switch v := args[0].(type) {
+	case float64:
+		relID = int64(v)
+	case int:
+		relID = int64(v)
+	case int64:
+		relID = v
+	default:
+		h.logger.Warn("DelRelationship: invalid relationship ID type",
+			zap.Any("rel_id", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("DelRelationship called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int64("relationship_id", relID))
+
+	// Delete relationship by ID
+	err = h.socialService.DeleteRelationshipByID(ctx.Context, relID)
+	if err != nil {
+		h.logger.Warn("DelRelationship: failed to delete relationship",
+			zap.Int64("relationship_id", relID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onDelRelationship", relID); err != nil {
+		h.logger.Error("DelRelationship: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	h.logger.Info("Relationship deleted",
+		zap.Int64("character_id", characterID),
+		zap.Int64("relationship_id", relID))
+
+	return nil, nil
+}
+
+// InitTS initializes the teacher/student view.
+// Client call: _core.remote.initTS()
+//
+// Response: Sends callback onInitTS({students[]})
+func (h *SocialHandler) InitTS(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("InitTS: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("InitTS: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("InitTS: fetching teacher/student list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	students, err := h.socialService.GetTeacherStudentList(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("InitTS: failed to get teacher/student list",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+	for _, student := range students {
+		studentID := student["id"]
+		result[strconv.FormatInt(studentID.(int64), 10)] = student
+	}
+
+	h.logger.Info("InitTS: returning teacher/student list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("count", len(result)))
+
+	if err := ctx.Connection.SendCallback("onInitTS", result); err != nil {
+		h.logger.Error("InitTS: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return nil, nil
+}
+
+// FindTeacher searches for a teacher by name.
+// Client call: _core.remote.call("findTeacher", responder, name)
+// Parameters:
+//   - name (String): Teacher's name to search for
+//
+// Response: Sends callback onFindTeacher({t, i, n, f})
+//   - t: 1 = success, 2 = error
+//   - i: Teacher ID (if success)
+//   - n: Teacher name (if success)
+//   - f: Error code (if error)
+func (h *SocialHandler) FindTeacher(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Parse teacher name
+	name, ok := args[0].(string)
+	if !ok {
+		h.logger.Warn("FindTeacher: invalid name type",
+			zap.Any("name", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("FindTeacher called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.String("teacher_name", name))
+
+	result, err := h.socialService.FindTeacher(ctx.Context, characterID, name)
+	if err != nil {
+		h.logger.Warn("FindTeacher: failed to find teacher",
+			zap.String("teacher_name", name),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onFindTeacher", result); err != nil {
+		h.logger.Error("FindTeacher: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return result, nil
+}
+
+// FindStudent searches for a student by name.
+// Client call: _core.remote.call("findStudent", responder, name)
+// Parameters:
+//   - name (String): Student's name to search for
+//
+// Response: Sends callback onFindStudent({t, i, n, f})
+//   - t: 1 = success, 2 = error
+//   - i: Student ID (if success)
+//   - n: Student name (if success)
+//   - f: Error code (if error)
+func (h *SocialHandler) FindStudent(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Parse student name
+	name, ok := args[0].(string)
+	if !ok {
+		h.logger.Warn("FindStudent: invalid name type",
+			zap.Any("name", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("FindStudent called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.String("student_name", name))
+
+	result, err := h.socialService.FindStudent(ctx.Context, characterID, name)
+	if err != nil {
+		h.logger.Warn("FindStudent: failed to find student",
+			zap.String("student_name", name),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onFindStudent", result); err != nil {
+		h.logger.Error("FindStudent: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return result, nil
+}
+
+// ReportTS reports teacher/student progress.
+// Client call: _core.remote.call("reportTS", responder)
+//
+// Response: Sends callback onReportTS({t, tp, ll, i, n, f})
+//   - t: 1 = student progress, 2 = teacher progress
+//   - tp: Teacher points
+//   - ll: Student level/progress
+//   - i: Character ID
+//   - n: Character name
+//   - f: Error code (if error)
+func (h *SocialHandler) ReportTS(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("ReportTS: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("ReportTS: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("ReportTS: reporting teacher/student progress",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	result, err := h.socialService.ReportTeacherStudentProgress(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("ReportTS: failed to report progress",
+			zap.Int64("character_id", characterID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onReportTS", result); err != nil {
+		h.logger.Error("ReportTS: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return result, nil
+}
+
+// DelST deletes a student relationship.
+// Client call: _core.remote.delST(studentId)
+// Parameters:
+//   - studentId (Number): Student ID to remove
+//
+// Response: Sends callback onDelST({t, i, n})
+//   - t: 1 = success, 2 = error
+//   - i: Student ID
+//   - n: Student name
+func (h *SocialHandler) DelST(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Parse student ID
+	var studentID int64
+	switch v := args[0].(type) {
+	case float64:
+		studentID = int64(v)
+	case int:
+		studentID = int64(v)
+	case int64:
+		studentID = v
+	default:
+		h.logger.Warn("DelST: invalid student ID type",
+			zap.Any("student_id", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("DelST called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int64("student_id", studentID))
+
+	result, err := h.socialService.DeleteStudent(ctx.Context, characterID, studentID)
+	if err != nil {
+		h.logger.Warn("DelST: failed to delete student",
+			zap.Int64("student_id", studentID),
+			zap.Error(err))
+		return nil, err
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onDelST", result); err != nil {
+		h.logger.Error("DelST: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	h.logger.Info("Student deleted",
+		zap.Int64("character_id", characterID),
+		zap.Int64("student_id", studentID))
+
+	return result, nil
+}

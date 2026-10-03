@@ -1,0 +1,779 @@
+// Guild handler for guild-related RPC calls.
+// Handles guild panel initialization and guild operations.
+package handlers
+
+import (
+	"context"
+	"strconv"
+
+	appchar "mcgame-server/internal/application/character"
+	appguild "mcgame-server/internal/application/guild"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+type GuildHandler struct {
+	logger       *zap.Logger
+	charService  *appchar.Service
+	guildService *appguild.Service
+}
+
+func NewGuildHandler(logger *zap.Logger) *GuildHandler {
+	return &GuildHandler{
+		logger: logger,
+	}
+}
+
+func (h *GuildHandler) SetCharacterService(charService *appchar.Service) {
+	h.charService = charService
+}
+
+func (h *GuildHandler) SetGuildService(guildService *appguild.Service) {
+	h.guildService = guildService
+}
+
+func (h *GuildHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("initViewGuildP", h.InitViewGuildP)
+	dispatcher.Register("getGuildMemberList", h.GetGuildMemberList)
+	dispatcher.Register("initGuildList", h.InitGuildList)
+	dispatcher.Register("addGuild", h.AddGuild)
+	dispatcher.Register("addGuildMember", h.AddGuildMember)
+	dispatcher.Register("quitGuild", h.QuitGuild)
+	dispatcher.Register("updateGuildMember", h.UpdateGuildMember)
+	dispatcher.Register("updateGuildRank", h.UpdateGuildRank)
+	dispatcher.Register("updateGuildNotice", h.UpdateGuildNotice)
+	dispatcher.Register("delGuild", h.DelGuild)
+	dispatcher.Register("guildLevelUp", h.GuildLevelUp)
+	dispatcher.Register("addGuildBankSlotNum", h.AddGuildBankSlotNum)
+	dispatcher.Register("addMaxGuildMemberNum", h.AddMaxGuildMemberNum)
+	dispatcher.Register("getGuildPrivateSkillData", h.GetGuildPrivateSkillData)
+}
+
+// InitViewGuildP initializes the guild panel view.
+// Client call: _core.remote.initViewGuildP()
+// Parameters: None
+//
+// Response: Sends callback onInitViewGuildP({myGuild, memberList, guildRank, applyList, skillDevData})
+//   - myGuild: Object containing guild information:
+//   - name: Guild name
+//   - ln: Leader name
+//   - guildInfo: Guild description/info
+//   - money: Guild money
+//   - exp: Guild experience
+//   - bagSlotNum: Number of bag slots
+//   - memberList: Array of member objects, each with:
+//   - cid: Character ID
+//   - rank: Member rank
+//   - name: Character name
+//   - level: Character level
+//   - class: Character class
+//   - online: Online status
+//   - contribution: Contribution points
+//   - guildRank: Array of rank objects, each with:
+//   - rank: Rank ID
+//   - name: Rank name
+//   - permissions: Rank permissions
+//   - applyList: Array of application objects
+//   - skillDevData: Object containing guild skill development data
+func (h *GuildHandler) InitViewGuildP(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("InitViewGuildP: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("InitViewGuildP: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("InitViewGuildP: initializing guild panel",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	// Default response - no guild (empty data)
+	response := map[string]interface{}{
+		"myGuild":      nil,
+		"memberList":   []interface{}{},
+		"guildRank":    []interface{}{},
+		"applyList":    []interface{}{},
+		"skillDevData": nil,
+	}
+
+	// TODO: In a full implementation:
+	// - Check if character has a guild
+	// - If yes, fetch guild data:
+	//   - Guild info (name, leader, description, money, exp, etc.)
+	//   - Member list with their ranks and status
+	//   - Guild rank definitions
+	//   - Pending applications
+	//   - Skill development progress
+	// - If no guild, return empty/null data
+	// Fetch guild data if service is available
+	if h.guildService != nil {
+		g, err := h.guildService.GetGuildByMember(context.Background(), characterID)
+		if err != nil {
+			h.logger.Warn("InitViewGuildP: failed to get guild", zap.Error(err))
+		} else if g != nil {
+			// Found guild, populate response
+
+			// Find leader name
+			leaderName := ""
+			memberList := make([]interface{}, 0, len(g.Members))
+
+			for _, m := range g.Members {
+				if m.Rank == 0 { // Leader
+					leaderName = m.CharacterName
+				}
+				memberList = append(memberList, m.ToDTO())
+			}
+
+			// Convert guild to DTO
+			guildDTO := g.ToDTO()
+			guildDTO["ln"] = leaderName // Override ID with Name as expected by client
+			guildDTO["bagSlotNum"] = 28 // Default guild bank slots
+
+			response["myGuild"] = guildDTO
+			response["memberList"] = memberList
+
+			// Define default guild ranks (0=Leader, 1=Vice, etc)
+			// This typically matches client static data but server can override
+			response["guildRank"] = []interface{}{
+				map[string]interface{}{"rank": 0, "name": "Bang cheng", "canAdd": 1, "canQuest": 1, "canSlot": 1, "canInfo": 1, "canDel": 1, "canDuty": 1},
+				map[string]interface{}{"rank": 1, "name": "Pho bang", "canAdd": 1, "canQuest": 1, "canSlot": 1, "canInfo": 1, "canDel": 1, "canDuty": 1},
+				map[string]interface{}{"rank": 2, "name": "Tinh anh", "canAdd": 1, "canQuest": 1, "canSlot": 0, "canInfo": 0, "canDel": 0, "canDuty": 0},
+				map[string]interface{}{"rank": 3, "name": "Thanh vien", "canAdd": 0, "canQuest": 0, "canSlot": 0, "canInfo": 0, "canDel": 0, "canDuty": 0},
+			}
+		}
+	} else {
+		// Mock data for development if service not injected (fallback)
+		// ... or just leave empty
+	}
+
+	h.logger.Info("InitViewGuildP: returning guild panel data",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Bool("has_guild", response["myGuild"] != nil))
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onInitViewGuildP", response); err != nil {
+		h.logger.Error("InitViewGuildP: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// GetGuildMemberList returns the list of guild members.
+// Client call: _core.remote.call("getGuildMemberList", responder)
+// Parameters: None (or optional page number)
+//
+// Response: Returns memberList object (keyed by member ID)
+// Each member contains: cid, id, name, level, class, rank, online, contribution, etc.
+func (h *GuildHandler) GetGuildMemberList(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("GetGuildMemberList: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("GetGuildMemberList: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Debug("GetGuildMemberList: fetching guild member list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID))
+
+	// Default response - empty member list
+	// In a full implementation, this would fetch from database
+	memberList := map[string]interface{}{}
+
+	h.logger.Info("GetGuildMemberList: returning member list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.Int("count", len(memberList)))
+
+	return memberList, nil
+}
+
+// InitGuildList initializes the guild list for browsing.
+// Client call: _core.remote.initGuildList()
+// Parameters: None
+//
+// Response: Sends callback onInitGuildList({guildId: {id, name, leader, level, memberCount, etc.}})
+func (h *GuildHandler) InitGuildList(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("InitGuildList: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Debug("InitGuildList: initializing guild list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr))
+
+	// Default response - empty guild list
+	// In a full implementation, this would fetch from database
+	guildList := map[string]interface{}{}
+
+	h.logger.Info("InitGuildList: returning guild list",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("count", len(guildList)))
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onInitGuildList", guildList); err != nil {
+		h.logger.Error("InitGuildList: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return guildList, nil
+}
+
+// AddGuild creates a new guild.
+// Client call: _core.remote.addGuild({name: guildName})
+// Parameters:
+//   - name (String): Guild name
+//
+// Response: Sends callback onAddGuild({id, name, leader, level, etc.})
+func (h *GuildHandler) AddGuild(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("AddGuild: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	characterID, err := strconv.ParseInt(charIDStr, 10, 64)
+	if err != nil {
+		h.logger.Warn("AddGuild: invalid character ID",
+			zap.String("char_id", charIDStr),
+			zap.Error(err))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	if len(args) < 1 {
+		h.logger.Warn("AddGuild: missing guild data",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	guildData, ok := args[0].(map[string]interface{})
+	if !ok {
+		h.logger.Warn("AddGuild: invalid guild data format",
+			zap.Any("data", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	guildName, _ := guildData["name"].(string)
+	if guildName == "" {
+		h.logger.Warn("AddGuild: missing guild name")
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("AddGuild: creating new guild",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", characterID),
+		zap.String("guild_name", guildName))
+
+	// Fetch character name for leader
+	var leaderName string
+	var guildID int64 = 1 // Default ID if service not available
+
+	if h.charService != nil {
+		char, err := h.charService.GetByID(context.Background(), characterID)
+		if err != nil {
+			h.logger.Error("AddGuild: failed to get character", zap.Error(err))
+			return nil, pkgerrors.ErrSystemError
+		}
+		if char == nil {
+			h.logger.Warn("AddGuild: character not found", zap.Int64("character_id", characterID))
+			return nil, pkgerrors.ErrCharacterNotFound
+		}
+
+		leaderName = char.Name
+
+		// Check level requirement (Level 50)
+		if char.Level < 50 {
+			h.logger.Warn("AddGuild: insufficient level",
+				zap.Int64("character_id", characterID),
+				zap.Int("level", char.Level),
+				zap.Int("required", 50))
+			return nil, pkgerrors.ErrInsufficientLevel
+		}
+
+		// Check money requirement (1,000,000 MoneyBind)
+		const requiredMoney = 1000000
+		if char.MoneyBind < requiredMoney {
+			h.logger.Warn("AddGuild: insufficient bound money",
+				zap.Int64("character_id", characterID),
+				zap.Int64("money_bind", char.MoneyBind),
+				zap.Int64("required", requiredMoney))
+			return nil, pkgerrors.ErrInsufficientFunds
+		}
+
+		// Create guild first
+		if h.guildService != nil {
+			g, err := h.guildService.CreateGuild(context.Background(), characterID, guildName)
+			if err != nil {
+				h.logger.Warn("AddGuild: failed to create guild", zap.Error(err))
+				return nil, err // Pass through service errors (name taken, etc)
+			}
+			guildID = g.ID
+		}
+
+		// Deduct money
+		char.MoneyBind -= requiredMoney
+		if err := h.charService.Update(context.Background(), char); err != nil {
+			// Critical error: Guild created but money not deducted
+			// In a real system, we would need to roll back the guild creation
+			h.logger.Error("AddGuild: failed to update character money", zap.Error(err))
+			// Attempt to rollback guild creation
+			if h.guildService != nil {
+				_ = h.guildService.DisbandGuild(context.Background(), guildID, characterID)
+			}
+			return nil, pkgerrors.ErrSystemError
+		}
+
+		_ = ctx.Connection.SendCallback("onUPP", map[string]interface{}{
+			"moneyBind": char.MoneyBind,
+		})
+
+		h.logger.Info("AddGuild: deducted creation fee",
+			zap.Int64("character_id", characterID),
+			zap.Int64("amount", requiredMoney),
+			zap.Int64("remaining", char.MoneyBind))
+	}
+
+	// Response
+	response := map[string]interface{}{
+		"id":          guildID,
+		"name":        guildName,
+		"cid":         characterID, // Character ID of the leader
+		"ln":          leaderName,  // Leader name
+		"level":       1,
+		"memberCount": 1,
+	}
+
+	h.logger.Info("AddGuild: guild created",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("guild_name", guildName),
+		zap.String("leader_name", leaderName))
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onAddGuild", response); err != nil {
+		h.logger.Error("AddGuild: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	// Automatically refresh guild panel for the client
+	_, _ = h.InitViewGuildP(ctx, nil)
+
+	return response, nil
+}
+
+// AddGuildMember adds a member to the guild.
+// Client call: _core.remote.addGuildMember(memberData)
+// Parameters:
+//   - memberData: Object containing member information
+//
+// Response: Sends callback onAddGuildMember({cid, id, gid, name, level, rank, etc.})
+func (h *GuildHandler) AddGuildMember(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("AddGuildMember: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if len(args) < 1 {
+		h.logger.Warn("AddGuildMember: missing member data",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Info("AddGuildMember: adding member to guild",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Any("member_data", args[0]))
+
+	// Default response
+	// In a full implementation, this would add member to guild in database
+	response := args[0] // Return the member data
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onAddGuildMember", response); err != nil {
+		h.logger.Error("AddGuildMember: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// QuitGuild allows a member to leave the guild.
+// Client call: _core.remote.quitGuild(memberId)
+// Parameters:
+//   - memberId (Number): Member ID to remove
+//
+// Response: Sends callback onQuitGuild({success, memberId})
+func (h *GuildHandler) QuitGuild(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("QuitGuild: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	if len(args) < 1 {
+		h.logger.Warn("QuitGuild: missing member ID",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var memberID int
+	switch v := args[0].(type) {
+	case float64:
+		memberID = int(v)
+	case int:
+		memberID = v
+	case int64:
+		memberID = int(v)
+	default:
+		h.logger.Warn("QuitGuild: invalid member ID",
+			zap.Any("member_id", args[0]))
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("QuitGuild: member leaving guild",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("member_id", memberID))
+
+	// Default response
+	// In a full implementation, this would remove member from guild
+	response := map[string]interface{}{
+		"success":  true,
+		"memberId": memberID,
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onQuitGuild", response); err != nil {
+		h.logger.Error("QuitGuild: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// UpdateGuildMember updates guild member information.
+// Client call: _core.remote.updateGuildMember(memberData)
+// Parameters:
+//   - memberData: Object containing updated member information
+//
+// Response: Sends callback onUpdateGuildMember(memberData)
+func (h *GuildHandler) UpdateGuildMember(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("UpdateGuildMember: missing member data",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Debug("UpdateGuildMember: updating member",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Any("member_data", args[0]))
+
+	response := args[0]
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onUpdateGuildMember", response); err != nil {
+		h.logger.Error("UpdateGuildMember: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// UpdateGuildRank updates guild rank information.
+// Client call: _core.remote.updateGuildRank(rankData)
+// Parameters:
+//   - rankData: Object containing rank information
+//
+// Response: Sends callback onUpdateGuildRank(rankId, rankData)
+func (h *GuildHandler) UpdateGuildRank(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("UpdateGuildRank: missing rank data",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Debug("UpdateGuildRank: updating rank",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Any("rank_data", args[0]))
+
+	rankData := args[0]
+	var rankID int
+	if rankMap, ok := rankData.(map[string]interface{}); ok {
+		if id, ok := rankMap["rank"].(float64); ok {
+			rankID = int(id)
+		}
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onUpdateGuildRank", rankID, rankData); err != nil {
+		h.logger.Error("UpdateGuildRank: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return rankData, nil
+}
+
+// UpdateGuildNotice updates the guild notice/announcement.
+// Client call: _core.remote.updateGuildNotice(guildId, notice)
+// Parameters:
+//   - guildId (Number): Guild ID
+//   - notice (String): New notice text
+//
+// Response: Sends callback onUpdateGuildInfo({notice, etc.})
+func (h *GuildHandler) UpdateGuildNotice(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		h.logger.Warn("UpdateGuildNotice: missing parameters",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var guildID int
+	switch v := args[0].(type) {
+	case float64:
+		guildID = int(v)
+	case int:
+		guildID = v
+	case int64:
+		guildID = int(v)
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	notice, _ := args[1].(string)
+
+	h.logger.Info("UpdateGuildNotice: updating notice",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("guild_id", guildID),
+		zap.String("notice", notice))
+
+	response := map[string]interface{}{
+		"notice": notice,
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onUpdateGuildInfo", response); err != nil {
+		h.logger.Error("UpdateGuildNotice: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// DelGuild deletes/disbands the guild.
+// Client call: _core.remote.delGuild()
+// Parameters: None
+//
+// Response: Sends callback onDelGuild({success})
+func (h *GuildHandler) DelGuild(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("DelGuild: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Info("DelGuild: deleting guild",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr))
+
+	response := map[string]interface{}{
+		"success": true,
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onDelGuild", response); err != nil {
+		h.logger.Error("DelGuild: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// GuildLevelUp levels up the guild.
+// Client call: _core.remote.call("guildLevelUp", null, guildId)
+// Parameters:
+//   - guildId (Number): Guild ID
+//
+// Response: Sends callback onUpdateGuildProperty({level, etc.})
+func (h *GuildHandler) GuildLevelUp(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("GuildLevelUp: missing guild ID",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var guildID int
+	switch v := args[0].(type) {
+	case float64:
+		guildID = int(v)
+	case int:
+		guildID = v
+	case int64:
+		guildID = int(v)
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("GuildLevelUp: leveling up guild",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("guild_id", guildID))
+
+	response := map[string]interface{}{
+		"level": 2, // Would be calculated from current level
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onUpdateGuildProperty", response); err != nil {
+		h.logger.Error("GuildLevelUp: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// AddGuildBankSlotNum adds bank slots to the guild.
+// Client call: _core.remote.call("addGuildBankSlotNum", null, guildId)
+// Parameters:
+//   - guildId (Number): Guild ID
+//
+// Response: Sends callback onUpdateGuildProperty({bagSlotNum, etc.})
+func (h *GuildHandler) AddGuildBankSlotNum(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("AddGuildBankSlotNum: missing guild ID",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var guildID int
+	switch v := args[0].(type) {
+	case float64:
+		guildID = int(v)
+	case int:
+		guildID = v
+	case int64:
+		guildID = int(v)
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("AddGuildBankSlotNum: adding bank slots",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("guild_id", guildID))
+
+	response := map[string]interface{}{
+		"bagSlotNum": 10, // Would be calculated from current slots
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onUpdateGuildProperty", response); err != nil {
+		h.logger.Error("AddGuildBankSlotNum: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// AddMaxGuildMemberNum increases the maximum member capacity.
+// Client call: _core.remote.call("addMaxGuildMemberNum", null, guildId)
+// Parameters:
+//   - guildId (Number): Guild ID
+//
+// Response: Sends callback onUpdateGuildProperty({maxMemberNum, etc.})
+func (h *GuildHandler) AddMaxGuildMemberNum(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		h.logger.Warn("AddMaxGuildMemberNum: missing guild ID",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var guildID int
+	switch v := args[0].(type) {
+	case float64:
+		guildID = int(v)
+	case int:
+		guildID = v
+	case int64:
+		guildID = int(v)
+	default:
+		return nil, pkgerrors.ErrInvalidInput
+	}
+
+	h.logger.Info("AddMaxGuildMemberNum: increasing member capacity",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int("guild_id", guildID))
+
+	response := map[string]interface{}{
+		"maxMemberNum": 50, // Would be calculated from current max
+	}
+
+	// Send callback
+	if err := ctx.Connection.SendCallback("onUpdateGuildProperty", response); err != nil {
+		h.logger.Error("AddMaxGuildMemberNum: failed to send callback",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Error(err))
+	}
+
+	return response, nil
+}
+
+// GetGuildPrivateSkillData returns guild skill development data.
+// Client call: _core.remote.call("getGuildPrivateSkillData", responder)
+// Parameters: None
+//
+// Response: Returns skill development data object
+func (h *GuildHandler) GetGuildPrivateSkillData(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	charIDStr := ctx.CharacterID
+	if charIDStr == "" {
+		h.logger.Warn("GetGuildPrivateSkillData: no character ID in session",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Debug("GetGuildPrivateSkillData: fetching skill data",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", charIDStr))
+
+	// Default response - empty skill data
+	// In a full implementation, this would fetch from database
+	response := map[string]interface{}{}
+
+	h.logger.Info("GetGuildPrivateSkillData: returning skill data",
+		zap.Uint32("conn_id", ctx.ConnID))
+
+	return response, nil
+}

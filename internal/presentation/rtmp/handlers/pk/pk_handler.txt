@@ -1,0 +1,347 @@
+package handlers
+
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	apppk "mcgame-server/internal/application/pk"
+	domainpk "mcgame-server/internal/domain/pk"
+	"mcgame-server/internal/infrastructure/rtmp"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+// PKHandler exposes PK/PvP related RPC endpoints over RTMP.
+type PKHandler struct {
+	service    *apppk.Service
+	rtmpServer *rtmp.Server
+	logger     *zap.Logger
+}
+
+func NewPKHandler(service *apppk.Service, rtmpServer *rtmp.Server, logger *zap.Logger) *PKHandler {
+	return &PKHandler{
+		service:    service,
+		rtmpServer: rtmpServer,
+		logger:     logger,
+	}
+}
+
+func (h *PKHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	// Legacy client sends PVPStartClient when clicking a target; route it to pkInvite so
+	// we don't fail with stub and the new PK flow still works.
+	dispatcher.Register("PVPStartClient", h.PKInvite)
+	dispatcher.Register("pkInvite", h.PKInvite)
+	dispatcher.Register("pkInviteResp", h.PKInviteResp)
+	dispatcher.Register("pkReady", h.PKReady)
+	dispatcher.Register("pkAction", h.PKAction)
+	dispatcher.Register("pkSurrender", h.PKSurrender)
+	dispatcher.Register("pkLeave", h.PKLeave)
+}
+
+func (h *PKHandler) PKInvite(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	targetCID, err := toInt64(args[0])
+	if err != nil {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	mapID := 0
+	if len(args) >= 2 {
+		mapID = toInt(args[1])
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	// Smart handling: If this player (characterID) is calling PVPStartClient on someone (targetCID)
+	// who already invited them, auto-accept the existing invite instead of creating a new one.
+	// This handles the case where client calls PVPStartClient(cid, true) when user clicks YES on onForcePVP popup.
+	if pendingInv, matchID := h.service.FindPendingInviteForPlayer(characterID); pendingInv != nil {
+		if pendingInv.FromCID == targetCID {
+			// This player is accepting an invite from targetCID - auto-accept it
+			h.logger.Info("Auto-accepting pending invite via PVPStartClient",
+				zap.String("match_id", matchID),
+				zap.Int64("accepter", characterID),
+				zap.Int64("inviter", targetCID))
+
+			match, err := h.service.Respond(ctx.Context, matchID, characterID, true)
+			if err != nil {
+				return rtmp.ErrorToResponse(err), nil
+			}
+
+			// Notify both players that match is ready
+			h.broadcastMatchEvent(match, func(conn *rtmp.Connection) {
+				_ = conn.SendCallback("onPkMatchReady", map[string]interface{}{
+					"matchId": match.ID,
+					"mapId":   match.MapID,
+					"players": []map[string]interface{}{
+						{"cid": match.PlayerA},
+						{"cid": match.PlayerB},
+					},
+				})
+			})
+
+			return map[string]interface{}{
+				"success":  true,
+				"accepted": true,
+				"matchId":  match.ID,
+			}, nil
+		}
+	}
+
+	// Normal flow: create new invite
+	if err := h.service.ValidateAllowedMap(mapID); err != nil {
+		return nil, err
+	}
+
+	inv, err := h.service.Invite(ctx.Context, characterID, targetCID, mapID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// Simple visual feedback for legacy client: show mid-screen note to the inviter.
+	// This helps verify that the RPC → server path is working even before full PK UI is wired.
+	_ = ctx.Connection.SendCallback("onMidNote",
+		fmt.Sprintf("Đã gửi lời mời PK tới người chơi %d (match %s)", targetCID, inv.MatchID))
+
+	// Notify target if online
+	if targetConn := h.rtmpServer.GetConnectionByCharacterID(strconv.FormatInt(targetCID, 10)); targetConn != nil {
+		_ = targetConn.SendCallback("onForcePVP", characterID)
+	}
+
+	return map[string]interface{}{
+		"success":  true,
+		"matchId":  inv.MatchID,
+		"expireAt": inv.ExpiresAt.UnixMilli(),
+	}, nil
+}
+
+func (h *PKHandler) PKInviteResp(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	matchID, ok := args[0].(string)
+	if !ok {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	accept := toBool(args[1])
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	match, err := h.service.Respond(ctx.Context, matchID, characterID, accept)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	if !accept || match == nil {
+		if match != nil {
+			h.broadcastMatchEvent(match, func(conn *rtmp.Connection) {
+				_ = conn.SendCallback("onPkInviteExpired", matchID)
+			})
+		}
+		return map[string]interface{}{"success": true, "accepted": false}, nil
+	}
+
+	h.broadcastMatchEvent(match, func(conn *rtmp.Connection) {
+		_ = conn.SendCallback("onPkMatchReady", map[string]interface{}{
+			"matchId": match.ID,
+			"mapId":   match.MapID,
+			"players": []map[string]interface{}{
+				{"cid": match.PlayerA},
+				{"cid": match.PlayerB},
+			},
+		})
+	})
+
+	return map[string]interface{}{"success": true, "accepted": true, "matchId": match.ID}, nil
+}
+
+func (h *PKHandler) PKReady(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	matchID, ok := args[0].(string)
+	if !ok {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	match, started, err := h.service.Ready(ctx.Context, matchID, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	if started {
+		h.broadcastMatchEvent(match, func(conn *rtmp.Connection) {
+			_ = conn.SendCallback("onPkStart", map[string]interface{}{
+				"matchId": match.ID,
+				"startAt": time.Now().UnixMilli(),
+			})
+		})
+	}
+	return map[string]interface{}{"success": true, "started": started}, nil
+}
+
+func (h *PKHandler) PKAction(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	matchID, ok := args[0].(string)
+	if !ok {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	match, err := h.service.Action(ctx.Context, matchID, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	var actionObj interface{}
+	if len(args) >= 2 {
+		actionObj = args[1]
+	}
+
+	h.broadcastMatchEvent(match, func(conn *rtmp.Connection) {
+		_ = conn.SendCallback("onPkActionResult", map[string]interface{}{
+			"matchId":   match.ID,
+			"actorCid":  characterID,
+			"payload":   actionObj,
+			"timestamp": time.Now().UnixMilli(),
+		})
+	})
+
+	return map[string]interface{}{"success": true}, nil
+}
+
+func (h *PKHandler) PKSurrender(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	matchID, ok := args[0].(string)
+	if !ok {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	match, err := h.service.Surrender(ctx.Context, matchID, characterID, "surrender")
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+	h.emitResult(match)
+	return map[string]interface{}{"success": true}, nil
+}
+
+func (h *PKHandler) PKLeave(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+	matchID, ok := args[0].(string)
+	if !ok {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	match, err := h.service.LeaveForfeit(ctx.Context, matchID, characterID, "leave")
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+	h.emitResult(match)
+	return map[string]interface{}{"success": true}, nil
+}
+
+func (h *PKHandler) emitResult(match *domainpk.Match) {
+	if match == nil {
+		return
+	}
+	h.broadcastMatchEvent(match, func(conn *rtmp.Connection) {
+		_ = conn.SendCallback("onPkResult", map[string]interface{}{
+			"matchId": match.ID,
+			"winner":  match.WinnerCID,
+			"reason":  match.Reason,
+			"endAt":   match.EndAt.UnixMilli(),
+			"mapId":   match.MapID,
+			"state":   match.State,
+		})
+		_ = conn.SendCallback("onPkEnd", match.ID)
+	})
+}
+
+func (h *PKHandler) broadcastMatchEvent(match *domainpk.Match, fn func(conn *rtmp.Connection)) {
+	if match == nil {
+		return
+	}
+	for _, cid := range []int64{match.PlayerA, match.PlayerB} {
+		if cid == 0 {
+			continue
+		}
+		if conn := h.rtmpServer.GetConnectionByCharacterID(strconv.FormatInt(cid, 10)); conn != nil {
+			fn(conn)
+		}
+	}
+}
+
+func toInt64(v interface{}) (int64, error) {
+	switch t := v.(type) {
+	case float64:
+		return int64(t), nil
+	case int64:
+		return t, nil
+	case int:
+		return int64(t), nil
+	default:
+		return 0, pkgerrors.ErrInvalidArgs
+	}
+}
+
+func toInt(v interface{}) int {
+	switch t := v.(type) {
+	case float64:
+		return int(t)
+	case int:
+		return t
+	case int64:
+		return int(t)
+	default:
+		return 0
+	}
+}
+
+func toBool(v interface{}) bool {
+	switch t := v.(type) {
+	case bool:
+		return t
+	case float64:
+		return t != 0
+	case int:
+		return t != 0
+	default:
+		return false
+	}
+}

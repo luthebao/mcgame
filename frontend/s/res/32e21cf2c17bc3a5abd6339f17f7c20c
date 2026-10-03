@@ -1,0 +1,133 @@
+﻿package
+{
+    import flash.display.Sprite;
+    import flash.text.TextField;
+	import flash.text.TextFieldAutoSize;
+	import flash.text.TextFieldType;
+	import flash.text.TextFormat;
+	
+    public class Preloader extends Sprite{
+        
+		private var barFront : Sprite;
+		private var barFrontMask : Sprite;
+		
+		private var barBack : Sprite;
+		private var panelBack : Sprite;
+		
+		private var _txtTitle : TextField;
+		private var _txtDescription : TextField;
+		private var _txtProgress : TextField;
+		
+		private var _tf : TextFormat;
+    
+        public function Preloader() {   
+ 
+			barFront = new (BarFront as Class)();
+			barFrontMask = new (BarFrontMask as Class)();
+			barBack = new (BarBack as Class)();
+			
+			panelBack = new (PanelBack as Class)();
+			
+			barFrontMask.y = panelBack.height/2 + 20;
+			barFrontMask.x = (panelBack.width - barFrontMask.width)/2;
+			
+			//barFront.mask = barFrontMask;
+			barFront.y = barFrontMask.y;
+			barFront.x = barFrontMask.x;
+			
+			barBack.y = barFrontMask.y;
+			barBack.x = barFrontMask.x;
+			
+			addChild( panelBack );
+			addChild( barBack );
+			addChild( barFront );
+			
+			_txtTitle = new TextField();
+			_txtDescription = new TextField();
+			_txtProgress = new TextField();
+			
+			_tf = new TextFormat( null, 12, null, true );
+			
+			_txtTitle.defaultTextFormat = _tf;
+			_txtDescription.defaultTextFormat = _tf;
+			_txtProgress.defaultTextFormat = _tf;
+			
+			_txtTitle.type = TextFieldType.DYNAMIC;
+			_txtDescription.type = TextFieldType.DYNAMIC;
+			_txtProgress.type = TextFieldType.DYNAMIC;
+			
+			_txtTitle.height = 20;
+			_txtDescription.height = 20;
+			_txtProgress.height = 20;
+			
+			_txtTitle.autoSize = TextFieldAutoSize.CENTER;
+			_txtProgress.autoSize = TextFieldAutoSize.RIGHT;
+			
+			layOutText();
+			
+			addChild( _txtTitle );
+			addChild( _txtDescription );
+			addChild( _txtProgress );
+			
+			
+			setProgress( 35, 100 );
+			_txtTitle.text = "Loading";
+			_txtDescription.text = "Now Loading...";
+			
+			
+			
+        }
+	
+		private function layOutText() : void{
+			
+			_txtTitle.x = (panelBack.width - _txtTitle.width )/2;
+			_txtTitle.y = 3;
+			
+			_txtDescription.x = barFrontMask.x;
+			_txtDescription.y = barFrontMask.y - _txtDescription.height - 10;
+			
+			_txtProgress.x = panelBack.width - _txtProgress.width - 10;
+			_txtProgress.y = barFrontMask.y - _txtProgress.height - 10;			
+		}
+		
+		public function setProgress( val : Number, max : Number ) : void {
+			
+			if( val > max )
+				val = max;
+			if( val < 0 )
+				val = 0;
+			
+			barFront.width = val / max * barFrontMask.width;
+			
+			_txtProgress.text = int( val/max*100 ) + "%";
+			
+			layOutText();
+			
+		}
+		
+		public function set title( val : String ) : void {
+			
+			_txtTitle.text = val;
+			
+			layOutText();
+		}
+		
+		public function set description( val : String ) : void {
+			_txtDescription.text = val;
+			
+			layOutText();
+		}
+		
+		public function set showProgressText( val : Boolean ) : void {
+			if( val )
+				addChild( _txtProgress );
+			else{
+				try{
+					removeChild( _txtProgress );
+				} catch ( e : Object ){}
+			}
+		}
+        
+    }
+}
+

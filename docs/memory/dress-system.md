@@ -1,0 +1,66 @@
+# Dress, Pet, and Battle Trace Alignment
+
+Trace-driven compatibility work established these protocol rules:
+
+- Dress recipe types follow the client and seed data exactly:
+  - `data_tbl_recipe.type = 1` is a full activation recipe.
+  - `data_tbl_recipe.type = 2` is a chip item.
+  - Chip rows use `product` to point at the full recipe ID and `num` as the required chip count.
+- Dress `makeAllChips` is a responder RPC that returns the updated `dressInfo` JSON string and should emit `onMidNote("Ghép thành công")` when at least one conversion succeeds.
+- `onChooseCharactor` must seed `cData.dressInfo` for `Player.data` as a normalized JSON string with the DRESS_PANEL keys `book`, `recipe`, `bag.crystal`, `bag.jewel`, `extract`, `score`, `fakeDressId`, and `fakeFlyDressId`; expanding empty or partial storage on load avoids first-open panel gaps.
+- The internal dress reset-tracking field `day` must stay server-side: `JSONUtil.JSONfy` rewrites hyphenated date strings and can corrupt the client-decoded `dressInfo` object so `book` becomes unusable.
+- Admin player management now uses `set_dress_panel` to edit DRESS_PANEL state, and online updates should push the exact callback `onUpdateDressInto` after persisting the new `dressInfo`.
+- `setFakeDress`, `unsetFakeDress`, and `setDressHide` should refresh the player model through a shared `resCode` resolver and `onSetRes({id,res})`. Priority is: active transform buff `resCode` first, then `dressHide`, then no-costume fallback to class/base `resCode`, then fake dress `resCode`, then the equipped costume item `resCode`.
+- Flyer appearance should use one shared resolver too: no equipped flyer means no flyer visual, otherwise `fakeFlyDressId` overrides the equipped flyer's `resCode` / `wavCode`, and login, scene, and live `onFlyerOn` refreshes should all use that same result.
+- `dressHide` should stay persisted in interface settings, be merged back on login, and be rate-limited like other character-panel toggles (`setDressHide = 1100ms`).
+- While a transform buff is active, login and scene payloads should suppress `dressResCode` so the transform appearance wins over costume/fake dress visuals.
+- Dress panel `DRESS_PANEL[11]` is client-computed from `dressInfo.book` by loading each activated dress id from `TBL_DRESS` and summing `prop1..prop4 / prop_num1..prop_num4`; the server must also project those activated dress-book bonuses into the shared stat pipeline so live `onUPP` and future recalculations match the panel.
+- Successful `activeDress` / `ensureBuyActive` calls should return the updated `dressInfo` string, immediately refresh the current player's stats, and decrement one `dressInfo.recipe[recipe_id]` entry alongside the consumed `bag.crystal` / `bag.jewel` costs.
+- Legacy dress-info rows can still contain activation recipes for dresses already present in `book`; `checkSameDay` should normalize that stale `recipe` data once using each dress row's `recipe_id`, then return the cleaned `dressInfo` to the client.
+- Dress spend handling should return typed spend data from the service layer. `goldExtractRecipe` adds `30` dress score, `tenExtractRecipe` adds `288`, and any dress-panel spend of gold, gold-bind, bạc, bạc khóa, or points should emit an `onSystemSay` chat notice from that spend summary. Gold-backed extracts must also push `onUPP` currency totals because `dressInfo` does not carry player gold.
+- Dress panel reward payload keys are callback-specific: `tenExtractRecipe.planArr` items use `{recipeId, num}`, while `transformAllRecipe.produceArr` items must use `{recipeId, recipeNum}` for `RecipeAlertTen`.
+- `transformRecipe` and `transformAllRecipe` recipe arrays can arrive as AMF ECMA arrays with `"0"`, `"1"`, `"2"` keys; decode them in index order before validating `dressInfo.recipe` counts.
+- `recieveGoods` should mint a bound equipment item into the bag, emit normal item-add/chat callbacks, and stay repeatable after activation instead of flipping dress state to a permanent claimed marker.
+- The granted item color for `recieveGoods` should come from `TBL_DRESS.color` (converted to equipment `colorCode`), not the linked equipment template color fields, because dress equipment templates often keep `color=-1` / `colorCode=0`.
+- Equipped `Thời trang` items should contribute normal equipment stats and bound-property bonuses to character properties; the client only displays server-sent totals and does not recalculate them locally.
+- In the shared stat pipeline, all direct-value bonuses must land before percentage scaling: attribute flats first, then direct flat/float bonuses, then the percent map. Mixed bonuses like `+Stamina`, `+HP`, and `%HP` must scale from the fully updated direct total.
+- `onChooseCharactor` should also seed `cData.shishangdian`; until fashion-point persistence is implemented, send numeric `0` so DressPanel renders a stable `Điểm thời thượng` value instead of blank text.
+- `getCharDetailData` should return only the flat detail-panel `final*` keys that `DetailPropPanel.updateView()` reads, but those values must come from the shared computed stat pipeline (`AggregateEquipmentStats` plus bonus providers like statfeature, buff, and dress), not from raw stored `Character.Final*` defaults alone.
+- `internal/domain/character/detail_props.go` is the reusable source of truth for the detail-panel stat mapping. It carries each `final*` key plus the verified semantic prop id and any raw legacy/common/equipment prop ids the current codebase proves directly, and `DetailStatPropPayload` should be reused instead of re-hardcoding the detail key list in handlers.
+- Player-facing `finalCriticalDamage` is a bonus-only prop for the detail/property panels; keep the hidden crit base at `150%` separately, expose only the extra bonus in DTOs, and apply that bonus only inside the critical-hit damage branch.
+- `Language.as` exposes two useful client prop-id tables: `TIP_QILING_H` verifies the qiling/common-feature ids already used for combo/defy/reborn/final damage modifiers, while `BUFF_PROP_NAME_ARR` fills in additional status ids such as `30/50 = resist rage`, `43-46/49/51 = alternate resist ids`, and `52-57 = confusion/dizzy/poison/rage/sleep/light accuracy`. The character normalization layer now accepts those proven ids.
+- Pet stat responder RPCs `getFinalPraDefPet` and `finalPraMagDefPet` must preserve the Flash responder contract: return `{key, value}` when the client passes a property label, and only return a bare numeric result when no label is provided.
+- `onRefreshPetProp` payloads should always include stable defaults for `ee`, `ef`, and `en`, and Pet Manager initialization should proactively push a fresh property snapshot for the active pet.
+- Combat playback damage metadata belongs on the hurt/defended action payload (`bid = 5/6`) under `sSObj`, using:
+  - `hHp = -damage`
+  - `cri = true` when critical
+  - `attackEff = <effect id>`
+- Battle victory should push `onUpdateQuestKill` as a creature-ID to kill-count map so quest counters advance immediately after combat.
+- `battleFieldGetInfo` must return the responder payload itself as a flat map keyed by battle position/battleId, with each entry carrying `keepRound`; wrapping the data in `{success, battleData}` breaks `BattleInfoCanvas.refreshData()` and makes every participant render as dead. The client can still ask for battle info after the final `onBattlePlayList` and before `battlePlayEnd`, so the handler should use the cleanup-aware battle lookup and return an empty map on a true stale miss instead of logging a warning/error response.
+- Login now safely seeds these UI callbacks even without full backing systems:
+  - `updateJewelOffPrice`
+  - `allServerMailsWarning`
+  - `initMountTimer` with empty `dressData` and `useDress = 0`
+- `getDecoSuitProp(suitId, linkSuitId, linkId)` — decoration suit set-bonus query (M8):
+  - Registered in `internal/presentation/rtmp/handlers/dress/handler.go`.
+  - Handler in `internal/presentation/rtmp/handlers/dress/deco_suit.go`.
+  - Service logic in `internal/application/dress/deco_suit.go` using `GetDecoShowsBySuitID` added to `internal/gamedata/cache.go` and `manager.go`.
+  - Reply shape: `{actName, suitIdObj, suitProp, actArr, actFlag, linkProp, actLinkSuitFlag, actLinkSuitName}`.
+  - `actArr` and `actFlag` are stubbed empty/false — player activation state comes from `player.character_decorations` which is not yet read by the Go character load path.
+  - `suitProp` aggregates PropType1-4/PropNum1-4 across all `TBL_DECO_SHOW` items sharing the same `suit_id`.
+  - `linkProp` is populated when `linkSuitId != suitId` and `linkSuitId > 0`; otherwise `"null"` string.
+  - `actName` / `actLinkSuitName` comes from the lowest-ID DecoShow entry's `name` in the respective suit.
+- `addDecoHoleLevel(position)` — decoration hole level-up (M8 Batch 2):
+  - Registered in `internal/presentation/rtmp/handlers/dress/handler.go`, handler in `deco_hole.go`.
+  - Service in `internal/application/dress/deco_hole.go` — `DecoHoleService`.
+  - State persisted under `FeatureDecoHole = "deco_hole"` in `character_feature_states` JSONB.
+  - `FeatureDecoHole` constant added to `internal/domain/statfeature/statfeature.go`.
+  - `GetDecoHolesByPosition` added to `internal/gamedata/cache.go` and `manager.go` (not used currently, available for future queries).
+  - TBL_DECO_HOLE data: positions 1-4 use base template IDs 1, 2, 3, 4. `next_id` chains to the next level. `cost_sil` is DecoSilver (CurrencyDecoSilver=216). `rate` is success % (100=certain, 0=max-level stop).
+  - Live account had `hid=54,104,154,204` for positions 1-4 (level 50 = max), hence no deduction visible in log.
+  - Wire-shape: `{position: {activeFlag, cid, did, hid, id, isShow, n, position, r1..r16, showLvl}}` — all values are AMF strings.
+  - `showLvl` = current template's `level` field from TBL_DECO_HOLE.
+  - `r1..r16` = per-slot rune stat bonuses (populated when runes are inserted; all "0" for new holes).
+  - `DecoHoleService` wired in `cmd/gameserver/main.go` via `dressHandler.SetDecoHoleService(decoHoleService)`.
+  - Currency callback: `onAddMoney(charID, "decoSilver", -spentAmount, newBalance)` emitted only if deduction > 0.
+  - `addDecoHoleLevel` is NOT in `quietMethods` (leave verbose until user confirms E2E).

@@ -1,0 +1,259 @@
+// Title handler for title-related RPC calls.
+// Handles title list retrieval, title activation, and title management.
+package handlers
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+
+	apptitle "mcgame-server/internal/application/title"
+	"mcgame-server/internal/infrastructure/rtmp"
+
+	"go.uber.org/zap"
+)
+
+type TitleHandler struct {
+	titleService *apptitle.Service
+	sceneManager *rtmp.SceneManager
+	logger       *zap.Logger
+}
+
+func NewTitleHandler(titleService *apptitle.Service, sceneManager *rtmp.SceneManager, logger *zap.Logger) *TitleHandler {
+	return &TitleHandler{
+		titleService: titleService,
+		sceneManager: sceneManager,
+		logger:       logger,
+	}
+}
+
+func (h *TitleHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("gtl", h.GetTitleList)
+	dispatcher.Register("setTitle", h.SetTitle)
+	dispatcher.Register("setActTitle", h.SetActTitle)
+}
+
+// GetTitleList retrieves the list of titles owned by the character.
+// Client call: _core.remote.call("gtl", new Responder(onTitleList))
+//
+// Response: {ct: string, cts: string}
+//   - ct: Character titles (pipe-separated list of title IDs, e.g., "1|2|3")
+//   - cts: Character titles special/active (pipe-separated list of special title IDs)
+func (h *TitleHandler) GetTitleList(ctx *rtmp.RPCContext, args []any) (any, error) {
+	h.logger.Debug("GetTitleList called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.String("character_id", ctx.CharacterID))
+
+	// Parse character ID
+	charID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		h.logger.Error("Invalid character ID",
+			zap.String("character_id", ctx.CharacterID),
+			zap.Error(err))
+		return map[string]any{
+			"ct":  "",
+			"cts": "",
+		}, nil
+	}
+
+	// Get title list from service
+	result, err := h.titleService.GetTitleList(context.Background(), charID)
+	if err != nil {
+		h.logger.Error("Failed to get title list",
+			zap.Int64("character_id", charID),
+			zap.Error(err))
+		return map[string]any{
+			"ct":  "",
+			"cts": "",
+		}, nil
+	}
+
+	return result, nil
+}
+
+// SetTitle sets the active title for the character.
+// Client call: _core.remote.call("setTitle", new Responder(onSetTitle), titleId)
+// Parameters:
+//   - titleId (Number): Title ID to activate, or -1 to deactivate
+//
+// Response: {f: boolean, t: number, bd: object}
+//   - f: Success flag
+//   - t: Current active title ID
+//   - bd: Buff data (if title has buff)
+func (h *TitleHandler) SetTitle(ctx *rtmp.RPCContext, args []any) (any, error) {
+	if len(args) < 1 {
+		h.logger.Warn("SetTitle called without title ID",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return map[string]any{"f": false}, nil
+	}
+
+	// Log the actual type received for debugging
+	h.logger.Debug("SetTitle args received",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Any("args", args),
+		zap.String("arg0_type", fmt.Sprintf("%T", args[0])))
+
+	// Try to parse title ID from various types
+	var titleID int
+	switch v := args[0].(type) {
+	case float64:
+		titleID = int(v)
+	case int:
+		titleID = v
+	case int64:
+		titleID = int(v)
+	case string:
+		// Try to parse string as int
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			h.logger.Warn("SetTitle called with unparseable string title ID",
+				zap.Uint32("conn_id", ctx.ConnID),
+				zap.String("value", v),
+				zap.Error(err))
+			return map[string]any{"f": false}, nil
+		}
+		titleID = parsed
+	default:
+		h.logger.Warn("SetTitle called with invalid title ID type",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.String("type", fmt.Sprintf("%T", args[0])),
+			zap.Any("value", args[0]))
+		return map[string]any{"f": false}, nil
+	}
+
+	// Parse character ID
+	charID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		h.logger.Error("Invalid character ID",
+			zap.String("character_id", ctx.CharacterID),
+			zap.Error(err))
+		return map[string]any{"f": false}, nil
+	}
+
+	h.logger.Debug("SetTitle called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", charID),
+		zap.Int("title_id", titleID))
+
+	// Set active title via service
+	result, err := h.titleService.SetActiveTitle(context.Background(), charID, titleID)
+	if err != nil {
+		h.logger.Error("Failed to set active title",
+			zap.Int64("character_id", charID),
+			zap.Int("title_id", titleID),
+			zap.Error(err))
+		return map[string]any{"f": false}, nil
+	}
+
+	// Broadcast title change to all players in scene (including self for immediate update)
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID > 0 {
+		channelID := ctx.Connection.GetChannelID()
+		titleUpdate := map[string]any{
+			"cid": charID,
+			"tid": titleID,
+		}
+		// Use 0 as excludeConnID to broadcast to everyone including the sender
+		h.sceneManager.BroadcastToScene(channelID, currentMapID, 0, "onTitleUpdate", titleUpdate)
+
+		h.logger.Debug("Title update broadcasted to scene",
+			zap.Int64("character_id", charID),
+			zap.Int("map_id", currentMapID),
+			zap.Int("title_id", titleID))
+	}
+
+	return result, nil
+}
+
+// SetActTitle sets the active special title for the character.
+// Client call: _core.remote.call("setActTitle", new Responder(onSetActTitle), titleId)
+// Parameters:
+//   - titleId (Number): Special title ID to activate, or -1 to deactivate
+//
+// Response: {f: boolean, t: number}
+//   - f: Success flag
+//   - t: Current active special title ID
+func (h *TitleHandler) SetActTitle(ctx *rtmp.RPCContext, args []any) (any, error) {
+	if len(args) < 1 {
+		h.logger.Warn("SetActTitle called without title ID",
+			zap.Uint32("conn_id", ctx.ConnID))
+		return map[string]any{"f": false}, nil
+	}
+
+	// Log the actual type received for debugging
+	h.logger.Debug("SetActTitle args received",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Any("args", args),
+		zap.String("arg0_type", fmt.Sprintf("%T", args[0])))
+
+	// Try to parse title ID from various types
+	var titleID int
+	switch v := args[0].(type) {
+	case float64:
+		titleID = int(v)
+	case int:
+		titleID = v
+	case int64:
+		titleID = int(v)
+	case string:
+		// Try to parse string as int
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			h.logger.Warn("SetActTitle called with unparseable string title ID",
+				zap.Uint32("conn_id", ctx.ConnID),
+				zap.String("value", v),
+				zap.Error(err))
+			return map[string]any{"f": false}, nil
+		}
+		titleID = parsed
+	default:
+		h.logger.Warn("SetActTitle called with invalid title ID type",
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.String("type", fmt.Sprintf("%T", args[0])),
+			zap.Any("value", args[0]))
+		return map[string]any{"f": false}, nil
+	}
+
+	// Parse character ID
+	charID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		h.logger.Error("Invalid character ID",
+			zap.String("character_id", ctx.CharacterID),
+			zap.Error(err))
+		return map[string]any{"f": false}, nil
+	}
+
+	h.logger.Debug("SetActTitle called",
+		zap.Uint32("conn_id", ctx.ConnID),
+		zap.Int64("character_id", charID),
+		zap.Int("title_id", titleID))
+
+	// Set active special title via service
+	result, err := h.titleService.SetActiveSpecialTitle(context.Background(), charID, titleID)
+	if err != nil {
+		h.logger.Error("Failed to set active special title",
+			zap.Int64("character_id", charID),
+			zap.Int("title_id", titleID),
+			zap.Error(err))
+		return map[string]any{"f": false}, nil
+	}
+
+	// Broadcast special title change to all players in scene (including self for immediate update)
+	currentMapID, _ := ctx.Connection.GetSceneInfo()
+	if currentMapID > 0 {
+		channelID := ctx.Connection.GetChannelID()
+		titleUpdate := map[string]any{
+			"cid": charID,
+			"tid": titleID,
+		}
+		// Use 0 as excludeConnID to broadcast to everyone including the sender
+		h.sceneManager.BroadcastToScene(channelID, currentMapID, 0, "onActTitleUpdate", titleUpdate)
+
+		h.logger.Debug("Special title update broadcasted to scene",
+			zap.Int64("character_id", charID),
+			zap.Int("map_id", currentMapID),
+			zap.Int("title_id", titleID))
+	}
+
+	return result, nil
+}

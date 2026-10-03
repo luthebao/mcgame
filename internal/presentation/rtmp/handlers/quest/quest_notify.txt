@@ -1,0 +1,167 @@
+package handlers
+
+import (
+	appquest "mcgame-server/internal/application/quest"
+	"mcgame-server/internal/domain/quest"
+	"mcgame-server/internal/gamedata"
+	"mcgame-server/internal/infrastructure/rtmp"
+
+	"go.uber.org/zap"
+)
+
+// QuestNotifyHelper provides methods to push quest-related updates to clients.
+type QuestNotifyHelper struct {
+	questService *appquest.Service
+	gameData     *gamedata.Manager
+	logger       *zap.Logger
+}
+
+func NewQuestNotifyHelper(qs *appquest.Service, gd *gamedata.Manager, logger *zap.Logger) *QuestNotifyHelper {
+	return &QuestNotifyHelper{
+		questService: qs,
+		gameData:     gd,
+		logger:       logger,
+	}
+}
+
+// PushQuestProgress updates the client's quest UI with latest progress for all active quests.
+func (h *QuestNotifyHelper) PushQuestProgress(ctx *rtmp.RPCContext, charID int64) {
+	if h.questService == nil {
+		return
+	}
+
+	activeQuests, err := h.questService.GetActiveQuests(ctx.Context, charID)
+	if err != nil {
+		h.logger.Warn("Failed to get active quests for push", zap.Error(err))
+		return
+	}
+
+	for _, qp := range activeQuests {
+		dto := h.questService.EnrichQuestDTO(ctx.Context, qp)
+		if err := ctx.Connection.SendCallback("onAddChaQuest", dto); err != nil {
+			h.logger.Warn("Failed to push quest progress callback", zap.Int("quest_id", qp.QuestID), zap.Error(err))
+		}
+
+		// If quest is complete, push NPC state update
+		if qp.IsComplete() && h.gameData != nil {
+			questTemplate := h.gameData.GetQuest(qp.QuestID)
+			if questTemplate != nil {
+				finishNPC := int(questTemplate.FinishNPC)
+				if finishNPC > 0 {
+					state := h.CalculateNpcQuestState(ctx, charID, finishNPC)
+					_ = ctx.Connection.SendCallback("onSetNpcState", finishNPC, state)
+				}
+			}
+		}
+	}
+}
+
+// PushNpcQuestStates recalculates and pushes quest markers for relevant NPCs.
+func (h *QuestNotifyHelper) PushNpcQuestStates(ctx *rtmp.RPCContext, charID int64, npcIDs []int) {
+	if h.questService == nil || h.gameData == nil {
+		return
+	}
+
+	uniqueNpcs := make(map[int]bool)
+	for _, id := range npcIDs {
+		if id > 0 {
+			uniqueNpcs[id] = true
+		}
+	}
+
+	for npcID := range uniqueNpcs {
+		state := h.CalculateNpcQuestState(ctx, charID, npcID)
+		if err := ctx.Connection.SendCallback("onSetNpcState", npcID, state); err != nil {
+			h.logger.Warn("Failed to push NPC state callback", zap.Int("npc_id", npcID), zap.Error(err))
+		}
+	}
+}
+
+// PushNpcQuestStatesByMap recalculates and pushes quest markers for all NPCs in the given map.
+func (h *QuestNotifyHelper) PushNpcQuestStatesByMap(ctx *rtmp.RPCContext, charID int64, mapID int) {
+	if h.gameData == nil {
+		return
+	}
+
+	mapCreatures := h.gameData.GetCache().GetMapCreaturesByMapID(mapID)
+	npcIDs := make([]int, 0)
+	for _, mc := range mapCreatures {
+		if mc != nil && mc.Cid > 0 {
+			npcIDs = append(npcIDs, int(mc.Cid))
+		}
+	}
+
+	h.PushNpcQuestStates(ctx, charID, npcIDs)
+}
+
+func (h *QuestNotifyHelper) CalculateNpcQuestState(ctx *rtmp.RPCContext, charID int64, npcID int) int {
+	activeQuests, _ := h.questService.GetActiveQuests(ctx.Context, charID)
+	if activeQuests == nil {
+		activeQuests = []*quest.QuestProgress{}
+	}
+
+	bestState := -1 // No markers
+
+	// 1. Check for active quests involving this NPC (Prioritize 104 > 103)
+	for _, qp := range activeQuests {
+		questTemplate := h.gameData.GetQuest(qp.QuestID)
+		if questTemplate == nil {
+			continue
+		}
+
+		if int(questTemplate.FinishNPC) == npcID {
+			if qp.IsComplete() {
+				h.logger.Debug("Found ready-to-turn-in quest for NPC", zap.Int("npc_id", npcID), zap.Int("quest_id", qp.QuestID))
+				return 104
+			}
+			if bestState == -1 {
+				bestState = 103
+			}
+		}
+	}
+
+	// 2. Check for new quests that can be accepted (State 102)
+	completedIDs, _ := h.questService.GetCompletedQuestIDs(ctx.Context, charID)
+	completedMap := make(map[int]bool)
+	for _, id := range completedIDs {
+		completedMap[id] = true
+	}
+
+	allQuests := h.gameData.GetAllQuests()
+	for _, questTemplate := range allQuests {
+		if questTemplate == nil || int(questTemplate.StartNPC) != npcID {
+			continue
+		}
+
+		questID := int(questTemplate.ID)
+		if completedMap[questID] {
+			continue
+		}
+
+		isActive := false
+		for _, qp := range activeQuests {
+			if qp.QuestID == questID {
+				isActive = true
+				break
+			}
+		}
+		if isActive {
+			continue
+		}
+
+		canAccept, reason, err := h.questService.CanAcceptQuest(ctx.Context, charID, questID)
+		if canAccept {
+			if bestState == -1 || bestState == 103 {
+				bestState = 102
+			}
+		} else {
+			h.logger.Debug("Quest available at NPC but conditions not met",
+				zap.Int("npc_id", npcID),
+				zap.Int("quest_id", questID),
+				zap.String("reason", reason),
+				zap.Error(err))
+		}
+	}
+
+	return bestState
+}

@@ -1,0 +1,24 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_SKILL_KIND",
+  "recordCount": 4,
+  "records": [
+    {
+      "id": "1",
+      "name": "主动技能"
+    },
+    {
+      "id": "2",
+      "name": "被动技能"
+    },
+    {
+      "id": "3",
+      "name": "Buff技能"
+    },
+    {
+      "id": "4",
+      "name": "功能技能"
+    }
+  ]
+}

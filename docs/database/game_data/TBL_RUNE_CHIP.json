@@ -1,0 +1,616 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_RUNE_CHIP",
+  "recordCount": 76,
+  "records": [
+    {
+      "iconCode": "4030200200352",
+      "id": "1",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Sinh",
+      "num": "10",
+      "rid": "21"
+    },
+    {
+      "iconCode": "4030200200353",
+      "id": "2",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "61"
+    },
+    {
+      "iconCode": "4030200200354",
+      "id": "3",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "101"
+    },
+    {
+      "iconCode": "4030200200355",
+      "id": "4",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "141"
+    },
+    {
+      "iconCode": "4030200200356",
+      "id": "5",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "181"
+    },
+    {
+      "iconCode": "4030200200357",
+      "id": "6",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Tốc ",
+      "num": "10",
+      "rid": "221"
+    },
+    {
+      "iconCode": "4030200200358",
+      "id": "7",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Chín",
+      "num": "10",
+      "rid": "261"
+    },
+    {
+      "iconCode": "4030200200359",
+      "id": "8",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Né T",
+      "num": "10",
+      "rid": "301"
+    },
+    {
+      "iconCode": "4030200200360",
+      "id": "9",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Bạo ",
+      "num": "10",
+      "rid": "341"
+    },
+    {
+      "iconCode": "4030200200361",
+      "id": "10",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "381"
+    },
+    {
+      "iconCode": "4030200200362",
+      "id": "11",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Xuyê",
+      "num": "10",
+      "rid": "421"
+    },
+    {
+      "iconCode": "4030200200363",
+      "id": "12",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "461"
+    },
+    {
+      "iconCode": "4030200200364",
+      "id": "13",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Debu",
+      "num": "10",
+      "rid": "501"
+    },
+    {
+      "iconCode": "4030200200365",
+      "id": "14",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "541"
+    },
+    {
+      "iconCode": "4030200200366",
+      "id": "15",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "581"
+    },
+    {
+      "iconCode": "4030200200367",
+      "id": "16",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "621"
+    },
+    {
+      "iconCode": "4030200200368",
+      "id": "17",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "661"
+    },
+    {
+      "iconCode": "4030200200369",
+      "id": "18",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "701"
+    },
+    {
+      "iconCode": "4030200200370",
+      "id": "19",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Miễn",
+      "num": "10",
+      "rid": "741"
+    },
+    {
+      "iconCode": "4030200200552",
+      "id": "20",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Sinh",
+      "num": "10",
+      "rid": "781"
+    },
+    {
+      "iconCode": "4030200200553",
+      "id": "21",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "821"
+    },
+    {
+      "iconCode": "4030200200554",
+      "id": "22",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "861"
+    },
+    {
+      "iconCode": "4030200200555",
+      "id": "23",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "901"
+    },
+    {
+      "iconCode": "4030200200556",
+      "id": "24",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "941"
+    },
+    {
+      "iconCode": "4030200200557",
+      "id": "25",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Tốc ",
+      "num": "10",
+      "rid": "981"
+    },
+    {
+      "iconCode": "4030200200558",
+      "id": "26",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Chín",
+      "num": "10",
+      "rid": "1021"
+    },
+    {
+      "iconCode": "4030200200559",
+      "id": "27",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Né T",
+      "num": "10",
+      "rid": "1061"
+    },
+    {
+      "iconCode": "4030200200560",
+      "id": "28",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Bạo ",
+      "num": "10",
+      "rid": "1101"
+    },
+    {
+      "iconCode": "4030200200561",
+      "id": "29",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "1141"
+    },
+    {
+      "iconCode": "4030200200562",
+      "id": "30",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Xuyê",
+      "num": "10",
+      "rid": "1181"
+    },
+    {
+      "iconCode": "4030200200563",
+      "id": "31",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "1221"
+    },
+    {
+      "iconCode": "4030200200564",
+      "id": "32",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Debu",
+      "num": "10",
+      "rid": "1261"
+    },
+    {
+      "iconCode": "4030200200565",
+      "id": "33",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "1301"
+    },
+    {
+      "iconCode": "4030200200566",
+      "id": "34",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "1341"
+    },
+    {
+      "iconCode": "4030200200567",
+      "id": "35",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "1381"
+    },
+    {
+      "iconCode": "4030200200568",
+      "id": "36",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "1421"
+    },
+    {
+      "iconCode": "4030200200569",
+      "id": "37",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "1461"
+    },
+    {
+      "iconCode": "4030200200570",
+      "id": "38",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Miễn",
+      "num": "10",
+      "rid": "1501"
+    },
+    {
+      "iconCode": "4030200200372",
+      "id": "39",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Sinh",
+      "num": "10",
+      "rid": "31"
+    },
+    {
+      "iconCode": "4030200200373",
+      "id": "40",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "71"
+    },
+    {
+      "iconCode": "4030200200374",
+      "id": "41",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "111"
+    },
+    {
+      "iconCode": "4030200200375",
+      "id": "42",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "151"
+    },
+    {
+      "iconCode": "4030200200376",
+      "id": "43",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "191"
+    },
+    {
+      "iconCode": "4030200200377",
+      "id": "44",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Tốc ",
+      "num": "10",
+      "rid": "231"
+    },
+    {
+      "iconCode": "4030200200378",
+      "id": "45",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Chín",
+      "num": "10",
+      "rid": "271"
+    },
+    {
+      "iconCode": "4030200200379",
+      "id": "46",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Né T",
+      "num": "10",
+      "rid": "311"
+    },
+    {
+      "iconCode": "4030200200380",
+      "id": "47",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Bạo ",
+      "num": "10",
+      "rid": "351"
+    },
+    {
+      "iconCode": "4030200200381",
+      "id": "48",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "391"
+    },
+    {
+      "iconCode": "4030200200382",
+      "id": "49",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Xuyê",
+      "num": "10",
+      "rid": "431"
+    },
+    {
+      "iconCode": "4030200200383",
+      "id": "50",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "471"
+    },
+    {
+      "iconCode": "4030200200384",
+      "id": "51",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Debu",
+      "num": "10",
+      "rid": "511"
+    },
+    {
+      "iconCode": "4030200200385",
+      "id": "52",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "551"
+    },
+    {
+      "iconCode": "4030200200386",
+      "id": "53",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "591"
+    },
+    {
+      "iconCode": "4030200200387",
+      "id": "54",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "631"
+    },
+    {
+      "iconCode": "4030200200388",
+      "id": "55",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "671"
+    },
+    {
+      "iconCode": "4030200200389",
+      "id": "56",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "711"
+    },
+    {
+      "iconCode": "4030200200390",
+      "id": "57",
+      "kind": "1",
+      "name": "Mảnh Vỡ Phù Văn Miễn",
+      "num": "10",
+      "rid": "751"
+    },
+    {
+      "iconCode": "4030200200572",
+      "id": "58",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Sinh",
+      "num": "10",
+      "rid": "791"
+    },
+    {
+      "iconCode": "4030200200573",
+      "id": "59",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "831"
+    },
+    {
+      "iconCode": "4030200200574",
+      "id": "60",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Công",
+      "num": "10",
+      "rid": "871"
+    },
+    {
+      "iconCode": "4030200200575",
+      "id": "61",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "911"
+    },
+    {
+      "iconCode": "4030200200576",
+      "id": "62",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Phòn",
+      "num": "10",
+      "rid": "951"
+    },
+    {
+      "iconCode": "4030200200577",
+      "id": "63",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Tốc ",
+      "num": "10",
+      "rid": "991"
+    },
+    {
+      "iconCode": "4030200200578",
+      "id": "64",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Chín",
+      "num": "10",
+      "rid": "1031"
+    },
+    {
+      "iconCode": "4030200200579",
+      "id": "65",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Né T",
+      "num": "10",
+      "rid": "1071"
+    },
+    {
+      "iconCode": "4030200200580",
+      "id": "66",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Bạo ",
+      "num": "10",
+      "rid": "1111"
+    },
+    {
+      "iconCode": "4030200200581",
+      "id": "67",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "1151"
+    },
+    {
+      "iconCode": "4030200200582",
+      "id": "68",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Xuyê",
+      "num": "10",
+      "rid": "1191"
+    },
+    {
+      "iconCode": "4030200200583",
+      "id": "69",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "1231"
+    },
+    {
+      "iconCode": "4030200200584",
+      "id": "70",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Debu",
+      "num": "10",
+      "rid": "1271"
+    },
+    {
+      "iconCode": "4030200200585",
+      "id": "71",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Khán",
+      "num": "10",
+      "rid": "1311"
+    },
+    {
+      "iconCode": "4030200200586",
+      "id": "72",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "1351"
+    },
+    {
+      "iconCode": "4030200200587",
+      "id": "73",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "1391"
+    },
+    {
+      "iconCode": "4030200200588",
+      "id": "74",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Tăng",
+      "num": "10",
+      "rid": "1431"
+    },
+    {
+      "iconCode": "4030200200589",
+      "id": "75",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Giảm",
+      "num": "10",
+      "rid": "1471"
+    },
+    {
+      "iconCode": "4030200200590",
+      "id": "76",
+      "kind": "2",
+      "name": "Mảnh Vỡ Phù Văn Miễn",
+      "num": "10",
+      "rid": "1511"
+    }
+  ]
+}

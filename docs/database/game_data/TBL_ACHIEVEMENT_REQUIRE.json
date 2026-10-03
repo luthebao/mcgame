@@ -1,0 +1,5920 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_ACHIEVEMENT_REQUIRE",
+  "recordCount": 739,
+  "records": [
+    {
+      "aid": "1002",
+      "id": "2",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1001",
+      "id": "1",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1003",
+      "id": "3",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1004",
+      "id": "4",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1005",
+      "id": "5",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1006",
+      "id": "6",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1007",
+      "id": "7",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1008",
+      "id": "8",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1009",
+      "id": "9",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1010",
+      "id": "10",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1011",
+      "id": "11",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1012",
+      "id": "12",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1013",
+      "id": "13",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1014",
+      "id": "14",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1016",
+      "id": "16",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "1017",
+      "id": "17",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1018",
+      "id": "18",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1019",
+      "id": "19",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1020",
+      "id": "20",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1021",
+      "id": "21",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "32"
+    },
+    {
+      "aid": "1022",
+      "id": "22",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1023",
+      "id": "23",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1024",
+      "id": "24",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1025",
+      "id": "25",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1026",
+      "id": "26",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1027",
+      "id": "27",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1028",
+      "id": "28",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1029",
+      "id": "29",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1030",
+      "id": "30",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1031",
+      "id": "31",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1032",
+      "id": "32",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1033",
+      "id": "33",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1034",
+      "id": "34",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1035",
+      "id": "35",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "1036",
+      "id": "36",
+      "name": "Bộ trang phục xì tin",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "1036",
+      "id": "37",
+      "name": "Bộ trang phục tình nhân",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "1036",
+      "id": "38",
+      "name": "Bộ trang phục Giáng Sinh",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "1037",
+      "id": "39",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1038",
+      "id": "40",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1039",
+      "id": "41",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1040",
+      "id": "42",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1041",
+      "id": "43",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1042",
+      "id": "44",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1043",
+      "id": "45",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1044",
+      "id": "46",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "1045",
+      "id": "47",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "1046",
+      "id": "48",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "1047",
+      "id": "49",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "1048",
+      "id": "50",
+      "name": "Số lượng danh hiệu",
+      "num": "5",
+      "showType": "2",
+      "type": "7"
+    },
+    {
+      "aid": "1049",
+      "id": "51",
+      "name": "Số lượng danh hiệu",
+      "num": "10",
+      "showType": "2",
+      "type": "7"
+    },
+    {
+      "aid": "1050",
+      "id": "52",
+      "name": "Số lượng danh hiệu",
+      "num": "15",
+      "showType": "2",
+      "type": "7"
+    },
+    {
+      "aid": "1051",
+      "id": "53",
+      "name": "Số ngày đăng nhập",
+      "num": "8",
+      "showType": "2",
+      "type": "8"
+    },
+    {
+      "aid": "1052",
+      "id": "54",
+      "name": "Số ngày đăng nhập",
+      "num": "28",
+      "showType": "2",
+      "type": "8"
+    },
+    {
+      "aid": "1053",
+      "id": "55",
+      "name": "Số ngày đăng nhập",
+      "num": "88",
+      "showType": "2",
+      "type": "8"
+    },
+    {
+      "aid": "1054",
+      "id": "56",
+      "name": "Số ngày đăng nhập",
+      "num": "218",
+      "showType": "2",
+      "type": "8"
+    },
+    {
+      "aid": "1055",
+      "id": "57",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "1056",
+      "id": "58",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "2001",
+      "id": "59",
+      "name": "Số lượng pet",
+      "num": "30",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2002",
+      "id": "60",
+      "name": "Pet hệ rồng",
+      "num": "10",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2003",
+      "id": "61",
+      "name": "Pet hệ máy",
+      "num": "10",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2004",
+      "id": "62",
+      "name": "Pet hệ người",
+      "num": "15",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2005",
+      "id": "63",
+      "name": "Pet hệ dã thú",
+      "num": "15",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2006",
+      "id": "64",
+      "name": "Pet hệ thực vật",
+      "num": "15",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2007",
+      "id": "65",
+      "name": "Pet hệ ác ma",
+      "num": "15",
+      "showType": "2",
+      "type": "2"
+    },
+    {
+      "aid": "2008",
+      "id": "66",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6023",
+      "id": "333",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "18"
+    },
+    {
+      "aid": "6025",
+      "id": "335",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "18"
+    },
+    {
+      "aid": "2009",
+      "id": "71",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6070",
+      "id": "395",
+      "name": "Số ô pet đã mở",
+      "num": "60",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "2010",
+      "id": "72",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2011",
+      "id": "73",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2012",
+      "id": "74",
+      "name": "Thần thú cam hệ rồng",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2012",
+      "id": "75",
+      "name": "Thần thú cam hệ máy",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2012",
+      "id": "76",
+      "name": "Thần thú cam hệ người",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2012",
+      "id": "77",
+      "name": "Thần thú cam hệ dã thú",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2012",
+      "id": "78",
+      "name": "Thần thú cam hệ thực vật",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2012",
+      "id": "79",
+      "name": "Thần thú cam hệ ác ma",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2014",
+      "id": "81",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2015",
+      "id": "82",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2016",
+      "id": "83",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "3"
+    },
+    {
+      "aid": "2017",
+      "id": "84",
+      "name": "Bắt pet thành công",
+      "num": "5000",
+      "showType": "2",
+      "type": "3"
+    },
+    {
+      "aid": "2018",
+      "id": "85",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2019",
+      "id": "86",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2020",
+      "id": "87",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2021",
+      "id": "88",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2022",
+      "id": "89",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2023",
+      "id": "90",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2024",
+      "id": "91",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2025",
+      "id": "92",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "2026",
+      "id": "93",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "2027",
+      "id": "94",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "2028",
+      "id": "95",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "2029",
+      "id": "96",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "2030",
+      "id": "97",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2031",
+      "id": "98",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2032",
+      "id": "99",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "2033",
+      "id": "100",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "2034",
+      "id": "101",
+      "name": "Mở ô pet",
+      "num": "30",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "2035",
+      "id": "102",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "30"
+    },
+    {
+      "aid": "2036",
+      "id": "103",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "30"
+    },
+    {
+      "aid": "2037",
+      "id": "104",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "30"
+    },
+    {
+      "aid": "2038",
+      "id": "105",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "30"
+    },
+    {
+      "aid": "2039",
+      "id": "106",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "31"
+    },
+    {
+      "aid": "2040",
+      "id": "107",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "31"
+    },
+    {
+      "aid": "2041",
+      "id": "108",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "31"
+    },
+    {
+      "aid": "2042",
+      "id": "109",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "31"
+    },
+    {
+      "aid": "2043",
+      "id": "110",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "3001",
+      "id": "111",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "22"
+    },
+    {
+      "aid": "3002",
+      "id": "112",
+      "name": "Số lượng bạn bè",
+      "num": "0",
+      "showType": "0",
+      "type": "22"
+    },
+    {
+      "aid": "3003",
+      "id": "113",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "23"
+    },
+    {
+      "aid": "3004",
+      "id": "114",
+      "name": "Số lượng đồ đệ",
+      "num": "30",
+      "showType": "0",
+      "type": "23"
+    },
+    {
+      "aid": "3005",
+      "id": "115",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "21"
+    },
+    {
+      "aid": "3006",
+      "id": "116",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "21"
+    },
+    {
+      "aid": "3007",
+      "id": "117",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "21"
+    },
+    {
+      "aid": "3008",
+      "id": "118",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "21"
+    },
+    {
+      "aid": "3009",
+      "id": "119",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "24"
+    },
+    {
+      "aid": "3010",
+      "id": "120",
+      "name": "Số lượng quyên góp",
+      "num": "50",
+      "showType": "2",
+      "type": "24"
+    },
+    {
+      "aid": "3011",
+      "id": "121",
+      "name": "Số lượng quyên góp",
+      "num": "100",
+      "showType": "2",
+      "type": "24"
+    },
+    {
+      "aid": "3012",
+      "id": "122",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "3013",
+      "id": "123",
+      "name": "Số lần hoàn thành",
+      "num": "7",
+      "showType": "2",
+      "type": "16"
+    },
+    {
+      "aid": "3014",
+      "id": "124",
+      "name": "Số lần hoàn thành",
+      "num": "30",
+      "showType": "2",
+      "type": "16"
+    },
+    {
+      "aid": "3015",
+      "id": "125",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "3016",
+      "id": "126",
+      "name": "Số lần hoàn thành",
+      "num": "50",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "3017",
+      "id": "127",
+      "name": "Số lần hoàn thành",
+      "num": "200",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "3018",
+      "id": "128",
+      "name": "Số lần hoàn thành",
+      "num": "400",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "3019",
+      "id": "129",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "3020",
+      "id": "130",
+      "name": "Số lần chiến thắng",
+      "num": "100",
+      "showType": "2",
+      "type": "0"
+    },
+    {
+      "aid": "3021",
+      "id": "131",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "34"
+    },
+    {
+      "aid": "3022",
+      "id": "132",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "34"
+    },
+    {
+      "aid": "3023",
+      "id": "133",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "34"
+    },
+    {
+      "aid": "3024",
+      "id": "134",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3025",
+      "id": "135",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3026",
+      "id": "136",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3027",
+      "id": "137",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3028",
+      "id": "138",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3029",
+      "id": "139",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3030",
+      "id": "140",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3031",
+      "id": "141",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3032",
+      "id": "142",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3033",
+      "id": "143",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3034",
+      "id": "144",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3035",
+      "id": "145",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3036",
+      "id": "146",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3037",
+      "id": "147",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3038",
+      "id": "148",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3039",
+      "id": "149",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "3040",
+      "id": "150",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "4001",
+      "id": "151",
+      "name": "Số lần thắng lợi",
+      "num": "5",
+      "showType": "2",
+      "type": "26"
+    },
+    {
+      "aid": "4002",
+      "id": "152",
+      "name": "Số lần thắng lợi",
+      "num": "50",
+      "showType": "2",
+      "type": "26"
+    },
+    {
+      "aid": "4003",
+      "id": "153",
+      "name": "Số lần thắng lợi",
+      "num": "500",
+      "showType": "2",
+      "type": "26"
+    },
+    {
+      "aid": "4004",
+      "id": "154",
+      "name": "Số lần thắng lợi",
+      "num": "1000",
+      "showType": "2",
+      "type": "26"
+    },
+    {
+      "aid": "4005",
+      "id": "155",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "25"
+    },
+    {
+      "aid": "4006",
+      "id": "156",
+      "name": "Số chiến trường tham gia",
+      "num": "5",
+      "showType": "2",
+      "type": "25"
+    },
+    {
+      "aid": "4007",
+      "id": "157",
+      "name": "Số chiến trường tham gia",
+      "num": "10",
+      "showType": "2",
+      "type": "25"
+    },
+    {
+      "aid": "4008",
+      "id": "158",
+      "name": "Số lần tiêu diệt",
+      "num": "10",
+      "showType": "2",
+      "type": "0"
+    },
+    {
+      "aid": "4009",
+      "id": "159",
+      "name": "Số lần tiêu diệt",
+      "num": "50",
+      "showType": "2",
+      "type": "0"
+    },
+    {
+      "aid": "4010",
+      "id": "160",
+      "name": "Số lần tiêu diệt",
+      "num": "100",
+      "showType": "2",
+      "type": "0"
+    },
+    {
+      "aid": "4011",
+      "id": "161",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "27"
+    },
+    {
+      "aid": "4012",
+      "id": "162",
+      "name": "Số lần đánh bại",
+      "num": "10",
+      "showType": "2",
+      "type": "28"
+    },
+    {
+      "aid": "4013",
+      "id": "163",
+      "name": "Số lần đánh bại",
+      "num": "100",
+      "showType": "2",
+      "type": "28"
+    },
+    {
+      "aid": "4014",
+      "id": "164",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "29"
+    },
+    {
+      "aid": "4015",
+      "id": "165",
+      "name": "Số lần bị đánh bại",
+      "num": "10",
+      "showType": "2",
+      "type": "29"
+    },
+    {
+      "aid": "4018",
+      "id": "168",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "4019",
+      "id": "169",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "4020",
+      "id": "170",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4021",
+      "id": "171",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4022",
+      "id": "172",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4023",
+      "id": "173",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4024",
+      "id": "174",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4025",
+      "id": "175",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4026",
+      "id": "176",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4027",
+      "id": "177",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4028",
+      "id": "178",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4029",
+      "id": "179",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4030",
+      "id": "180",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4031",
+      "id": "181",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4032",
+      "id": "182",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "4033",
+      "id": "183",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "4034",
+      "id": "184",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "4035",
+      "id": "185",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "20"
+    },
+    {
+      "aid": "4036",
+      "id": "186",
+      "name": "Số chiến trường thắng lợi",
+      "num": "10",
+      "showType": "2",
+      "type": "20"
+    },
+    {
+      "aid": "4037",
+      "id": "187",
+      "name": "Số chiến trường thắng lợi",
+      "num": "100",
+      "showType": "2",
+      "type": "20"
+    },
+    {
+      "aid": "4038",
+      "id": "188",
+      "name": "Số chiến trường thắng lợi",
+      "num": "1000",
+      "showType": "2",
+      "type": "20"
+    },
+    {
+      "aid": "4039",
+      "id": "189",
+      "name": "Số chiến trường thắng lợi",
+      "num": "10000",
+      "showType": "2",
+      "type": "20"
+    },
+    {
+      "aid": "5001",
+      "id": "190",
+      "name": "Tà Thần",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5002",
+      "id": "191",
+      "name": "Tử Thần",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5003",
+      "id": "192",
+      "name": "Chiến Thần",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5004",
+      "id": "193",
+      "name": "Ma Thần",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5005",
+      "id": "194",
+      "name": "Tà Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5005",
+      "id": "195",
+      "name": "Tử Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5005",
+      "id": "196",
+      "name": "Chiến Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5005",
+      "id": "197",
+      "name": "Ma Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5006",
+      "id": "198",
+      "name": "Thạch Yêu",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5007",
+      "id": "199",
+      "name": "Bách Thảo Tinh",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5008",
+      "id": "200",
+      "name": "Phủ Ma",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5009",
+      "id": "201",
+      "name": "Ma Chiến",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5010",
+      "id": "202",
+      "name": "Thạch Yêu",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5010",
+      "id": "203",
+      "name": "Bách Thảo Tinh",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5010",
+      "id": "204",
+      "name": "Phủ Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5010",
+      "id": "205",
+      "name": "Ma Chiến",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5011",
+      "id": "206",
+      "name": "Ác Thần",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5012",
+      "id": "207",
+      "name": "Quỷ Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5014",
+      "id": "209",
+      "name": "Atula Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5015",
+      "id": "210",
+      "name": "Solomon",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5016",
+      "id": "211",
+      "name": "Avatar",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5018",
+      "id": "213",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5019",
+      "id": "214",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5020",
+      "id": "215",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5021",
+      "id": "216",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "19"
+    },
+    {
+      "aid": "5022",
+      "id": "217",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "19"
+    },
+    {
+      "aid": "5023",
+      "id": "218",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "19"
+    },
+    {
+      "aid": "5024",
+      "id": "219",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "19"
+    },
+    {
+      "aid": "5025",
+      "id": "220",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "19"
+    },
+    {
+      "aid": "5026",
+      "id": "221",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5027",
+      "id": "222",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5028",
+      "id": "223",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5029",
+      "id": "224",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5030",
+      "id": "225",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5031",
+      "id": "226",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5032",
+      "id": "227",
+      "name": "Lâu La",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5032",
+      "id": "228",
+      "name": "Chiến Sĩ",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5032",
+      "id": "229",
+      "name": "Chiến Tướng",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5033",
+      "id": "230",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5034",
+      "id": "231",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "232",
+      "name": "Ẩn Phong Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "233",
+      "name": "Hám Địa Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "234",
+      "name": "Đinh Thủy Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "235",
+      "name": "Tinh Hỏa Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "236",
+      "name": "Quang Dực Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "237",
+      "name": "Ám Dạ Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5035",
+      "id": "238",
+      "name": "Thánh Long",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5036",
+      "id": "239",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5037",
+      "id": "240",
+      "name": "Nữ Yêu Ngàn Năm",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5037",
+      "id": "241",
+      "name": "Lão Quái Bạch Cốt",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5037",
+      "id": "242",
+      "name": "Chướng Thi Vương",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5037",
+      "id": "243",
+      "name": "Hung Linh Ngàn Năm",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5038",
+      "id": "244",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5039",
+      "id": "245",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5040",
+      "id": "246",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5041",
+      "id": "247",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "16"
+    },
+    {
+      "aid": "5042",
+      "id": "248",
+      "name": "Số lượng nhiệm vụ hoàn thành",
+      "num": "50",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "5043",
+      "id": "249",
+      "name": "Số lượng nhiệm vụ hoàn thành",
+      "num": "500",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "5044",
+      "id": "250",
+      "name": "Số lượng nhiệm vụ hoàn thành",
+      "num": "1000",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "5045",
+      "id": "251",
+      "name": "Số lượng nhiệm vụ hoàn thành",
+      "num": "5000",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "5046",
+      "id": "252",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5047",
+      "id": "253",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5048",
+      "id": "254",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5049",
+      "id": "255",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5050",
+      "id": "256",
+      "name": "Số ngày liên tục",
+      "num": "30",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "5051",
+      "id": "257",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5052",
+      "id": "258",
+      "name": "Số ngày liên tục",
+      "num": "10",
+      "showType": "2",
+      "type": "1"
+    },
+    {
+      "aid": "5053",
+      "id": "259",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5054",
+      "id": "260",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5055",
+      "id": "261",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5056",
+      "id": "262",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5057",
+      "id": "263",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5058",
+      "id": "264",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5059",
+      "id": "265",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5060",
+      "id": "266",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5061",
+      "id": "267",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5062",
+      "id": "268",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5063",
+      "id": "269",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "5064",
+      "id": "270",
+      "name": "Số lần đào bảo",
+      "num": "5",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "5065",
+      "id": "271",
+      "name": "Số lần đào bảo",
+      "num": "50",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6001",
+      "id": "272",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6002",
+      "id": "273",
+      "name": "Thức ăn đã ăn",
+      "num": "30",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6003",
+      "id": "274",
+      "name": "Thức ăn đã nấu",
+      "num": "5",
+      "showType": "2",
+      "type": "10"
+    },
+    {
+      "aid": "6004",
+      "id": "275",
+      "name": "Thức ăn đã nấu",
+      "num": "25",
+      "showType": "2",
+      "type": "10"
+    },
+    {
+      "aid": "6005",
+      "id": "276",
+      "name": "Sách Dạy Nấu Ăn",
+      "num": "35",
+      "showType": "2",
+      "type": "5"
+    },
+    {
+      "aid": "6006",
+      "id": "277",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6007",
+      "id": "278",
+      "name": "Sử dụng dược phẩm",
+      "num": "30",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6008",
+      "id": "279",
+      "name": "Chế dược phẩm",
+      "num": "5",
+      "showType": "2",
+      "type": "11"
+    },
+    {
+      "aid": "6009",
+      "id": "280",
+      "name": "Chế dược phẩm",
+      "num": "15",
+      "showType": "2",
+      "type": "11"
+    },
+    {
+      "aid": "6010",
+      "id": "281",
+      "name": "Ma Huyết Hoàn",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6010",
+      "id": "282",
+      "name": "Thái Dương Thủy",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6010",
+      "id": "283",
+      "name": "Thiên Hương Hoàn",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6010",
+      "id": "284",
+      "name": "Tứ Phương Linh Động Hoàn",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6010",
+      "id": "285",
+      "name": "Truy Huyết Đơn",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6010",
+      "id": "286",
+      "name": "Hỏa Linh Dược Hoàn",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6011",
+      "id": "287",
+      "name": "Các loại cá câu được",
+      "num": "12",
+      "showType": "2",
+      "type": "12"
+    },
+    {
+      "aid": "6012",
+      "id": "288",
+      "name": "Số lượng cá câu được",
+      "num": "5000",
+      "showType": "2",
+      "type": "12"
+    },
+    {
+      "aid": "6013",
+      "id": "289",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6014",
+      "id": "290",
+      "name": "Các loại thảo dược hái được",
+      "num": "15",
+      "showType": "2",
+      "type": "14"
+    },
+    {
+      "aid": "6015",
+      "id": "291",
+      "name": "Số lượng thảo dược hái được",
+      "num": "5000",
+      "showType": "2",
+      "type": "14"
+    },
+    {
+      "aid": "6016",
+      "id": "292",
+      "name": "Số lượng cây trồng",
+      "num": "15",
+      "showType": "2",
+      "type": "13"
+    },
+    {
+      "aid": "6017",
+      "id": "293",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "17"
+    },
+    {
+      "aid": "6018",
+      "id": "294",
+      "name": "Số lần bị trộm cây",
+      "num": "100",
+      "showType": "2",
+      "type": "17"
+    },
+    {
+      "aid": "6019",
+      "id": "295",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "6020",
+      "id": "296",
+      "name": "Trồng trọt",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6020",
+      "id": "297",
+      "name": "Hái dược",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6020",
+      "id": "298",
+      "name": "Câu cá",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6020",
+      "id": "299",
+      "name": "Chế dược",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6020",
+      "id": "300",
+      "name": "Nấu ăn",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "6021",
+      "id": "301",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "5"
+    },
+    {
+      "aid": "6022",
+      "id": "302",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "2013",
+      "id": "307",
+      "name": "Y Tá MM",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "1015",
+      "id": "305",
+      "name": "Sinh mênh sơ cấp",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "5013",
+      "id": "324",
+      "name": "Đánh bại tứ thần",
+      "num": "0",
+      "showType": "1",
+      "type": "15"
+    },
+    {
+      "aid": "5013",
+      "id": "325",
+      "name": "Đánh bại tứ ma",
+      "num": "0",
+      "showType": "1",
+      "type": "15"
+    },
+    {
+      "aid": "5017",
+      "id": "327",
+      "name": "Đánh bại tứ thần",
+      "num": "0",
+      "showType": "1",
+      "type": "15"
+    },
+    {
+      "aid": "5017",
+      "id": "328",
+      "name": "Đánh bại tứ ma",
+      "num": "0",
+      "showType": "1",
+      "type": "15"
+    },
+    {
+      "aid": "2013",
+      "id": "308",
+      "name": "Tiểu Lương Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "309",
+      "name": "Kim Hổ",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "310",
+      "name": "Kim Ngưu",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "311",
+      "name": "Dứa Mật",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "312",
+      "name": "Nhím Xanh",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "313",
+      "name": "Tinh Linh Hộ Thú",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "314",
+      "name": "Momo",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "315",
+      "name": "Hoàng Tử Thiên Sứ",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "316",
+      "name": "Thiên Sứ Mít Ướt",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "317",
+      "name": "Công Chúa Ác Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "318",
+      "name": "Đinh Long",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2013",
+      "id": "319",
+      "name": "Thần Long Viễn Cổ",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "1015",
+      "id": "303",
+      "name": "Phòng ngự vật lý sơ cấp",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "1015",
+      "id": "304",
+      "name": "Phòng ngự ma pháp sơ cấp",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "1015",
+      "id": "306",
+      "name": "Tốc độ sơ cấp",
+      "num": "0",
+      "showType": "1",
+      "type": "5"
+    },
+    {
+      "aid": "5013",
+      "id": "326",
+      "name": "Đánh bại Ác Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5017",
+      "id": "329",
+      "name": "Đánh bại Ác Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5017",
+      "id": "330",
+      "name": "Đánh bại Atula Vương",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5017",
+      "id": "331",
+      "name": "Đánh bại Solomon",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "5017",
+      "id": "332",
+      "name": "Đánh bại Avatar",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "6024",
+      "id": "334",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "18"
+    },
+    {
+      "aid": "6026",
+      "id": "336",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "18"
+    },
+    {
+      "aid": "6028",
+      "id": "338",
+      "name": "Số lần hoàn thành",
+      "num": "10",
+      "showType": "2",
+      "type": "16"
+    },
+    {
+      "aid": "6027",
+      "id": "337",
+      "name": "Số lần hoàn thành",
+      "num": "5",
+      "showType": "2",
+      "type": "16"
+    },
+    {
+      "aid": "4016",
+      "id": "344",
+      "name": "Đại diện đội đỏ",
+      "num": "0",
+      "showType": "1",
+      "type": "35"
+    },
+    {
+      "aid": "1057",
+      "id": "342",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "2013",
+      "id": "343",
+      "name": "Thỏ Baby",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "4016",
+      "id": "345",
+      "name": "Đại diện đội xanh",
+      "num": "0",
+      "showType": "1",
+      "type": "35"
+    },
+    {
+      "aid": "6029",
+      "id": "346",
+      "name": "Số lần kết hôn",
+      "num": "3",
+      "showType": "2",
+      "type": "34"
+    },
+    {
+      "aid": "6030",
+      "id": "347",
+      "name": "Số lần kết hôn",
+      "num": "5",
+      "showType": "2",
+      "type": "34"
+    },
+    {
+      "aid": "6031",
+      "id": "348",
+      "name": "Số lần mời bạn",
+      "num": "5",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6032",
+      "id": "349",
+      "name": "Số lần mời bạn",
+      "num": "10",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6033",
+      "id": "350",
+      "name": "Số lần mời bạn",
+      "num": "15",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6034",
+      "id": "351",
+      "name": "Số lần sử dụng trang sức",
+      "num": "10",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6035",
+      "id": "352",
+      "name": "Số lần sử dụng trang sức",
+      "num": "20",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "6036",
+      "id": "353",
+      "name": "Số lần sử dụng trang sức",
+      "num": "30",
+      "showType": "2",
+      "type": "9"
+    },
+    {
+      "aid": "4017",
+      "id": "354",
+      "name": "Pet tím",
+      "num": "0",
+      "showType": "1",
+      "type": "36"
+    },
+    {
+      "aid": "4017",
+      "id": "355",
+      "name": "Trang bị cam",
+      "num": "0",
+      "showType": "1",
+      "type": "36"
+    },
+    {
+      "aid": "6037",
+      "id": "356",
+      "name": "Số ngày kết hôn",
+      "num": "90",
+      "showType": "2",
+      "type": "34"
+    },
+    {
+      "aid": "6040",
+      "id": "359",
+      "name": "Số ngày kết hôn",
+      "num": "720",
+      "showType": "2",
+      "type": "34"
+    },
+    {
+      "aid": "6039",
+      "id": "358",
+      "name": "Số ngày kết hôn",
+      "num": "360",
+      "showType": "2",
+      "type": "34"
+    },
+    {
+      "aid": "6038",
+      "id": "357",
+      "name": "Số ngày kết hôn",
+      "num": "180",
+      "showType": "2",
+      "type": "34"
+    },
+    {
+      "aid": "6041",
+      "id": "360",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6042",
+      "id": "361",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6043",
+      "id": "362",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6044",
+      "id": "363",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6052",
+      "id": "377",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6045",
+      "id": "364",
+      "name": "Cánh Thiên Sứ",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6045",
+      "id": "365",
+      "name": "Cánh Ác Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6051",
+      "id": "376",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6045",
+      "id": "366",
+      "name": "Cánh Bích Không",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6046",
+      "id": "367",
+      "name": "Cánh Thiên Sứ",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6046",
+      "id": "368",
+      "name": "Cánh Ác Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6046",
+      "id": "369",
+      "name": "Cánh Bích Không",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6047",
+      "id": "370",
+      "name": "Cánh Thiên Sứ",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6047",
+      "id": "371",
+      "name": "Cánh Ác Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6047",
+      "id": "372",
+      "name": "Cánh Bích Không",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6048",
+      "id": "373",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6049",
+      "id": "374",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6050",
+      "id": "375",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6053",
+      "id": "378",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6054",
+      "id": "379",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "12"
+    },
+    {
+      "aid": "6057",
+      "id": "382",
+      "name": "Số lượng Cá Mập",
+      "num": "100",
+      "showType": "2",
+      "type": "12"
+    },
+    {
+      "aid": "6055",
+      "id": "380",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "12"
+    },
+    {
+      "aid": "6056",
+      "id": "381",
+      "name": "Số lượng Piranha",
+      "num": "100",
+      "showType": "2",
+      "type": "12"
+    },
+    {
+      "aid": "6058",
+      "id": "383",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "6059",
+      "id": "384",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "6060",
+      "id": "385",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "7"
+    },
+    {
+      "aid": "6061",
+      "id": "386",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "37"
+    },
+    {
+      "aid": "6062",
+      "id": "387",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "37"
+    },
+    {
+      "aid": "6063",
+      "id": "388",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "37"
+    },
+    {
+      "aid": "6064",
+      "id": "389",
+      "name": "Số lần tham gia",
+      "num": "3",
+      "showType": "2",
+      "type": "38"
+    },
+    {
+      "aid": "6065",
+      "id": "390",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "38"
+    },
+    {
+      "aid": "6066",
+      "id": "391",
+      "name": "Số lần đạt hạng nhất",
+      "num": "10",
+      "showType": "2",
+      "type": "38"
+    },
+    {
+      "aid": "6067",
+      "id": "392",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "6068",
+      "id": "393",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "6069",
+      "id": "394",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "6071",
+      "id": "396",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "6072",
+      "id": "397",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "6073",
+      "id": "398",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "39"
+    },
+    {
+      "aid": "6074",
+      "id": "399",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "40"
+    },
+    {
+      "aid": "6075",
+      "id": "400",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "40"
+    },
+    {
+      "aid": "6076",
+      "id": "401",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "40"
+    },
+    {
+      "aid": "6077",
+      "id": "402",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "40"
+    },
+    {
+      "aid": "6078",
+      "id": "403",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "40"
+    },
+    {
+      "aid": "6079",
+      "id": "404",
+      "name": "Số ngày liên tục",
+      "num": "15",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6086",
+      "id": "411",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "42"
+    },
+    {
+      "aid": "6080",
+      "id": "405",
+      "name": "Số ngày liên tục",
+      "num": "60",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6081",
+      "id": "406",
+      "name": "Số ngày liên tục",
+      "num": "7",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6082",
+      "id": "407",
+      "name": "Số ngày liên tục",
+      "num": "30",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6083",
+      "id": "408",
+      "name": "Số ngày liên tục",
+      "num": "90",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6084",
+      "id": "409",
+      "name": "Số lần trộm cắp thành công",
+      "num": "30",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6090",
+      "id": "415",
+      "name": "Số ngày liên tục",
+      "num": "3",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6089",
+      "id": "414",
+      "name": "Số lần thắng",
+      "num": "7000",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6085",
+      "id": "410",
+      "name": "Số lần trộm cắp thành công",
+      "num": "60",
+      "showType": "2",
+      "type": "41"
+    },
+    {
+      "aid": "6087",
+      "id": "412",
+      "name": "Số lần thắng",
+      "num": "70",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6088",
+      "id": "413",
+      "name": "Số lần thắng",
+      "num": "700",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6091",
+      "id": "416",
+      "name": "Số ngày liên tục",
+      "num": "5",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6092",
+      "id": "417",
+      "name": "Số ngày liên tục",
+      "num": "7",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6093",
+      "id": "418",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "42"
+    },
+    {
+      "aid": "6094",
+      "id": "419",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "42"
+    },
+    {
+      "aid": "6095",
+      "id": "420",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "42"
+    },
+    {
+      "aid": "6096",
+      "id": "421",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "6153",
+      "id": "513",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6098",
+      "id": "423",
+      "name": "Số ngày đăng nhập",
+      "num": "588",
+      "showType": "2",
+      "type": "8"
+    },
+    {
+      "aid": "6099",
+      "id": "424",
+      "name": "Số ngày đăng nhập",
+      "num": "988",
+      "showType": "2",
+      "type": "8"
+    },
+    {
+      "aid": "6100",
+      "id": "425",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "426",
+      "name": "Cung Nhân Mã",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "427",
+      "name": "Cung Kim Ngưu",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "428",
+      "name": "Cung Cự Giải",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "429",
+      "name": "Cung Song Ngư",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "430",
+      "name": "Cung Xử Nữ",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "431",
+      "name": "Cung Bảo Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "432",
+      "name": "Cung Bạch Dương",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "433",
+      "name": "Cung Ma Kết",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "434",
+      "name": "Cung Thiên Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "435",
+      "name": "Cung Sư Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "436",
+      "name": "Cung Hổ Cáp",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6101",
+      "id": "437",
+      "name": "Cung Song Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "438",
+      "name": "Cung Song Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "439",
+      "name": "Cung Hổ Cáp",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "440",
+      "name": "Cung Sư Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "441",
+      "name": "Cung Thiên Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "442",
+      "name": "Cung Ma Kết",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "443",
+      "name": "Cung Bạch Dương",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "444",
+      "name": "Cung Bảo Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "445",
+      "name": "Cung Xử Nữ",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "446",
+      "name": "Cung Song Ngư",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "447",
+      "name": "Cung Cự Giải",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "448",
+      "name": "Cung Kim Ngưu",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6102",
+      "id": "449",
+      "name": "Cung Nhân Mã",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "450",
+      "name": "Cung Song Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "451",
+      "name": "Cung Hổ Cáp",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "452",
+      "name": "Cung Sư Tử",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "453",
+      "name": "Cung Thiên Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "454",
+      "name": "Cung Ma Kết",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "455",
+      "name": "Cung Bạch Dương",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "456",
+      "name": "Cung Bảo Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "457",
+      "name": "Cung Xử Nữ",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "458",
+      "name": "Cung Song Ngư",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "459",
+      "name": "Cung Cự Giải",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "460",
+      "name": "Cung Kim Ngưu",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6103",
+      "id": "461",
+      "name": "Cung Nhân Mã",
+      "num": "0",
+      "showType": "1",
+      "type": "43"
+    },
+    {
+      "aid": "6104",
+      "id": "462",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6105",
+      "id": "463",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6106",
+      "id": "464",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6107",
+      "id": "465",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6108",
+      "id": "466",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6109",
+      "id": "467",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6110",
+      "id": "468",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6111",
+      "id": "469",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6112",
+      "id": "470",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6113",
+      "id": "471",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6114",
+      "id": "472",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6115",
+      "id": "473",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6116",
+      "id": "474",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6117",
+      "id": "475",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6118",
+      "id": "476",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6119",
+      "id": "477",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6120",
+      "id": "478",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6121",
+      "id": "479",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6122",
+      "id": "480",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6123",
+      "id": "481",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6124",
+      "id": "482",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6125",
+      "id": "483",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6126",
+      "id": "484",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6127",
+      "id": "485",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6128",
+      "id": "486",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6129",
+      "id": "487",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6130",
+      "id": "488",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6131",
+      "id": "489",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6132",
+      "id": "490",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6133",
+      "id": "491",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6134",
+      "id": "492",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6135",
+      "id": "493",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6136",
+      "id": "494",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6137",
+      "id": "495",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6138",
+      "id": "496",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6139",
+      "id": "497",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6140",
+      "id": "498",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "43"
+    },
+    {
+      "aid": "6141",
+      "id": "499",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6142",
+      "id": "500",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6143",
+      "id": "501",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6151",
+      "id": "509",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6144",
+      "id": "502",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6152",
+      "id": "512",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6145",
+      "id": "503",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6146",
+      "id": "504",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6147",
+      "id": "505",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6148",
+      "id": "506",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6149",
+      "id": "507",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6150",
+      "id": "508",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "1058",
+      "id": "510",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "5066",
+      "id": "511",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "6154",
+      "id": "514",
+      "name": "Mehdi Urboss",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6155",
+      "id": "515",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6156",
+      "id": "516",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6157",
+      "id": "517",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "1"
+    },
+    {
+      "aid": "6158",
+      "id": "518",
+      "name": "Chu Ma Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6159",
+      "id": "519",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "45"
+    },
+    {
+      "aid": "6160",
+      "id": "520",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "45"
+    },
+    {
+      "aid": "6161",
+      "id": "521",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "45"
+    },
+    {
+      "aid": "6162",
+      "id": "522",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "46"
+    },
+    {
+      "aid": "6163",
+      "id": "523",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6164",
+      "id": "524",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6165",
+      "id": "525",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6166",
+      "id": "526",
+      "name": "Kiếp Nạn Vô Ưu - Ma Chiến",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6174",
+      "id": "534",
+      "name": "Kiếp Nạn Vô Ưu - Solomon",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6173",
+      "id": "533",
+      "name": "Kiếp Nạn Vô Ưu - Avatar",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6172",
+      "id": "532",
+      "name": "Kiếp Nạn Vô Ưu - Atula Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6171",
+      "id": "531",
+      "name": "Kiếp Nạn Vô Ưu - Hydra",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6170",
+      "id": "530",
+      "name": "Kiếp Nạn Vô Ưu - Mehdi",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6169",
+      "id": "529",
+      "name": "Kiếp Nạn Vô Ưu  - Ma Hồn",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6168",
+      "id": "528",
+      "name": "Kiếp Nạn Vô Ưu - Chu Ma Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6167",
+      "id": "527",
+      "name": "Kiếp Nạn Vô Ưu - Quỷ Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6175",
+      "id": "535",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "4"
+    },
+    {
+      "aid": "6176",
+      "id": "536",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6177",
+      "id": "537",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6178",
+      "id": "538",
+      "name": "",
+      "num": "0",
+      "showType": "0",
+      "type": "47"
+    },
+    {
+      "aid": "6179",
+      "id": "539",
+      "name": "Kích hoạt tiến hóa pet hệ Người",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "554",
+      "name": "Pet hệ đặc biệt",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "553",
+      "name": "Pet hệ BOSS",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "552",
+      "name": "Pet hệ Long",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "551",
+      "name": "Pet hệ Ác Ma",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "550",
+      "name": "Pet hệ Máy",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "549",
+      "name": "Pet hệ Thực Vật",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "548",
+      "name": "Pet hệ Dã Thú",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6187",
+      "id": "547",
+      "name": "Pet hệ Người",
+      "num": "1",
+      "showType": "1",
+      "type": "48"
+    },
+    {
+      "aid": "6186",
+      "id": "546",
+      "name": "Kích hoạt tiến hóa pet hệ đặc biệt",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6185",
+      "id": "545",
+      "name": "Kích hoạt tiến hóa pet hệ BOSS",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6184",
+      "id": "544",
+      "name": "Kích hoạt tiến hóa pet hệ Long",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6183",
+      "id": "543",
+      "name": "Kích hoạt tiến hóa pet hệ Ác Ma",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6182",
+      "id": "542",
+      "name": "Kích hoạt tiến hóa pet hệ Máy",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6181",
+      "id": "541",
+      "name": "Kích hoạt tiến hóa pet hệ Thực Vật",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6193",
+      "id": "560",
+      "name": "Thần Chết Hộ Mệnh",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6180",
+      "id": "540",
+      "name": "Kích hoạt tiến hóa pet hệ Dã Thú",
+      "num": "10",
+      "showType": "2",
+      "type": "48"
+    },
+    {
+      "aid": "6194",
+      "id": "561",
+      "name": "Con Ma Vui Vẻ",
+      "num": "0",
+      "showType": "0",
+      "type": "44"
+    },
+    {
+      "aid": "6192",
+      "id": "559",
+      "name": "Điểm thành tựu",
+      "num": "0",
+      "showType": "0",
+      "type": "49"
+    },
+    {
+      "aid": "6191",
+      "id": "558",
+      "name": "Điểm thành tựu",
+      "num": "0",
+      "showType": "0",
+      "type": "49"
+    },
+    {
+      "aid": "6190",
+      "id": "557",
+      "name": "Điểm thành tựu",
+      "num": "0",
+      "showType": "0",
+      "type": "49"
+    },
+    {
+      "aid": "6189",
+      "id": "556",
+      "name": "Điểm thành tựu",
+      "num": "0",
+      "showType": "0",
+      "type": "49"
+    },
+    {
+      "aid": "6188",
+      "id": "555",
+      "name": "Điểm thành tựu",
+      "num": "0",
+      "showType": "0",
+      "type": "49"
+    },
+    {
+      "aid": "6196",
+      "id": "563",
+      "name": "Đạt Đỉnh Vinh Quang",
+      "num": "0",
+      "showType": "0",
+      "type": "50"
+    },
+    {
+      "aid": "6201",
+      "id": "568",
+      "name": "Đã Mở Ủy Thác",
+      "num": "0",
+      "showType": "0",
+      "type": "50"
+    },
+    {
+      "aid": "6200",
+      "id": "567",
+      "name": "Số Lần Mở",
+      "num": "100",
+      "showType": "2",
+      "type": "50"
+    },
+    {
+      "aid": "6199",
+      "id": "566",
+      "name": "Số Lần Mở",
+      "num": "100",
+      "showType": "2",
+      "type": "50"
+    },
+    {
+      "aid": "6198",
+      "id": "565",
+      "name": "Nhất Bộ Đăng Thiên",
+      "num": "0",
+      "showType": "0",
+      "type": "50"
+    },
+    {
+      "aid": "6197",
+      "id": "564",
+      "name": "Xâm Nhập Thâm Uyên",
+      "num": "0",
+      "showType": "0",
+      "type": "50"
+    },
+    {
+      "aid": "6195",
+      "id": "562",
+      "name": "Vút Bay Như Gió",
+      "num": "0",
+      "showType": "0",
+      "type": "50"
+    },
+    {
+      "aid": "6202",
+      "id": "569",
+      "name": "Thúy Vũ Phù Phong",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6209",
+      "id": "571",
+      "name": "Deeven",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6208",
+      "id": "570",
+      "name": "Thánh Kiếm Orlando",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6210",
+      "id": "572",
+      "name": "Pollux",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "6210",
+      "id": "573",
+      "name": "Catos",
+      "num": "0",
+      "showType": "1",
+      "type": "0"
+    },
+    {
+      "aid": "6211",
+      "id": "574",
+      "name": "Thanatos",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6212",
+      "id": "575",
+      "name": "Tà Thần Khakass",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6203",
+      "id": "576",
+      "name": "Rèn Luyện 1 - 1",
+      "num": "0",
+      "showType": "0",
+      "type": "51"
+    },
+    {
+      "aid": "6204",
+      "id": "577",
+      "name": "Rèn Luyện 1 - 2",
+      "num": "0",
+      "showType": "0",
+      "type": "51"
+    },
+    {
+      "aid": "6205",
+      "id": "578",
+      "name": "Rèn Luyện 1 - 3",
+      "num": "0",
+      "showType": "0",
+      "type": "51"
+    },
+    {
+      "aid": "6207",
+      "id": "580",
+      "name": "Rèn Luyện 1 - 5",
+      "num": "0",
+      "showType": "0",
+      "type": "51"
+    },
+    {
+      "aid": "6206",
+      "id": "579",
+      "name": "Rèn Luyện 1 - 4",
+      "num": "0",
+      "showType": "0",
+      "type": "51"
+    },
+    {
+      "aid": "6223",
+      "id": "591",
+      "name": "Liên Kích Chiến Thắng",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6222",
+      "id": "590",
+      "name": "Cuồng Vương",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6221",
+      "id": "589",
+      "name": "Bách Biến Chiến Tháng",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6220",
+      "id": "588",
+      "name": "Đôi Tay Kỳ Diệu",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6219",
+      "id": "587",
+      "name": "Chuyên Gia Phá Mìn",
+      "num": "100",
+      "showType": "2",
+      "type": "52"
+    },
+    {
+      "aid": "6218",
+      "id": "586",
+      "name": "Vương Giả Bá Đạo",
+      "num": "10",
+      "showType": "2",
+      "type": "52"
+    },
+    {
+      "aid": "6217",
+      "id": "585",
+      "name": "Anh Hùng Thế Hệ",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6216",
+      "id": "584",
+      "name": "Nhân Tài Kỳ Thạch",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6215",
+      "id": "583",
+      "name": "Bậc Thầy Kỳ Thạch",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6214",
+      "id": "582",
+      "name": "Đại Thần Kỳ Thạch",
+      "num": "0",
+      "showType": "0",
+      "type": "52"
+    },
+    {
+      "aid": "6213",
+      "id": "581",
+      "name": "Sơ Nhập Giang Hồ",
+      "num": "10",
+      "showType": "2",
+      "type": "52"
+    },
+    {
+      "aid": "6225",
+      "id": "593",
+      "name": "Thần Cao Cấp",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6224",
+      "id": "592",
+      "name": "Thiên Thần",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6226",
+      "id": "594",
+      "name": "Thần Siêu Việt",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6254",
+      "id": "636",
+      "name": "Trang bị khắc Quang",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6243",
+      "id": "611",
+      "name": "Người Mẫu Mới",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6244",
+      "id": "612",
+      "name": "Kích Hoạt Bộ Thời Trang",
+      "num": "10",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6245",
+      "id": "613",
+      "name": "Kích Hoạt Bộ Thời Trang",
+      "num": "20",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6246",
+      "id": "614",
+      "name": "Tiểu Phi Hiệp",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6247",
+      "id": "615",
+      "name": "Kích Hoạt Bộ Phi Hành",
+      "num": "5",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6248",
+      "id": "616",
+      "name": "Kích Hoạt Bộ Phi Hành",
+      "num": "10",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6249",
+      "id": "617",
+      "name": "Yêu Dân Tộc",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6250",
+      "id": "618",
+      "name": "Chiến Binh Hoàng Kim",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6250",
+      "id": "619",
+      "name": "Nhạc Công Hoàng Kim",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6250",
+      "id": "620",
+      "name": "Danh Y Hoàng Kim",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6250",
+      "id": "621",
+      "name": "Thợ Săn Hoàng Kim",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6250",
+      "id": "622",
+      "name": "Xạ Thủ Hoàng Kim",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6250",
+      "id": "623",
+      "name": "Hiệp Sĩ Hoàng Kim",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6251",
+      "id": "624",
+      "name": "Manga",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6251",
+      "id": "625",
+      "name": "Luffy",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6251",
+      "id": "626",
+      "name": "Quản Gia",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6251",
+      "id": "627",
+      "name": "Cô Bé Quàng Khăng Đỏ",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6251",
+      "id": "628",
+      "name": "Cosplay",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6251",
+      "id": "629",
+      "name": "Băng Tuyết Kỳ Duyên",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6252",
+      "id": "630",
+      "name": "Furi",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6252",
+      "id": "631",
+      "name": "Phi Long",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6252",
+      "id": "632",
+      "name": "Ngựa Một Sừng",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6252",
+      "id": "633",
+      "name": "Hỏa Phụng Hoàng",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6253",
+      "id": "634",
+      "name": "Máy Bay Giấy Hồng",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6253",
+      "id": "635",
+      "name": "Máy Bay Giấy Lam",
+      "num": "0",
+      "showType": "1",
+      "type": "6"
+    },
+    {
+      "aid": "6255",
+      "id": "637",
+      "name": "Trang bị khắc Ám",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6256",
+      "id": "638",
+      "name": "Trang bị khắc Phong",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6257",
+      "id": "639",
+      "name": "Trang bị khắc Địa",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6258",
+      "id": "640",
+      "name": "Trang bị khắc Thủy",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6259",
+      "id": "641",
+      "name": "Trang bị khắc Hỏa",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6260",
+      "id": "642",
+      "name": "Trang bị thăng hoa cấp 25",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6261",
+      "id": "643",
+      "name": "Trang bị thăng hoa cấp 50",
+      "num": "12",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6262",
+      "id": "644",
+      "name": "Trang bị pet khắc Quang",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6269",
+      "id": "651",
+      "name": "Trang bị pet thăng hoa cấp 50",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6268",
+      "id": "650",
+      "name": "Trang bị pet thăng hoa cấp 25",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6267",
+      "id": "649",
+      "name": "Trang bị pet khắc Hỏa",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6266",
+      "id": "648",
+      "name": "Trang bị pet khắc Thủy",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6265",
+      "id": "647",
+      "name": "Trang bị pet khắc Địa",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6264",
+      "id": "646",
+      "name": "Trang bị pet khắc Phong",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6263",
+      "id": "645",
+      "name": "Trang bị pet khắc Ám",
+      "num": "8",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6270",
+      "id": "652",
+      "name": "Giác Quan Thứ Nhất",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6276",
+      "id": "658",
+      "name": "Giác Quan Thứ Bảy",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6275",
+      "id": "657",
+      "name": "Giác Quan Thứ Sáu",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6274",
+      "id": "656",
+      "name": "Giác Quan Thứ Năm",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6273",
+      "id": "655",
+      "name": "Giác Quan Thứ Tư",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6272",
+      "id": "654",
+      "name": "Giác Quan Thứ Ba",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6271",
+      "id": "653",
+      "name": "Giác Quan Thứ Hai",
+      "num": "0",
+      "showType": "0",
+      "type": "33"
+    },
+    {
+      "aid": "6277",
+      "id": "659",
+      "name": "Khởi Hành Thi",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6278",
+      "id": "660",
+      "name": "Đội Viên Hủy Diệt",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6279",
+      "id": "661",
+      "name": "Đẩy Than Trong Tuyết",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6280",
+      "id": "662",
+      "name": "Tuyệt Duyên Thể",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6281",
+      "id": "663",
+      "name": "Giải Độc Tễ",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6282",
+      "id": "664",
+      "name": "Người Gây Rừng",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6283",
+      "id": "665",
+      "name": "Thiên Thần Sa Ngã",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6284",
+      "id": "666",
+      "name": "Niết Bàn Trùng Sinh",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6286",
+      "id": "668",
+      "name": "Khế Ước Linh Hồn (Tốc)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6285",
+      "id": "667",
+      "name": "Khế Ước Linh Hồn (HP)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6287",
+      "id": "669",
+      "name": "Khế Ước Linh Hồn (Công VL)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6288",
+      "id": "670",
+      "name": "Khế Ước Linh Hồn (Công MP)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6289",
+      "id": "671",
+      "name": "Khế Ước Vĩnh Hằng (HP)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6290",
+      "id": "672",
+      "name": "Khế Ước Vĩnh Hằng (Tốc)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6291",
+      "id": "673",
+      "name": "Khế Ước Vĩnh Hằng (Công VL)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6292",
+      "id": "674",
+      "name": "Khế Ước Vĩnh Hằng (Công MP)",
+      "num": "0",
+      "showType": "0",
+      "type": "2"
+    },
+    {
+      "aid": "6293",
+      "id": "675",
+      "name": "Thu Thập Đại Sư",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6307",
+      "id": "698",
+      "name": "Trận Thánh Đế",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6307",
+      "id": "697",
+      "name": "Ấn Thánh Đế",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6307",
+      "id": "696",
+      "name": "Giáp Thánh Đế",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6307",
+      "id": "695",
+      "name": "Mũ Thánh Đế",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6306",
+      "id": "694",
+      "name": "Trận Mộng Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6306",
+      "id": "693",
+      "name": "Ấn Mộng Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6306",
+      "id": "692",
+      "name": "Giáp Mộng Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6306",
+      "id": "691",
+      "name": "Mũ Mộng Ma",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6305",
+      "id": "690",
+      "name": "Trận Solomon",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6305",
+      "id": "689",
+      "name": "Ấn Solomon",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6305",
+      "id": "688",
+      "name": "Giáp Solonmon",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6305",
+      "id": "687",
+      "name": "Mũ Solomon",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6304",
+      "id": "686",
+      "name": "Thợ Săn Thành Phố",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6303",
+      "id": "685",
+      "name": "Sói Kim Cang",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6302",
+      "id": "684",
+      "name": "Lãnh Chúa Thâm Uyên",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6301",
+      "id": "683",
+      "name": "Dũng Sĩ Đồng Thoại",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6300",
+      "id": "682",
+      "name": "Kẻ Đào Mộ",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6299",
+      "id": "681",
+      "name": "Chinh Phục Hang Động",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6298",
+      "id": "680",
+      "name": "Kế Thừa Di Sản",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6297",
+      "id": "679",
+      "name": "Mọt Sách",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6296",
+      "id": "678",
+      "name": "Thương Nhân Châu Báu",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6295",
+      "id": "677",
+      "name": "Vùng An Toàn",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6294",
+      "id": "676",
+      "name": "Kỳ Tài Binh Đao",
+      "num": "0",
+      "showType": "0",
+      "type": "54"
+    },
+    {
+      "aid": "6318",
+      "id": "709",
+      "name": "Quán Quân Giải Mã",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6317",
+      "id": "708",
+      "name": "Thánh Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6316",
+      "id": "707",
+      "name": "Diêm Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6315",
+      "id": "706",
+      "name": "Ám Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6314",
+      "id": "705",
+      "name": "Quang Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6313",
+      "id": "704",
+      "name": "Luyện Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6312",
+      "id": "703",
+      "name": "Thổ Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6311",
+      "id": "702",
+      "name": "Phong Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6310",
+      "id": "701",
+      "name": "Lôi Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6309",
+      "id": "700",
+      "name": "Thủy Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6308",
+      "id": "699",
+      "name": "Hỏa Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "57"
+    },
+    {
+      "aid": "6319",
+      "id": "710",
+      "name": "Chiến Đội Siêu Năng",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6320",
+      "id": "711",
+      "name": "Thảo Mai Vô Tội",
+      "num": "0",
+      "showType": "0",
+      "type": "6"
+    },
+    {
+      "aid": "6322",
+      "id": "712",
+      "name": "Bộ Thời Trang đã kích hoạt",
+      "num": "30",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6333",
+      "id": "725",
+      "name": "Chúc Phúc Thần Hậu",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6332",
+      "id": "723",
+      "name": "Chúc Phúc Nữ Thần Tư Pháp",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6331",
+      "id": "722",
+      "name": "Chúc Phúc Nữ Thần Thánh Khiết",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6330",
+      "id": "721",
+      "name": "Chúc Phúc Nữ Thần Tình Yêu",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6329",
+      "id": "720",
+      "name": "Chúc Phúc Nữ Thần Hòa Bình",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6328",
+      "id": "719",
+      "name": "Chúc Phúc Nữ Thần Chiến Binh",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6327",
+      "id": "718",
+      "name": "Chúc Phúc Nữ Thần Hỏa Diệm",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6326",
+      "id": "717",
+      "name": "Chúc Phúc Nữ Thần Tự Do",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6325",
+      "id": "716",
+      "name": "Chúc Phúc Nữ Thần Ánh Trăng",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6324",
+      "id": "715",
+      "name": "Chúc Phúc Nữ Thần Âm Nhạc",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6321",
+      "id": "714",
+      "name": "Bộ Phi Hành đã kích hoạt",
+      "num": "15",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6323",
+      "id": "713",
+      "name": "Bộ Thời Trang đã kích hoạt",
+      "num": "40",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6401",
+      "id": "726",
+      "name": "Tân Nhân Liều Lĩnh",
+      "num": "0",
+      "showType": "1",
+      "type": "60"
+    },
+    {
+      "aid": "6402",
+      "id": "727",
+      "name": "Dũng Sĩ Liều Lĩnh",
+      "num": "0",
+      "showType": "1",
+      "type": "60"
+    },
+    {
+      "aid": "6403",
+      "id": "728",
+      "name": "Tinh Anh Liều Lĩnh",
+      "num": "0",
+      "showType": "1",
+      "type": "60"
+    },
+    {
+      "aid": "6404",
+      "id": "729",
+      "name": "Vua Mạo Hiểm",
+      "num": "0",
+      "showType": "1",
+      "type": "60"
+    },
+    {
+      "aid": "6405",
+      "id": "730",
+      "name": "Mạo Hiểm Tốc Độ",
+      "num": "0",
+      "showType": "1",
+      "type": "59"
+    },
+    {
+      "aid": "6406",
+      "id": "731",
+      "name": "Mạo Hiểm Cấp Tốc",
+      "num": "0",
+      "showType": "1",
+      "type": "59"
+    },
+    {
+      "aid": "6407",
+      "id": "732",
+      "name": "Hiểm Trở Vô Cùng",
+      "num": "0",
+      "showType": "1",
+      "type": "59"
+    },
+    {
+      "aid": "6408",
+      "id": "733",
+      "name": "Một Cơn Gió Thuận",
+      "num": "0",
+      "showType": "1",
+      "type": "59"
+    },
+    {
+      "aid": "6334",
+      "id": "734",
+      "name": "Truyền Nhiễm Khoái Lạc",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6335",
+      "id": "735",
+      "name": "Quốc Vương La Ni",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6336",
+      "id": "736",
+      "name": "Bối Hậu Lạnh Lùng",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6413",
+      "id": "740",
+      "name": "Ma Thuật Đại Thiên Sứ",
+      "num": "0",
+      "showType": "1",
+      "type": "61"
+    },
+    {
+      "aid": "6412",
+      "id": "739",
+      "name": "Đại Thiên Sứ Bảo Hộ",
+      "num": "0",
+      "showType": "1",
+      "type": "61"
+    },
+    {
+      "aid": "6411",
+      "id": "738",
+      "name": "Sức Mạnh Đại Thiên Sứ",
+      "num": "0",
+      "showType": "1",
+      "type": "61"
+    },
+    {
+      "aid": "6410",
+      "id": "737",
+      "name": "Huyết Sắc Chiến Thần",
+      "num": "0",
+      "showType": "1",
+      "type": "61"
+    },
+    {
+      "aid": "6414",
+      "id": "741",
+      "name": "Tân Xuân Chi Quan",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6414",
+      "id": "742",
+      "name": "Tân Xuân Chi Quang",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6414",
+      "id": "743",
+      "name": "Tân Xuân Chi Ấn",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6414",
+      "id": "744",
+      "name": "Tân Xuân Chi Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6415",
+      "id": "745",
+      "name": "Đấu Thú Giỏi!",
+      "num": "10",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6416",
+      "id": "746",
+      "name": "Đấu Thú Vương Siêu Cấp",
+      "num": "20",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6417",
+      "id": "747",
+      "name": "Đấu Thú Vương Vô Địch",
+      "num": "30",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6418",
+      "id": "748",
+      "name": "Đấu Thú Vương Trong Truyền Thuyết",
+      "num": "30",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6419",
+      "id": "749",
+      "name": "Ta Có Khả Năng Điều Khiển Chiến Thú",
+      "num": "10",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6420",
+      "id": "750",
+      "name": "Thần Thú, Thần Long, Thần Chủ Nhân",
+      "num": "10",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6421",
+      "id": "751",
+      "name": "Cửu Vô Tận",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6422",
+      "id": "752",
+      "name": "Thập Vô Tận",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6423",
+      "id": "753",
+      "name": "Bá Chủ Linh Thú",
+      "num": "30",
+      "showType": "2",
+      "type": "42"
+    },
+    {
+      "aid": "6424",
+      "id": "754",
+      "name": "Hoàng Giả Quan",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6424",
+      "id": "755",
+      "name": "Hoàng Giả Quang",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6424",
+      "id": "756",
+      "name": "Hoàng Giả Ấn",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6424",
+      "id": "757",
+      "name": "Hoàng Giả Trận",
+      "num": "0",
+      "showType": "1",
+      "type": "53"
+    },
+    {
+      "aid": "6425",
+      "id": "758",
+      "name": "Ahihi",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6426",
+      "id": "759",
+      "name": "Ma Pháp Long Nhi",
+      "num": "0",
+      "showType": "1",
+      "type": "58"
+    },
+    {
+      "aid": "6427",
+      "id": "760",
+      "name": "Thập Nhất Vô Tận",
+      "num": "0",
+      "showType": "0",
+      "type": "0"
+    },
+    {
+      "aid": "6428",
+      "id": "761",
+      "name": "Đã kích hoạt bộ thời trang",
+      "num": "45",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6429",
+      "id": "762",
+      "name": "Kích hoạt bộ thời trang",
+      "num": "50",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6430",
+      "id": "763",
+      "name": "Kích hoạt bộ thời trang",
+      "num": "55",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6431",
+      "id": "764",
+      "name": "Kích hoạt phi hành",
+      "num": "20",
+      "showType": "2",
+      "type": "6"
+    },
+    {
+      "aid": "6432",
+      "id": "7499",
+      "name": "Huấn Luyện Viên Bất Bại",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6433",
+      "id": "7500",
+      "name": "Huấn Luyện Viên Huy Hoàng",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6434",
+      "id": "7501",
+      "name": "Huấn Luyện Viên Vô Lượng",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6435",
+      "id": "7502",
+      "name": "Festivall Thần Thú - Minh Tinh Truyền Kỳ",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6436",
+      "id": "7503",
+      "name": "Festivall Thần Thú - Danh Nhân Siêu Cấp",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "6437",
+      "id": "7504",
+      "name": "Festivall Thần Thú - Ngôi Sao Mới Nổi",
+      "num": "0",
+      "showType": "0",
+      "type": "9"
+    },
+    {
+      "aid": "2044",
+      "id": "765",
+      "name": "Bạch Hổ Cuồng Nộ",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2044",
+      "id": "766",
+      "name": "Huyền Minh Linh Võ",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2044",
+      "id": "767",
+      "name": "Kim Dực Chu Linh",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    },
+    {
+      "aid": "2044",
+      "id": "768",
+      "name": "Long Tiểu Thanh",
+      "num": "0",
+      "showType": "1",
+      "type": "2"
+    }
+  ]
+}

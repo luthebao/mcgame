@@ -1,0 +1,846 @@
+// Quest handler for quest-related RPC calls.
+// Handles quest acceptance, completion, and progress tracking.
+// Supports main story, daily, and loop quests with objective parsing.
+package handlers
+
+import (
+	"errors"
+	"fmt"
+	"strconv"
+
+	appchar "mcgame-server/internal/application/character"
+	appitem "mcgame-server/internal/application/item"
+	apppet "mcgame-server/internal/application/pet"
+	appquest "mcgame-server/internal/application/quest"
+	domainchar "mcgame-server/internal/domain/character"
+	domainitem "mcgame-server/internal/domain/item"
+	"mcgame-server/internal/domain/quest"
+	"mcgame-server/internal/gamedata"
+	"mcgame-server/internal/gamedata/models"
+	"mcgame-server/internal/infrastructure/rtmp"
+	rtmputils "mcgame-server/internal/presentation/rtmp/utils"
+	pkgerrors "mcgame-server/pkg/errors"
+
+	"go.uber.org/zap"
+)
+
+type QuestHandler struct {
+	questService    *appquest.Service
+	charService     *appchar.Service
+	itemService     *appitem.Service
+	petService      *apppet.Service
+	gameDataManager *gamedata.Manager
+	questNotify     *QuestNotifyHelper
+	logger          *zap.Logger
+}
+
+func NewQuestHandler(questService *appquest.Service, logger *zap.Logger) *QuestHandler {
+	return &QuestHandler{
+		questService: questService,
+		logger:       logger,
+	}
+}
+
+func (h *QuestHandler) SetCharacterService(charService *appchar.Service) {
+	h.charService = charService
+}
+
+func (h *QuestHandler) SetItemService(itemService *appitem.Service) {
+	h.itemService = itemService
+}
+
+func (h *QuestHandler) SetPetService(petService *apppet.Service) {
+	h.petService = petService
+}
+
+func (h *QuestHandler) SetGameDataManager(manager *gamedata.Manager) {
+	h.gameDataManager = manager
+}
+
+func (h *QuestHandler) SetQuestNotifyHelper(qnh *QuestNotifyHelper) {
+	h.questNotify = qnh
+}
+
+func (h *QuestHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("initQuestManager", h.InitQuestManager)
+	dispatcher.Register("takeQuest", h.TakeQuest)
+	dispatcher.Register("takeBuildQuest", h.TakeBuildQuest)
+	dispatcher.Register("finishQuest", h.FinishQuest)
+	dispatcher.Register("getLoopQuestStartTime", h.GetLoopQuestStartTime)
+	dispatcher.Register("canQuest", h.CanQuest)
+	dispatcher.Register("initCB", h.InitCB)
+	dispatcher.Register("initCBByItem", h.InitCBByItem)
+	dispatcher.Register("takeCBQuest", h.TakeCBQuest)
+	dispatcher.Register("cancelQuest", h.CancelQuest)
+}
+
+func (h *QuestHandler) TakeCBQuest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var sIndex int
+	switch v := args[0].(type) {
+	case float64:
+		sIndex = int(v)
+	case int:
+		sIndex = v
+	case string:
+		// Client might send "1" as string
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			h.logger.Error("TakeCBQuest: invalid sIndex string", zap.String("val", v), zap.Error(err))
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+		sIndex = parsed
+	default:
+		h.logger.Error("TakeCBQuest: invalid arg type", zap.Any("arg", args[0]))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Info("TakeCBQuest called",
+		zap.Int64("character_id", characterID),
+		zap.Int("s_index", sIndex))
+
+	// Resolve Quest ID from Cache (Service uses 1-based index, Client sends 0-based)
+	questID, err := h.questService.GetCallBoardQuestID(characterID, sIndex+1)
+	if err != nil {
+		h.logger.Warn("TakeCBQuest: Cache miss/invalid, attempting reload", zap.Error(err))
+		// Fallback: Reload CallBoard to ensure cache is populated
+		availableQuests, err := h.questService.LoadCallBoard(ctx.Context, characterID)
+		if err == nil && len(availableQuests) > 0 {
+			// Check bounds (sIndex is 0-based)
+			if sIndex >= 0 && sIndex < len(availableQuests) {
+				questID = int(availableQuests[sIndex].ID)
+			}
+		}
+	}
+
+	if questID == 0 {
+		h.logger.Error("TakeCBQuest: Could not resolve quest ID")
+		return map[string]interface{}{"f": false}, nil
+	}
+
+	h.logger.Info("Resolved CallBoard quest",
+		zap.Int("s_index", sIndex),
+		zap.Int("resolved_id", questID))
+
+	// Use empty objectives for CB quests for now
+	objectives := h.getDefaultObjectives(questID)
+
+	// Call AcceptQuest
+	qp, err := h.questService.AcceptQuest(ctx.Context, characterID, questID, objectives)
+	if err != nil {
+		h.logger.Error("Failed to accept CB quest", zap.Error(err))
+		return map[string]interface{}{
+			"f": false,
+		}, nil
+	}
+	h.sendAddQuestCallback(ctx, characterID, qp)
+
+	return map[string]interface{}{
+		"f": true,
+		"i": sIndex,
+	}, nil
+}
+
+func (h *QuestHandler) sendAddQuestCallback(ctx *rtmp.RPCContext, charID int64, qp *quest.QuestProgress) {
+	activeQuests, _ := h.questService.GetActiveQuests(ctx.Context, charID)
+	enrichedDTO := h.questService.EnrichQuestDTO(ctx.Context, qp)
+
+	payload := make(map[string]interface{})
+	for k, v := range enrichedDTO {
+		payload[k] = v
+	}
+
+	payload["qid"] = strconv.Itoa(qp.QuestID)
+	payload["st"] = enrichedDTO["state"]
+	payload["d"] = enrichedDTO
+	payload["qn"] = len(activeQuests)
+
+	if err := ctx.Connection.SendCallback("onAddChaQuest", payload); err != nil {
+		h.logger.Error("Failed to send onAddChaQuest callback", zap.Error(err))
+	}
+}
+
+func (h *QuestHandler) InitQuestManager(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	activeQuests, err := h.questService.GetActiveQuests(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	completedIDs, err := h.questService.GetCompletedQuestIDs(ctx.Context, characterID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// Map active quests to DTOs and then into a map keyed by QID string
+	// Client expects { "q": { "qid1": {DTO}, "qid2": {DTO} } }
+	questMap := make(map[string]interface{})
+	for _, qp := range activeQuests {
+		baseDTO := h.questService.EnrichQuestDTO(ctx.Context, qp)
+		finalDTO := make(map[string]interface{})
+		for k, v := range baseDTO {
+			finalDTO[k] = v
+		}
+
+		// Add string QID and st (state) to match client expectations for Quest Objects
+		// We do NOT add 'd' (wrapper) or 'qn' (count) here as those seem specific to the onAdd event payload
+		finalDTO["qid"] = strconv.Itoa(qp.QuestID)
+		finalDTO["st"] = baseDTO["state"]
+		// finalDTO["d"] = baseDTO
+		// finalDTO["qn"] = len(activeQuests)
+
+		qidStr := strconv.Itoa(qp.QuestID)
+		questMap[qidStr] = finalDTO
+	}
+
+	h.logger.Info("InitQuestManager result",
+		zap.Int64("character_id", characterID),
+		zap.Int("active_count", len(activeQuests)),
+		zap.Int("completed_count", len(completedIDs)),
+		zap.Int("quest_map_size", len(questMap)))
+
+	return map[string]interface{}{
+		"q":            questMap,
+		"completedIds": completedIDs,
+	}, nil
+}
+
+func (h *QuestHandler) TakeQuest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) != 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var questID int
+	switch v := args[0].(type) {
+	case float64:
+		questID = int(v)
+	case int:
+		questID = v
+	case string:
+		var err error
+		questID, err = strconv.Atoi(v)
+		if err != nil {
+			h.logger.Error("TakeQuest: invalid questID string", zap.String("val", v))
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+	default:
+		h.logger.Error("TakeQuest: invalid questID type", zap.Any("val", args[0]), zap.String("type", fmt.Sprintf("%T", args[0])))
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	// Parse NPC ID from args[1]
+	var npcID int
+	switch v := args[1].(type) {
+	case float64:
+		npcID = int(v)
+	case int:
+		npcID = v
+	case string:
+		// Handle potential string format from client
+		var err error
+		npcID, err = strconv.Atoi(v)
+		if err != nil {
+			h.logger.Warn("TakeQuest: invalid npcID string, ignoring", zap.String("val", v))
+		}
+	}
+
+	objectives := h.questService.GetInitialObjectives(questID)
+
+	qp, err := h.questService.AcceptQuest(ctx.Context, characterID, questID, objectives)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Quest accepted",
+		zap.Int64("character_id", characterID),
+		zap.Int("quest_id", questID))
+
+	h.sendAddQuestCallback(ctx, characterID, qp)
+
+	if questID == 160 && h.itemService != nil {
+		// Add item 335 directly to quest bag (SlotTypeQuestBag, SID 2300-2329)
+		addedItem, err := h.itemService.AddItemToSlot(ctx.Context, characterID, 335, domainitem.ItemTypeQuest, 1, false, domainitem.SlotTypeQuestBag)
+		if err != nil {
+			h.logger.Warn("Failed to add item 335 to quest bag for quest 160",
+				zap.Int64("character_id", characterID),
+				zap.Error(err))
+		} else if addedItem != nil {
+			// Get item template data for name and kind
+			itemName := "Item 335"
+			itemKind := 0
+			if h.gameDataManager != nil {
+				if itemTpl := h.gameDataManager.GetItem(335); itemTpl != nil {
+					itemName = itemTpl.Name
+					itemKind = int(itemTpl.Kind)
+				}
+			}
+			// Send onAddItem callback (visual effect)
+			itemDTO := map[string]interface{}{
+				"i":  335,
+				"q":  1,
+				"s":  "",
+				"c":  addedItem.ColorCode,
+				"t":  28,
+				"n":  itemName,
+				"tt": itemKind,
+			}
+			ctx.Connection.SendCallback("onAddItem", itemDTO)
+			ctx.Connection.SendCallback("onAddCharactorSlot", addedItem.ToDTO())
+		}
+	}
+
+	// // Get number of active quests
+	// activeQuests, _ := h.questService.GetActiveQuests(ctx.Context, characterID)
+
+	// // Response specifically for TakeQuest to close the panel if successful
+	// res := map[string]interface{}{
+	// 	"flag": true,
+	// 	"qn":   len(activeQuests),
+	// }
+
+	// Push NPC state update for the quest's start/finish NPCs
+	if h.questNotify != nil {
+		questTemplate := h.questService.GetQuestTemplate(questID)
+		uniqueNPCs := make(map[int]bool)
+
+		if npcID > 0 {
+			uniqueNPCs[npcID] = true
+		}
+
+		if questTemplate != nil {
+			if int(questTemplate.StartNPC) > 0 {
+				uniqueNPCs[int(questTemplate.StartNPC)] = true
+			}
+			if int(questTemplate.FinishNPC) > 0 {
+				uniqueNPCs[int(questTemplate.FinishNPC)] = true
+			}
+		}
+
+		if len(uniqueNPCs) > 0 {
+			npcIDs := make([]int, 0, len(uniqueNPCs))
+			for id := range uniqueNPCs {
+				npcIDs = append(npcIDs, id)
+			}
+			h.questNotify.PushNpcQuestStates(ctx, characterID, npcIDs)
+		}
+	}
+
+	return nil, nil
+}
+
+func (h *QuestHandler) TakeBuildQuest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 2 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var questID int
+	switch v := args[0].(type) {
+	case float64:
+		questID = int(v)
+	case int:
+		questID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	var npcID int
+	switch v := args[1].(type) {
+	case float64:
+		npcID = int(v)
+	case int:
+		npcID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	objectives := h.questService.GetInitialObjectives(questID)
+	if len(args) >= 3 {
+		if list, ok := args[2].([]interface{}); ok {
+			objectives = h.parseObjectives(list)
+		}
+	}
+
+	qp, err := h.questService.AcceptQuestFromNPC(ctx.Context, characterID, questID, npcID, objectives)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	h.logger.Info("Quest accepted from NPC",
+		zap.Int64("character_id", characterID),
+		zap.Int("quest_id", questID),
+		zap.Int("npc_id", npcID))
+
+	// Send callback to add the quest to client's manager
+	h.sendAddQuestCallback(ctx, characterID, qp)
+
+	// Get number of active quests
+	activeQuests, _ := h.questService.GetActiveQuests(ctx.Context, characterID)
+
+	// Push NPC state update for the quest's start/finish NPCs
+	if h.questNotify != nil {
+		questTemplate := h.questService.GetQuestTemplate(questID)
+		npcIDs := []int{}
+
+		// Always update the NPC we interacted with
+		if npcID > 0 {
+			npcIDs = append(npcIDs, npcID)
+		}
+
+		if questTemplate != nil {
+			// Update StartNPC if different (unlikely for TakeBuildQuest but safe)
+			if int(questTemplate.StartNPC) > 0 && int(questTemplate.StartNPC) != npcID {
+				npcIDs = append(npcIDs, int(questTemplate.StartNPC))
+			}
+			// Update FinishNPC (to show incomplete/complete state)
+			if int(questTemplate.FinishNPC) > 0 && int(questTemplate.FinishNPC) != npcID {
+				npcIDs = append(npcIDs, int(questTemplate.FinishNPC))
+			}
+		}
+
+		if len(npcIDs) > 0 {
+			h.questNotify.PushNpcQuestStates(ctx, characterID, npcIDs)
+		}
+	}
+
+	return map[string]interface{}{
+		"flag": true,
+		"qn":   len(activeQuests),
+	}, nil
+}
+
+func (h *QuestHandler) FinishQuest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var questID int
+	switch v := args[0].(type) {
+	case float64:
+		questID = int(v)
+	case int:
+		questID = v
+	case string:
+		questID, _ = strconv.Atoi(v)
+	case map[string]interface{}:
+		// Handle object format: {s: -1, i: "2695", n: 240}
+		if val, ok := v["i"]; ok {
+			switch iv := val.(type) {
+			case string:
+				questID, _ = strconv.Atoi(iv)
+			case float64:
+				questID = int(iv)
+			case int:
+				questID = iv
+			}
+		}
+		if questID == 0 {
+			h.logger.Warn("FinishQuest: map argument missing 'i' field or invalid", zap.Any("arg", v))
+			return nil, pkgerrors.ErrInvalidArgs
+		}
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	_, rewards, err := h.questService.CompleteQuest(ctx.Context, characterID, questID)
+	if err != nil {
+		return map[string]interface{}{
+			"flag": false,
+			"msg":  err.Error(),
+		}, nil
+	}
+
+	if questID == 160 && h.itemService != nil {
+		items, err := h.itemService.GetInventory(ctx.Context, characterID)
+		if err == nil {
+			for _, it := range items {
+				if it.TemplateID == 335 && it.SlotType == domainitem.SlotTypeQuestBag {
+					itemDTO := it.ToDTO()
+					if err := h.itemService.DeleteItemByTemplateAndSlotType(ctx.Context, characterID, 335, domainitem.SlotTypeQuestBag); err != nil {
+						h.logger.Warn("Failed to delete quest item 335 after completing quest 160",
+							zap.Int64("character_id", characterID),
+							zap.Error(err))
+					} else {
+						// Send onDelCharactorSlot callback to remove from UI
+						_ = ctx.Connection.SendCallback("onDelCharactorSlot", itemDTO["sid"])
+					}
+					break
+				}
+			}
+		}
+	}
+
+	h.logger.Info("Quest completed",
+		zap.Int64("character_id", characterID),
+		zap.Int("quest_id", questID),
+		zap.Any("rewards", rewards))
+
+	// Handle Rewards Callbacks
+	if rewards != nil {
+		totalMoney := int64(0)
+		if changes, ok := rewards["currencyChanges"].(map[string]int64); ok {
+			if m, ok := changes["money"]; ok {
+				totalMoney = m
+			}
+
+			// Helper to get current character currency amount
+			getCurrencyAmount := func(c *domainchar.Character, key string) float64 {
+				switch key {
+				case "money":
+					return float64(c.Money)
+				case "moneyBind":
+					return float64(c.MoneyBind)
+				case "gold":
+					return float64(c.Gold)
+				case "goldBind":
+					return float64(c.GoldBind)
+				// Add others if needed
+				default:
+					return 0
+				}
+			}
+
+			// We need the updated character to get the TOTAL amount
+			char, err := h.charService.GetCharacter(ctx.Context, characterID)
+			if err == nil {
+				for currType, amount := range changes {
+					if amount > 0 {
+						// onAddMoney(charID, currencyType, amount, currentTotal)
+						currentTotal := getCurrencyAmount(char, currType)
+						_ = ctx.Connection.SendCallback("onAddMoney", float64(characterID), currType, float64(amount), currentTotal)
+					}
+				}
+			}
+		}
+
+		// 2. Experience -> onUPP
+		totalExp := int64(0)
+		if e, ok := rewards["exp"].(int64); ok {
+			totalExp = e
+		}
+
+		// Check level up from rewards
+		isLevelUp := false
+		if l, ok := rewards["levelUp"].(bool); ok && l {
+			isLevelUp = true
+		}
+
+		if totalExp > 0 || totalMoney > 0 {
+			char, err := h.charService.GetCharacter(ctx.Context, characterID)
+			if err == nil {
+				rtmputils.SendExpAndLevelUpCallbacks(ctx.Connection, char, totalExp, isLevelUp)
+			}
+		}
+
+		// 3. Items -> onAddItem (effect) and onAddCharactorSlot (inventory)
+		if notified, ok := rewards["notifiedItems"].([]map[string]interface{}); ok {
+			for _, nItem := range notified {
+				_ = ctx.Connection.SendCallback("onAddItem", nItem)
+			}
+		}
+		if items, ok := rewards["items"].([]map[string]interface{}); ok {
+			for _, itemDTO := range items {
+				_ = ctx.Connection.SendCallback("onAddCharactorSlot", itemDTO)
+			}
+		}
+
+		// 4. Pets -> onAddPet
+		if pets, ok := rewards["pets"].([]map[string]interface{}); ok {
+			for _, petDTO := range pets {
+				_ = ctx.Connection.SendCallback("onAddPet", petDTO)
+			}
+		}
+	}
+
+	// 4. Update Achievements (Generic trigger)
+	_ = ctx.Connection.SendCallback("onUpdateAchieve")
+
+	// 5. Update Safe Battle/Mid status
+	_ = ctx.Connection.SendCallback("onUpdateSafeBattleMid")
+
+	// Get number of active quests remaining
+	activeQuests, _ := h.questService.GetActiveQuests(ctx.Context, characterID)
+
+	// Push NPC state update for the whole map to show newly available quests
+	if h.questNotify != nil {
+		mapID, _ := ctx.Connection.GetSceneInfo()
+		h.questNotify.PushNpcQuestStatesByMap(ctx, characterID, mapID)
+	}
+
+	return map[string]interface{}{
+		"flag": true,
+		"qid":  questID,
+		"qn":   len(activeQuests),
+	}, nil
+}
+
+func (h *QuestHandler) CancelQuest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	h.logger.Debug("CancelQuest called", zap.Any("args", args))
+
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		h.logger.Error("CancelQuest: unauthorized", zap.Error(err))
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var questID int
+	switch v := args[0].(type) {
+	case float64:
+		questID = int(v)
+	case int:
+		questID = v
+	case string:
+		questID, _ = strconv.Atoi(v)
+	default:
+		h.logger.Warn("CancelQuest: invalid questID type", zap.Any("val", args[0]), zap.String("type", fmt.Sprintf("%T", args[0])))
+		return map[string]interface{}{"flag": false}, nil
+	}
+
+	h.logger.Info("Abandoning quest", zap.Int64("char_id", characterID), zap.Int("quest_id", questID))
+
+	err = h.questService.AbandonQuest(ctx.Context, characterID, questID)
+	if err != nil {
+		h.logger.Error("CancelQuest: abandon failed", zap.Error(err))
+		return map[string]interface{}{
+			"flag": false,
+		}, nil
+	}
+
+	// Get active quests count for `qn` field
+	activeQuests, err := h.questService.GetActiveQuests(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("CancelQuest: failed to get active quests", zap.Error(err))
+	}
+
+	// Send callback to remove the quest from client's manager
+	// Client QuestPanel.as requires 'flag', 'qn', and 'qid'
+	if err := ctx.Connection.SendCallback("onCancelQuest", map[string]interface{}{
+		"flag": true,
+		"qn":   len(activeQuests),
+		"qid":  strconv.Itoa(questID),
+	}); err != nil {
+		h.logger.Error("CancelQuest: failed to send callback", zap.Error(err))
+	}
+
+	return map[string]interface{}{
+		"flag": true,
+		"qid":  questID,
+		"qn":   len(activeQuests),
+	}, nil
+}
+
+func (h *QuestHandler) GetLoopQuestStartTime(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	questType := 1
+	if len(args) >= 1 {
+		switch v := args[0].(type) {
+		case float64:
+			questType = int(v)
+		case int:
+			questType = v
+		}
+	}
+
+	startTime := h.questService.GetLoopQuestStartTime(questType)
+
+	return map[string]interface{}{
+		"startTime": startTime,
+	}, nil
+}
+
+func (h *QuestHandler) CanQuest(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var questID int
+	switch v := args[0].(type) {
+	case float64:
+		questID = int(v)
+	case int:
+		questID = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	canAccept, reason, err := h.questService.CanAcceptQuest(ctx.Context, characterID, questID)
+	if err != nil {
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	return map[string]interface{}{
+		"canAccept": canAccept,
+		"reason":    reason,
+	}, nil
+}
+
+func (h *QuestHandler) getDefaultObjectives(questID int) []quest.Objective {
+	switch {
+	case questID < 100:
+		return []quest.Objective{
+			{Type: quest.ObjectiveTalkToNPC, Target: questID, Current: 0, Required: 1},
+		}
+	case questID < 1000:
+		return []quest.Objective{
+			{Type: quest.ObjectiveKillMonster, Target: questID % 100, Current: 0, Required: 10},
+		}
+	case questID < 2000:
+		return []quest.Objective{
+			{Type: quest.ObjectiveCollectItem, Target: questID % 100, Current: 0, Required: 5},
+		}
+	default:
+		return []quest.Objective{
+			{Type: quest.ObjectiveKillMonster, Target: 1, Current: 0, Required: 5},
+			{Type: quest.ObjectiveCollectItem, Target: 1, Current: 0, Required: 3},
+		}
+	}
+}
+
+func (h *QuestHandler) parseObjectives(objList []interface{}) []quest.Objective {
+	objectives := make([]quest.Objective, 0, len(objList))
+
+	for _, obj := range objList {
+		objMap, ok := obj.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		objective := quest.Objective{}
+
+		if t, ok := objMap["type"].(float64); ok {
+			objective.Type = quest.ObjectiveType(int(t))
+		}
+		if target, ok := objMap["target"].(float64); ok {
+			objective.Target = int(target)
+		}
+		if current, ok := objMap["current"].(float64); ok {
+			objective.Current = int(current)
+		}
+		if required, ok := objMap["required"].(float64); ok {
+			objective.Required = int(required)
+		}
+
+		objectives = append(objectives, objective)
+	}
+
+	return objectives
+}
+
+func (h *QuestHandler) InitCB(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if h.charService == nil {
+		return nil, errors.New("character service not set")
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	h.logger.Debug("InitCB called", zap.Int64("character_id", characterID))
+
+	availableQuests, err := h.questService.LoadCallBoard(ctx.Context, characterID)
+	if err != nil {
+		h.logger.Error("InitCB: failed to load quests", zap.Error(err))
+		availableQuests = []*models.QuestTemplate{}
+	}
+
+	questList := make([]map[string]interface{}, 0)
+	for i, q := range availableQuests {
+		questList = append(questList, map[string]interface{}{
+			"id":     int(q.ID),
+			"qid":    strconv.FormatInt(q.ID, 10),
+			"state":  102, // ST_QUEST_CANTAKE
+			"sIndex": i + 1,
+			"c":      int(q.Color),
+			"data":   q.ToDTO(),
+		})
+	}
+
+	h.logger.Info("InitCB: sending quest list", zap.Int("count", len(questList)))
+
+	return map[string]interface{}{
+		"f":    true,
+		"n":    10,
+		"data": questList,
+	}, nil
+}
+
+func (h *QuestHandler) InitCBByItem(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+	if len(args) < 1 {
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	characterID, err := strconv.ParseInt(ctx.CharacterID, 10, 64)
+	if err != nil {
+		return nil, pkgerrors.ErrUnauthorized
+	}
+
+	var refreshType int
+	switch v := args[0].(type) {
+	case float64:
+		refreshType = int(v)
+	case int:
+		refreshType = v
+	default:
+		return nil, pkgerrors.ErrInvalidArgs
+	}
+
+	h.logger.Info("InitCBByItem called",
+		zap.Int64("character_id", characterID),
+		zap.Int("refresh_type", refreshType))
+
+	// Call Service
+	itemConsumed, result, err := h.questService.RefreshCallBoard(ctx.Context, characterID, refreshType)
+	if err != nil {
+		h.logger.Error("RefreshCallBoard failed", zap.Error(err))
+		return rtmp.ErrorToResponse(err), nil
+	}
+
+	// Handle Item Callback
+	if itemConsumed != nil {
+		sid := itemConsumed.CalculateSID()
+		if itemConsumed.StackCount <= 0 {
+			// Item depleted
+			ctx.Connection.SendCallback("onDelCharactorSlot", float64(itemConsumed.ID), float64(sid))
+		} else {
+			// Update stack
+			ctx.Connection.SendCallback("onUpChaSlotStackNum", float64(itemConsumed.ID), float64(itemConsumed.StackCount), float64(sid))
+		}
+	}
+
+	return result, nil
+}

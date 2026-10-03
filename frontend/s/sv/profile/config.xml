@@ -1,0 +1,11 @@
+<config>
+    <server>
+        <name>Vibe</name>
+        <resource>http://localhost:8888/s/</resource>
+        <logic>127.0.0.1:1935/master/test/</logic>
+        <reg>http://localhost:8888/register.html</reg>
+        <pay>http://localhost:8888/payment.html</pay>
+        <guide>http://localhost:8888/guide.html</guide>
+        <active>http://localhost:8888/events.html</active>
+    </server>
+</config>

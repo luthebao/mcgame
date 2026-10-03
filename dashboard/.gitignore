@@ -1,0 +1,33 @@
+# Dependencies
+/node_modules
+
+# Build output
+/.next/
+/out/
+/build/
+
+# Coverage and cache
+/coverage/
+/.turbo/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Environment files (local secrets)
+.env
+.env.*
+!.env.example
+
+# Vercel
+/.vercel/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS files
+.DS_Store

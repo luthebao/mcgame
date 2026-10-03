@@ -1,0 +1,210 @@
+// Stub handler for unimplemented RPC methods.
+// Provides placeholder responses to prevent "method not found" errors.
+// Logs stub calls for tracking which methods need implementation.
+package handlers
+
+import (
+	"mcgame-server/internal/infrastructure/rtmp"
+
+	"go.uber.org/zap"
+)
+
+type StubHandler struct {
+	logger *zap.Logger
+}
+
+func NewStubHandler(logger *zap.Logger) *StubHandler {
+	return &StubHandler{
+		logger: logger,
+	}
+}
+
+func (h *StubHandler) RegisterHandlers(dispatcher *rtmp.RPCDispatcher) {
+	dispatcher.Register("getRepeatSysMsg", h.stubHandler("getRepeatSysMsg"))
+	dispatcher.Register("getHeadline", h.stubHandler("getHeadline"))
+	dispatcher.Register("closeAuction", h.stubHandler("closeAuction"))
+	dispatcher.Register("createGuildBuildings", h.stubHandler("createGuildBuildings"))
+	dispatcher.Register("getCharStateClient", h.stubHandler("getCharStateClient"))
+	dispatcher.Register("getCharLeaderClient", h.stubHandler("getCharLeaderClient"))
+	dispatcher.Register("fixFlyState", h.stubHandler("fixFlyState"))
+
+	// getChatPanel is now implemented in ChatHandler
+	// dispatcher.Register("getChatPanel", h.stubHandler("getChatPanel"))
+	dispatcher.Register("addMail", h.stubHandler("addMail"))
+	dispatcher.Register("getMail", h.stubHandler("getMail"))
+
+	dispatcher.Register("npcFuncOther", h.stubHandler("npcFuncOther"))
+	dispatcher.Register("auctionSearch", h.stubHandler("auctionSearch"))
+
+	dispatcher.Register("fullHpRecoverByItem", h.stubHandler("fullHpRecoverByItem"))
+	dispatcher.Register("fullMpRecoverByItem", h.stubHandler("fullMpRecoverByItem"))
+	dispatcher.Register("submitAddict", h.stubHandler("submitAddict"))
+	dispatcher.Register("callGm", h.stubHandler("callGm"))
+	dispatcher.Register("shopClosePanel", h.stubHandler("shopClosePanel"))
+	dispatcher.Register("getLimitTimeShop", h.stubHandler("getLimitTimeShop"))
+
+	dispatcher.Register("product", h.stubHandler("product"))
+	dispatcher.Register("uc", h.stubHandler("uc"))
+	dispatcher.Register("gtg", h.stubHandler("gtg"))
+	dispatcher.Register("ex", h.stubHandler("ex"))
+	dispatcher.Register("gp", h.stubHandler("gp"))
+	dispatcher.Register("gg", h.stubHandler("gg"))
+
+	dispatcher.Register("getGuildInfo", h.stubHandler("getGuildInfo"))
+	dispatcher.Register("getGuildList", h.stubHandler("getGuildList"))
+
+	dispatcher.Register("getRankList", h.stubHandler("getRankList"))
+
+	dispatcher.Register("getDailyOnlineAct", h.stubHandler("getDailyOnlineAct"))
+	dispatcher.Register("getActivityInfo", h.stubHandler("getActivityInfo"))
+
+	dispatcher.Register("inInstanceMap", h.stubHandler("inInstanceMap"))
+	dispatcher.Register("onlineReport", h.stubHandler("onlineReport"))
+
+	// // Group/Party related
+	// dispatcher.Register("groupJoin", h.stubHandler("groupJoin"))
+	// dispatcher.Register("groupReqDeny", h.stubHandler("groupReqDeny"))
+	// dispatcher.Register("groupInvite", h.stubHandler("groupInvite"))
+	// dispatcher.Register("groupRequest", h.stubHandler("groupRequest"))
+	// dispatcher.Register("groupLeave", h.stubHandler("groupLeave"))
+	// dispatcher.Register("groupAFK", h.stubHandler("groupAFK"))
+	// dispatcher.Register("unGroupAFK", h.stubHandler("unGroupAFK"))
+	// dispatcher.Register("groupKick", h.stubHandler("groupKick"))
+	// dispatcher.Register("groupGiveLeader", h.stubHandler("groupGiveLeader"))
+
+	// // Character actions
+	// dispatcher.Register("lvUp", h.stubHandler("lvUp"))
+	// dispatcher.Register("repairAll", h.stubHandler("repairAll"))
+	// dispatcher.Register("dropItem", h.stubHandler("dropItem"))
+	// dispatcher.Register("delTempSlot", h.stubHandler("delTempSlot"))
+	// dispatcher.Register("dropGuildItem", h.stubHandler("dropGuildItem"))
+	// dispatcher.Register("stopFlying", h.stubHandler("stopFlying"))
+	// dispatcher.Register("delBuffClient", h.stubHandler("delBuffClient"))
+	// dispatcher.Register("delVipTitle", h.stubHandler("delVipTitle"))
+	// dispatcher.Register("delActiveTitle", h.stubHandler("delActiveTitle"))
+	// dispatcher.Register("skillSetUserBar", h.stubHandler("skillSetUserBar"))
+	// dispatcher.Register("assassinate", h.stubHandler("assassinate"))
+	// dispatcher.Register("startWatch", h.stubHandler("startWatch"))
+	// dispatcher.Register("restoreChar", h.stubHandler("restoreChar"))
+	// dispatcher.Register("startDeleteChar", h.stubHandler("startDeleteChar"))
+	// dispatcher.Register("backToCharSelect", h.stubHandler("backToCharSelect"))
+	// dispatcher.Register("changeRing", h.stubHandler("changeRing"))
+	// dispatcher.Register("icl", h.stubHandler("icl"))
+	// dispatcher.Register("applyMWResetProp", h.stubHandler("applyMWResetProp"))
+	// dispatcher.Register("verifyAuthentication", h.stubHandler("verifyAuthentication"))
+	// dispatcher.Register("setAddictFlagFromClient", h.stubHandler("setAddictFlagFromClient"))
+
+	// // Scene/Movement
+	// dispatcher.Register("sceneLogin", h.stubHandler("sceneLogin"))
+	// dispatcher.Register("sceneChange", h.stubHandler("sceneChange"))
+	// dispatcher.Register("cbom", h.stubHandler("cbom"))
+	// dispatcher.Register("cb", h.stubHandler("cb"))
+	// dispatcher.Register("udcr", h.stubHandler("udcr"))
+	// dispatcher.Register("quitGatheringClinet", h.stubHandler("quitGatheringClinet"))
+
+	// // NPC/Building
+	// dispatcher.Register("setNpcState", h.stubHandler("setNpcState"))
+	// dispatcher.Register("clickBuild", h.stubHandler("clickBuild"))
+	// dispatcher.Register("execBuildFunc", h.stubHandler("execBuildFunc"))
+
+	// // Battle
+	// dispatcher.Register("battleEscaped", h.stubHandler("battleEscaped"))
+	// dispatcher.Register("battlePlayEnd", h.stubHandler("battlePlayEnd"))
+
+	// // Pet related
+	// dispatcher.Register("cancelPetFollow", h.stubHandler("cancelPetFollow"))
+	// dispatcher.Register("checkLimitWingEffect", h.stubHandler("checkLimitWingEffect"))
+	// dispatcher.Register("initMagicCrystalData", h.stubHandler("initMagicCrystalData"))
+
+	// // Farm
+	// dispatcher.Register("getFarmByCid", h.stubHandler("getFarmByCid"))
+
+	// // Chat/Social
+	// dispatcher.Register("say", h.stubHandler("say"))
+	// dispatcher.Register("addPopNum", h.stubHandler("addPopNum"))
+	// dispatcher.Register("delPopNum", h.stubHandler("delPopNum"))
+	// dispatcher.Register("refuseToAddFriend", h.stubHandler("refuseToAddFriend"))
+	// dispatcher.Register("acceptTeacher", h.stubHandler("acceptTeacher"))
+	// dispatcher.Register("acceptStudent", h.stubHandler("acceptStudent"))
+	// dispatcher.Register("breakBrotherShip", h.stubHandler("breakBrotherShip"))
+	// dispatcher.Register("inviteReturned", h.stubHandler("inviteReturned"))
+
+	// // World Boss
+	// dispatcher.Register("wbStrongBattle", h.stubHandler("wbStrongBattle"))
+	// dispatcher.Register("wbAutoBattle", h.stubHandler("wbAutoBattle"))
+	// dispatcher.Register("wbLeaveMap", h.stubHandler("wbLeaveMap"))
+	// dispatcher.Register("canEnterWbMap", h.stubHandler("canEnterWbMap"))
+	// dispatcher.Register("autoBattleByRandom", h.stubHandler("autoBattleByRandom"))
+
+	// // Pet Soul
+	// dispatcher.Register("preySoul", h.stubHandler("preySoul"))
+	// dispatcher.Register("transformExpInPanel", h.stubHandler("transformExpInPanel"))
+	// dispatcher.Register("putSoulToBag", h.stubHandler("putSoulToBag"))
+
+	// // Network/System
+	// dispatcher.Register("checkNetDelay", h.stubHandler("checkNetDelay"))
+	// dispatcher.Register("checkEquipEdit", h.stubHandler("checkEquipEdit"))
+	// dispatcher.Register("us", h.stubHandler("us"))
+	// dispatcher.Register("uif", h.stubHandler("uif"))
+	// dispatcher.Register("saveGuideLog", h.stubHandler("saveGuideLog"))
+	// dispatcher.Register("getTodayOnlineTime", h.stubHandler("getTodayOnlineTime"))
+	// dispatcher.Register("getShopConfig", h.stubHandler("getShopConfig"))
+
+	// // Pet Arena
+	// dispatcher.Register("getPetArenaData", h.stubHandler("getPetArenaData"))
+	// dispatcher.Register("getPetArenaActivityInfo", h.stubHandler("getPetArenaActivityInfo"))
+	// dispatcher.Register("getPetArenaDataActivity", h.stubHandler("getPetArenaDataActivity"))
+
+	// // Trials
+	// dispatcher.Register("trialsOut", h.stubHandler("trialsOut"))
+
+	// // Bloody Battle
+	// dispatcher.Register("getBBPersonalScore", h.stubHandler("getBBPersonalScore"))
+	// dispatcher.Register("bbLeaveScene", h.stubHandler("bbLeaveScene"))
+	// dispatcher.Register("bbTransToSafe", h.stubHandler("bbTransToSafe"))
+	// dispatcher.Register("getBloodyBattleInfo", h.stubHandler("getBloodyBattleInfo"))
+	// dispatcher.Register("enterBloodyBattle", h.stubHandler("enterBloodyBattle"))
+
+	// // PVP
+	// dispatcher.Register("checkPVPLine", h.stubHandler("checkPVPLine"))
+
+	// // Activity/Events
+	// dispatcher.Register("dxdRegister", h.stubHandler("dxdRegister"))
+	// dispatcher.Register("dxdGetIn", h.stubHandler("dxdGetIn"))
+	// dispatcher.Register("canEnterTreasureHunt", h.stubHandler("canEnterTreasureHunt"))
+	// dispatcher.Register("canQuest", h.stubHandler("canQuest"))
+
+	// // DOTA
+	// dispatcher.Register("dotaPlayerVSNPC", h.stubHandler("dotaPlayerVSNPC"))
+
+	// // Guild/Brother
+	// dispatcher.Register("acceptNewMemToBrother", h.stubHandler("acceptNewMemToBrother"))
+	// dispatcher.Register("releaseChat", h.stubHandler("releaseChat"))
+	// dispatcher.Register("uproot", h.stubHandler("uproot"))
+	// dispatcher.Register("coverLongBuff", h.stubHandler("coverLongBuff"))
+	// dispatcher.Register("doDoubleHarvest", h.stubHandler("doDoubleHarvest"))
+	// dispatcher.Register("updateBrotherTitle", h.stubHandler("updateBrotherTitle"))
+	// dispatcher.Register("updateTeamFlyState", h.stubHandler("updateTeamFlyState"))
+	// dispatcher.Register("disbandBrothers", h.stubHandler("disbandBrothers"))
+	// dispatcher.Register("ripenImmediately", h.stubHandler("ripenImmediately"))
+	// dispatcher.Register("updateDefencerMobai", h.stubHandler("updateDefencerMobai"))
+	// dispatcher.Register("onUsePackageByMoney", h.stubHandler("onUsePackageByMoney"))
+	// dispatcher.Register("guwushiqiByDenfencer", h.stubHandler("guwushiqiByDenfencer"))
+	// dispatcher.Register("onResetHMTProgress", h.stubHandler("onResetHMTProgress"))
+	// dispatcher.Register("changeRMBWingColor", h.stubHandler("changeRMBWingColor"))
+	// dispatcher.Register("becomeBrother", h.stubHandler("becomeBrother"))
+	// dispatcher.Register("beginBrother", h.stubHandler("beginBrother"))
+	// dispatcher.Register("onAddNeedDragonBall", h.stubHandler("onAddNeedDragonBall"))
+	// dispatcher.Register("changeWingColor", h.stubHandler("changeWingColor"))
+	// dispatcher.Register("npcScriptSend", h.stubHandler("npcScriptSend"))
+}
+
+func (h *StubHandler) stubHandler(method string) rtmp.HandlerFunc {
+	return func(ctx *rtmp.RPCContext, args []interface{}) (interface{}, error) {
+		h.logger.Debug("Stub RPC called (not implemented)",
+			zap.String("method", method),
+			zap.Uint32("conn_id", ctx.ConnID),
+			zap.Int("arg_count", len(args)))
+		return nil, nil
+	}
+}

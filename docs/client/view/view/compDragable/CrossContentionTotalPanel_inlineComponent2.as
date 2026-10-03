@@ -1,0 +1,82 @@
+﻿// Decompiled by BaoLT
+// https://github.com/luthebao
+
+//com.qeedoo.ui.view.compDragable.CrossContentionTotalPanel_inlineComponent2
+
+package com.qeedoo.ui.view.compDragable
+{
+    import mx.controls.Text;
+    import com.qeedoo.game.config.Language;
+    import mx.events.PropertyChangeEvent;
+    import flash.events.*;
+    import flash.display.*;
+    import flash.geom.*;
+    import mx.styles.*;
+    import flash.text.*;
+    import flash.media.*;
+    import mx.binding.*;
+    import flash.net.*;
+    import flash.utils.*;
+    import flash.system.*;
+    import flash.accessibility.*;
+    import flash.ui.*;
+    import flash.filters.*;
+    import flash.external.*;
+    import flash.debugger.*;
+    import flash.errors.*;
+    import flash.printing.*;
+    import flash.profiler.*;
+    import flash.xml.*;
+
+    public class CrossContentionTotalPanel_inlineComponent2 extends Text 
+    {
+
+        private var _88844982outerDocument:CrossContentionTotalPanel;
+
+        public function CrossContentionTotalPanel_inlineComponent2()
+        {
+            this.selectable = false;
+        }
+
+        override public function set data(_arg_1:Object):void
+        {
+            var _local_2:String;
+            super.data = _arg_1;
+            if (data.lordname)
+            {
+                _local_2 = CrossContentionTotalPanel.getServerName(Number(data.lordname));
+                this.htmlText = Language.CROSS_CONTENTION_PANEL_U[16].toString().replace("{osid}", _local_2);
+                this.toolTip = CrossContentionTotalPanel.getUnitServersName(Number(data.lordname));
+            }
+            else
+            {
+                this.htmlText = Language.CROSS_CONTENTION_PANEL_U[17];
+                this.toolTip = "";
+            };
+        }
+
+        [Bindable(event="propertyChange")]
+        public function get outerDocument():CrossContentionTotalPanel
+        {
+            return (this._88844982outerDocument);
+        }
+
+        override public function initialize():void
+        {
+            super.initialize();
+        }
+
+        public function set outerDocument(_arg_1:CrossContentionTotalPanel):void
+        {
+            var _local_2:Object = this._88844982outerDocument;
+            if (_local_2 !== _arg_1)
+            {
+                this._88844982outerDocument = _arg_1;
+                this.dispatchEvent(PropertyChangeEvent.createUpdateEvent(this, "outerDocument", _local_2, _arg_1));
+            };
+        }
+
+
+    }
+}//package com.qeedoo.ui.view.compDragable
+

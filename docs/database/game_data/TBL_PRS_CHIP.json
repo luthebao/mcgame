@@ -1,0 +1,88 @@
+{
+  "exportedAt": "2026-07-10T08:01:57Z",
+  "source": "docs/client/data/GameData.as + docs/client/data/moreData.as",
+  "name": "TBL_PRS_CHIP",
+  "recordCount": 10,
+  "records": [
+    {
+      "costCrystal": "200",
+      "iconCode": "3060100001245",
+      "id": "1",
+      "name": "Mảnh Nữ Thần Âm Nhạc",
+      "position": "1",
+      "showId": "1"
+    },
+    {
+      "costCrystal": "620",
+      "iconCode": "3060100001247",
+      "id": "2",
+      "name": "Mảnh Nữ Thần Ánh Trăng",
+      "position": "2",
+      "showId": "2"
+    },
+    {
+      "costCrystal": "300",
+      "iconCode": "3060100001238",
+      "id": "3",
+      "name": "Mảnh Nữ Thần Tự Do",
+      "position": "3",
+      "showId": "3"
+    },
+    {
+      "costCrystal": "1000",
+      "iconCode": "3060100001239",
+      "id": "4",
+      "name": "Mảnh Nữ Thần Hỏa Diệm",
+      "position": "4",
+      "showId": "4"
+    },
+    {
+      "costCrystal": "400",
+      "iconCode": "3060100001244",
+      "id": "5",
+      "name": "Mảnh Nữ Thần Chiến Binh",
+      "position": "5",
+      "showId": "5"
+    },
+    {
+      "costCrystal": "1220",
+      "iconCode": "3060100001246",
+      "id": "6",
+      "name": "Mảnh Nữ Thần Hòa Bình",
+      "position": "6",
+      "showId": "6"
+    },
+    {
+      "costCrystal": "500",
+      "iconCode": "3060100001243",
+      "id": "7",
+      "name": "Mảnh Nữ Thần Tình Yêu",
+      "position": "7",
+      "showId": "7"
+    },
+    {
+      "costCrystal": "1500",
+      "iconCode": "3060100001242",
+      "id": "8",
+      "name": "Mảnh Nữ Thần Thánh Khiết",
+      "position": "8",
+      "showId": "8"
+    },
+    {
+      "costCrystal": "600",
+      "iconCode": "3060100001241",
+      "id": "9",
+      "name": "Mảnh Nữ Thần Tư Pháp",
+      "position": "9",
+      "showId": "9"
+    },
+    {
+      "costCrystal": "2000",
+      "iconCode": "3060100001240",
+      "id": "10",
+      "name": "Mảnh Thần Hậu Gabriel",
+      "position": "10",
+      "showId": "10"
+    }
+  ]
+}
