@@ -68,7 +68,9 @@ function notifyGameServer(action: BroadcastAction, id: number): void {
         cache: "no-store",
     }).catch((error: unknown) => {
         console.warn(
-            `[activities] broadcast notify failed (${action}, id=${id}):`,
+            "[activities] broadcast notify failed (%s, id=%d): %s",
+            action,
+            id,
             error instanceof Error ? error.message : String(error)
         )
     })

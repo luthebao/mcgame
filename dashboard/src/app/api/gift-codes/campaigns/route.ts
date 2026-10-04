@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto"
+import { randomInt } from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 
 import { API_MESSAGES, API_MESSAGE_BUILDERS } from "@/constants/api-messages"
@@ -193,7 +193,7 @@ function slugifyGiftCodeCampaignKey(raw: string): string {
         }
     }
 
-    return out.replace(/^-+|-+$/g, "")
+    return out.endsWith("-") ? out.slice(0, -1) : out
 }
 
 function normalizeCampaignKey(
@@ -344,11 +344,10 @@ function compileGiftCodeRewards(
 function generateGiftCodeValue(prefix: string, randomLen: number): string {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     const length = randomLen > 0 ? randomLen : defaultGiftCodeGenLength
-    const bytes = randomBytes(length)
 
     let code = prefix
-    for (const value of bytes) {
-        code += alphabet[value % alphabet.length]
+    for (let i = 0; i < length; i++) {
+        code += alphabet[randomInt(alphabet.length)]
     }
     return code
 }
