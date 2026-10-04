@@ -1,6 +1,6 @@
 module mcgame-server
 
-go 1.25
+go 1.26.0
 
 // Patched go-amf0 to remove strict UTF-8 validation for legacy Flash clients
 replace github.com/yutopp/go-amf0 => ./pkg/amf0
@@ -9,7 +9,7 @@ require (
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jackc/pgx/v5 v5.7.2
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pires/go-proxyproto v0.12.0
 	github.com/pkg/errors v0.9.1
@@ -21,8 +21,8 @@ require (
 	github.com/yutopp/go-amf0 v0.1.0
 	github.com/yutopp/go-flv v0.3.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.41.0
-	google.golang.org/grpc v1.62.1
+	golang.org/x/crypto v0.57.0
+	google.golang.org/grpc v1.84.0
 )
 
 require (
@@ -39,7 +39,6 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -57,12 +56,12 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240314234333-6e1732d8331c // indirect
-	google.golang.org/protobuf v1.36.8
+	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

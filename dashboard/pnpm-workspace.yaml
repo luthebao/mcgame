@@ -1,3 +1,5 @@
 allowBuilds:
   sharp: false
   unrs-resolver: false
+overrides:
+  postcss: ^8.5.28
